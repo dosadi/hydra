@@ -11,7 +11,8 @@ VERILATOR    ?= verilator
 CXX          ?= g++
 
 SDL_CFLAGS   ?= $(shell sdl2-config --cflags)
-SDL_LIBS     ?= $(shell sdl2-config --libs) -lSDL2_ttf
+SDL_LIBS     ?= $(shell sdl2-config --libs) -LDFLAGS -lSDL2_ttf
+
 
 VERILATOR_FLAGS := \
     -Wall --trace \
@@ -23,13 +24,13 @@ VERILATOR_FLAGS := \
 all: $(CXX_EXE)
 
 $(CXX_EXE): V$(TOP_MODULE)___024root.h
-\t$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk
-\tcp obj_dir/V$(TOP_MODULE) $(CXX_EXE)
+	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk
+	cp obj_dir/V$(TOP_MODULE) $(CXX_EXE)
 
 V$(TOP_MODULE)___024root.h: $(RTL_DIR)/*.sv $(SIM_DIR)/$(CXX_SRCS)
-\tcd $(SIM_DIR) && $(VERILATOR) $(VERILATOR_FLAGS) $(SDL_CFLAGS) $(SDL_LIBS)
+	cd $(SIM_DIR) && $(VERILATOR) $(VERILATOR_FLAGS) $(SDL_CFLAGS) -LDFLAGS $(SDL_LIBS)
 
 clean:
-\trm -rf obj_dir $(CXX_EXE)
+	rm -rf obj_dir $(CXX_EXE)
 
 .PHONY: all clean
