@@ -60,13 +60,22 @@ module voxel_axil_csr #(
     // Debug BRAM write (voxel mem)
     output reg                      dbg_we_pulse,
     output reg [17:0]               dbg_addr,
-    output reg [63:0]               dbg_wdata
+    output reg [63:0]               dbg_wdata,
+
+    // Simple DMA stub control
+    output reg                      dma_start_pulse,
+    output reg                      dma_busy,
+    output reg [31:0]               dma_src,
+    output reg [31:0]               dma_dst,
+    output reg [31:0]               dma_len,
+    output reg [31:0]               dma_status // bit0=done sticky, bit1=busy
 );
 
     localparam [1:0] RESP_OKAY = 2'b00;
 
     // Register file for readback (word addressed)
-    reg [31:0] regs [0:20];
+    reg [31:0] regs [0:27];
+    reg [31:0] dma_counter;
 
     wire [ADDR_WIDTH-1:0] awaddr_aligned = {s_axil_awaddr[ADDR_WIDTH-1:2], 2'b00};
     wire [ADDR_WIDTH-1:0] araddr_aligned = {s_axil_araddr[ADDR_WIDTH-1:2], 2'b00};
@@ -76,7 +85,7 @@ module voxel_axil_csr #(
     integer i;
 `ifndef SYNTHESIS
     initial begin
-        for (i = 0; i < 21; i = i + 1)
+        for (i = 0; i < 28; i = i + 1)
             regs[i] = 32'd0;
         s_axil_awready = 1'b0;
         s_axil_wready  = 1'b0;
@@ -90,6 +99,13 @@ module voxel_axil_csr #(
         flags_load_pulse = 1'b0;
         sel_load_pulse   = 1'b0;
         dbg_we_pulse     = 1'b0;
+        dma_start_pulse  = 1'b0;
+        dma_busy         = 1'b0;
+        dma_src          = 32'd0;
+        dma_dst          = 32'd0;
+        dma_len          = 32'd0;
+        dma_status       = 32'd0;
+        dma_counter      = 32'd0;
     end
 `endif
 
@@ -112,6 +128,12 @@ module voxel_axil_csr #(
     localparam integer W_DBG_DATA_H = 8'h13;
     localparam integer W_DBG_CTRL   = 8'h14;
 
+    localparam integer W_DMA_SRC    = 8'h20;
+    localparam integer W_DMA_DST    = 8'h21;
+    localparam integer W_DMA_LEN    = 8'h22;
+    localparam integer W_DMA_CTRL   = 8'h23;
+    localparam integer W_DMA_STATUS = 8'h24;
+
     // Write channel
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -123,6 +145,10 @@ module voxel_axil_csr #(
             flags_load_pulse <= 1'b0;
             sel_load_pulse   <= 1'b0;
             dbg_we_pulse     <= 1'b0;
+            dma_start_pulse  <= 1'b0;
+            dma_busy         <= 1'b0;
+            dma_status       <= 32'd0;
+            dma_counter      <= 32'd0;
         end else begin
             cam_load_pulse   <= 1'b0;
             flags_load_pulse <= 1'b0;
@@ -168,6 +194,20 @@ module voxel_axil_csr #(
                     W_DBG_DATA_L:  dbg_wdata[31:0]  <= s_axil_wdata;
                     W_DBG_DATA_H:  dbg_wdata[63:32] <= s_axil_wdata;
                     W_DBG_CTRL:    if (s_axil_wdata[0]) dbg_we_pulse <= 1'b1;
+                    W_DMA_SRC:     dma_src <= s_axil_wdata;
+                    W_DMA_DST:     dma_dst <= s_axil_wdata;
+                    W_DMA_LEN:     dma_len <= s_axil_wdata;
+                    W_DMA_CTRL: begin
+                        if (s_axil_wdata[0] && !dma_busy) begin
+                            dma_start_pulse <= 1'b1;
+                            dma_busy        <= 1'b1;
+                            dma_status[0]   <= 1'b0; // clear done
+                            dma_status[1]   <= 1'b1; // busy
+                            dma_counter     <= (dma_len >> 3); // crude cycles ~= bytes/8
+                            if (dma_counter == 0)
+                                dma_counter <= 32'd16;
+                        end
+                    end
                     default: ;
                 endcase
 
@@ -193,12 +233,34 @@ module voxel_axil_csr #(
                 s_axil_arready <= s_axil_arvalid;
 
             if (s_axil_arready && s_axil_arvalid && !s_axil_rvalid) begin
-                s_axil_rdata   <= regs[ar_word];
+                case (ar_word)
+                    W_DMA_STATUS: s_axil_rdata <= dma_status;
+                    default:       s_axil_rdata <= regs[ar_word];
+                endcase
                 s_axil_rresp   <= RESP_OKAY;
                 s_axil_rvalid  <= 1'b1;
                 s_axil_arready <= 1'b0;
             end else if (s_axil_rvalid && s_axil_rready) begin
                 s_axil_rvalid <= 1'b0;
+            end
+        end
+    end
+
+    // DMA stub progress: count down cycles, then mark done
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            dma_busy    <= 1'b0;
+            dma_status  <= 32'd0;
+            dma_counter <= 32'd0;
+        end else begin
+            if (dma_busy) begin
+                if (dma_counter != 0)
+                    dma_counter <= dma_counter - 1'b1;
+                else begin
+                    dma_busy       <= 1'b0;
+                    dma_status[1]  <= 1'b0; // busy clear
+                    dma_status[0]  <= 1'b1; // done sticky
+                end
             end
         end
     end
