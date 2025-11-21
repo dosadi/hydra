@@ -15,7 +15,8 @@ SDL_LIBS     ?= $(shell sdl2-config --libs) -LDFLAGS -lSDL2_ttf
 
 
 VERILATOR_FLAGS := \
-    -Wall --trace \
+    -Wall --Wno-fatal --trace \
+    --Wno-WIDTHEXPAND --Wno-UNUSEDSIGNAL --Wno-UNUSEDPARAM --Wno-BLKSEQ --Wno-INITIALDLY \
     --cc $(TOP_MODULE).sv \
     --top-module $(TOP_MODULE) \
     -O3 --exe $(CXX_SRCS) \

@@ -130,61 +130,83 @@ module voxel_raycaster_core_pipelined #(
     // --------------------------------------------------------------------
     task automatic compute_pixel_data;
         reg [8:0] tmp;
+        reg [7:0] out_r, out_g, out_b;
+        reg [7:0] out_reflection, out_refraction, out_attenuation, out_emission;
+        reg [7:0] out_material_id;
+        reg [7:0] out_normal_x, out_normal_y, out_normal_z, out_curvature;
     begin
         // Base lighting
-        pixel_r = (voxel_color[23:16] * voxel_light) >> 8;
-        pixel_g = (voxel_color[15:8]  * voxel_light) >> 8;
-        pixel_b = (voxel_color[7:0]   * voxel_light) >> 8;
+        out_r = (voxel_color[23:16] * voxel_light) >> 8;
+        out_g = (voxel_color[15:8]  * voxel_light) >> 8;
+        out_b = (voxel_color[7:0]   * voxel_light) >> 8;
 
         // Emission
         if (voxel_emissive != 0) begin
-            tmp = pixel_r + voxel_emissive; pixel_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-            tmp = pixel_g + voxel_emissive; pixel_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-            tmp = pixel_b + voxel_emissive; pixel_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_r + voxel_emissive; out_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_g + voxel_emissive; out_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_b + voxel_emissive; out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
         end
 
         // Material fields
-        pixel_material_id = {voxel_material_type, 4'h0};
+        out_material_id = {voxel_material_type, 4'h0};
 
-        if (voxel_material_type == 4'd3)       pixel_reflection = 8'd255;
-        else if (voxel_material_type == 4'd5)  pixel_reflection = 8'd200;
-        else                                   pixel_reflection = voxel_material_props[7:5] << 5;
+        if (voxel_material_type == 4'd3)       out_reflection = 8'd255;
+        else if (voxel_material_type == 4'd5)  out_reflection = 8'd200;
+        else                                   out_reflection = voxel_material_props[7:5] << 5;
 
-        if (voxel_material_type == 4'd5)      pixel_refraction = 8'd128;
-        else if (voxel_material_type == 4'd2) pixel_refraction = 8'd85;
-        else                                  pixel_refraction = 8'd0;
+        if (voxel_material_type == 4'd5)      out_refraction = 8'd128;
+        else if (voxel_material_type == 4'd2) out_refraction = 8'd85;
+        else                                  out_refraction = 8'd0;
 
-        pixel_attenuation = ray_steps;
-        pixel_emission    = (voxel_material_type == 4'd1) ? voxel_emissive : 8'd0;
+        out_attenuation = ray_steps;
+        out_emission    = (voxel_material_type == 4'd1) ? voxel_emissive : 8'd0;
 
-        // Normals/curvature are stubbed: up vector
+        // Normals/curvature are stubbed: up vector unless smooth surfaces enabled
+        out_normal_x  = pixel_normal_x;
+        out_normal_y  = pixel_normal_y;
+        out_normal_z  = pixel_normal_z;
+        out_curvature = pixel_curvature;
         if (!enable_smooth_surfaces) begin
-            pixel_normal_x  = 8'd0;
-            pixel_normal_y  = 8'd0;
-            pixel_normal_z  = 8'd127;
-            pixel_curvature = 8'd0;
+            out_normal_x  = 8'd0;
+            out_normal_y  = 8'd0;
+            out_normal_z  = 8'd127;
+            out_curvature = 8'd0;
         end
 
-        apply_advanced_lighting(render_config, pixel_curvature,
-                                pixel_r, pixel_g, pixel_b);
+        apply_advanced_lighting(render_config, out_curvature,
+                                out_r, out_g, out_b);
 
         // Selection highlight
         if (sel_active &&
             voxel_x == sel_voxel_x &&
             voxel_y == sel_voxel_y &&
             voxel_z == sel_voxel_z) begin
-            tmp = pixel_r + 9'd96; pixel_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-            tmp = pixel_g + 9'd16; pixel_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-            tmp = pixel_b + 9'd96; pixel_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_r + 9'd96; out_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_g + 9'd16; out_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_b + 9'd96; out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
         end
+
+        // Commit results with non-blocking assignments to keep sequential logic consistent
+        pixel_reflection  <= out_reflection;
+        pixel_refraction  <= out_refraction;
+        pixel_attenuation <= out_attenuation;
+        pixel_emission    <= out_emission;
+        pixel_r           <= out_r;
+        pixel_g           <= out_g;
+        pixel_b           <= out_b;
+        pixel_material_id <= out_material_id;
+        pixel_normal_x    <= out_normal_x;
+        pixel_normal_y    <= out_normal_y;
+        pixel_normal_z    <= out_normal_z;
+        pixel_curvature   <= out_curvature;
 
         // Pack words:
         // word0: [31:24] reflection, [23:16] refraction, [15:8] attenuation, [7:0] emission
         // word1: [31:24] R, [23:16] G, [15:8] B, [7:0] material ID
         // word2: [31:24] nx, [23:16] ny, [15:8] nz, [7:0] curvature
-        pixel_word0 <= {pixel_reflection, pixel_refraction, pixel_attenuation, pixel_emission};
-        pixel_word1 <= {pixel_r, pixel_g, pixel_b, pixel_material_id};
-        pixel_word2 <= {pixel_normal_x, pixel_normal_y, pixel_normal_z, pixel_curvature};
+        pixel_word0 <= {out_reflection, out_refraction, out_attenuation, out_emission};
+        pixel_word1 <= {out_r, out_g, out_b, out_material_id};
+        pixel_word2 <= {out_normal_x, out_normal_y, out_normal_z, out_curvature};
     end
     endtask
 

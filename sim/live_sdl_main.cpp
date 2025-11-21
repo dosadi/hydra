@@ -7,6 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <verilated.h>
 #include "Vvoxel_framebuffer_top.h"
+#include "Vvoxel_framebuffer_top___024root.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
 
     Vvoxel_framebuffer_top* top = new Vvoxel_framebuffer_top;
+    auto* root = top->rootp;  // Access internal regs exposed by Verilator
     top->clk   = 0;
     top->rst_n = 0;
 
@@ -73,6 +75,9 @@ int main(int argc, char** argv) {
         die(std::string("SDL_Init: ") + SDL_GetError());
     if (TTF_Init() != 0)
         die(std::string("TTF_Init: ") + TTF_GetError());
+
+    // Prefer software renderer in headless/Xvfb environments to avoid GPU access.
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
 
     SDL_Window* win = SDL_CreateWindow(
         "Voxel Accelerator — Interactive Raycaster",
@@ -148,27 +153,27 @@ int main(int argc, char** argv) {
         float px = -dy * 0.66f;
         float py =  dx * 0.66f;
 
-        top->cam_x       = int16_t(pos_x * FX);
-        top->cam_y       = int16_t(pos_y * FX);
-        top->cam_z       = int16_t(pos_z * FX);
-        top->cam_dir_x   = int16_t(dx * FX);
-        top->cam_dir_y   = int16_t(dy * FX);
-        top->cam_dir_z   = int16_t(dz * FX);
-        top->cam_plane_x = int16_t(px * FX);
-        top->cam_plane_y = int16_t(py * FX);
+        root->voxel_framebuffer_top__DOT__cam_x       = int16_t(pos_x * FX);
+        root->voxel_framebuffer_top__DOT__cam_y       = int16_t(pos_y * FX);
+        root->voxel_framebuffer_top__DOT__cam_z       = int16_t(pos_z * FX);
+        root->voxel_framebuffer_top__DOT__cam_dir_x   = int16_t(dx * FX);
+        root->voxel_framebuffer_top__DOT__cam_dir_y   = int16_t(dy * FX);
+        root->voxel_framebuffer_top__DOT__cam_dir_z   = int16_t(dz * FX);
+        root->voxel_framebuffer_top__DOT__cam_plane_x = int16_t(px * FX);
+        root->voxel_framebuffer_top__DOT__cam_plane_y = int16_t(py * FX);
     };
 
     auto apply_flags_to_dut = [&]() {
-        top->cfg_smooth_surfaces = smooth_surfaces ? 1 : 0;
-        top->cfg_curvature       = curvature       ? 1 : 0;
-        top->cfg_extra_light     = extra_light     ? 1 : 0;
+        root->voxel_framebuffer_top__DOT__cfg_smooth_surfaces = smooth_surfaces ? 1 : 0;
+        root->voxel_framebuffer_top__DOT__cfg_curvature       = curvature       ? 1 : 0;
+        root->voxel_framebuffer_top__DOT__cfg_extra_light     = extra_light     ? 1 : 0;
     };
 
     auto apply_selection_to_dut = [&]() {
-        top->sel_active   = selection_active ? 1 : 0;
-        top->sel_voxel_x  = selection_x;
-        top->sel_voxel_y  = selection_y;
-        top->sel_voxel_z  = selection_z;
+        root->voxel_framebuffer_top__DOT__sel_active  = selection_active ? 1 : 0;
+        root->voxel_framebuffer_top__DOT__sel_voxel_x = selection_x;
+        root->voxel_framebuffer_top__DOT__sel_voxel_y = selection_y;
+        root->voxel_framebuffer_top__DOT__sel_voxel_z = selection_z;
     };
 
     apply_camera_to_dut();
@@ -182,7 +187,7 @@ int main(int argc, char** argv) {
 
     while (running && !Verilated::gotFinish()) {
         // Default: no debug write
-        top->dbg_write_en = 0;
+        root->voxel_framebuffer_top__DOT__dbg_write_en = 0;
 
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
@@ -202,22 +207,22 @@ int main(int argc, char** argv) {
                 } else if (key == SDLK_3) {
                     extra_light = !extra_light;
                     apply_flags_to_dut();
-                } else if (key == SDLK_m || key == SDLK_M) {
+                } else if (key == SDLK_m) {
                     mouse_captured = !mouse_captured;
                     update_mouse_capture();
                 }
 
                 // Selection
-                else if (key == SDLK_f || key == SDLK_F) {
-                    if (top->cursor_hit_valid) {
+                else if (key == SDLK_f) {
+                    if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
                         selection_active = true;
-                        selection_x = static_cast<uint8_t>(top->cursor_voxel_x);
-                        selection_y = static_cast<uint8_t>(top->cursor_voxel_y);
-                        selection_z = static_cast<uint8_t>(top->cursor_voxel_z);
-                        selection_word = static_cast<uint64_t>(top->cursor_voxel_data);
+                        selection_x = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_x);
+                        selection_y = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_y);
+                        selection_z = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_z);
+                        selection_word = static_cast<uint64_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_data);
                         apply_selection_to_dut();
                     }
-                } else if (key == SDLK_g || key == SDLK_G) {
+                } else if (key == SDLK_g) {
                     selection_active = false;
                     selection_word   = 0;
                     apply_selection_to_dut();
@@ -237,26 +242,26 @@ int main(int argc, char** argv) {
 
                     bool do_write = false;
 
-                    if (key == SDLK_c || key == SDLK_C) {
+                    if (key == SDLK_c) {
                         material_type = (material_type + 1) & 0x0F;
                         w &= ~((uint64_t)0x0F << 4);
                         w |= (uint64_t(material_type) << 4);
                         do_write = true;
-                    } else if (key == SDLK_x || key == SDLK_X) {
+                    } else if (key == SDLK_x) {
                         int val = emissive + 16;
                         if (val > 255) val = 255;
                         emissive = (uint8_t)val;
                         w &= ~((uint64_t)0xFF << 48);
                         w |= (uint64_t)emissive << 48;
                         do_write = true;
-                    } else if (key == SDLK_z || key == SDLK_Z) {
+                    } else if (key == SDLK_z) {
                         int val = emissive - 16;
                         if (val < 0) val = 0;
                         emissive = (uint8_t)val;
                         w &= ~((uint64_t)0xFF << 48);
                         w |= (uint64_t)emissive << 48;
                         do_write = true;
-                    } else if (key == SDLK_b || key == SDLK_B) {
+                    } else if (key == SDLK_b) {
                         auto saturate_add = [](uint8_t c, int delta) -> uint8_t {
                             int v = c + delta;
                             if (v < 0) v = 0;
@@ -276,9 +281,9 @@ int main(int argc, char** argv) {
                     if (do_write) {
                         selection_word = w;
                         uint32_t addr = voxel_addr_from_xyz(selection_x, selection_y, selection_z);
-                        top->dbg_write_addr = addr;
-                        top->dbg_write_data = w;
-                        top->dbg_write_en   = 1;
+                        root->voxel_framebuffer_top__DOT__dbg_write_addr = addr;
+                        root->voxel_framebuffer_top__DOT__dbg_write_data = w;
+                        root->voxel_framebuffer_top__DOT__dbg_write_en   = 1;
                     }
                 }
             } else if (ev.type == SDL_MOUSEMOTION && mouse_captured) {
@@ -388,13 +393,13 @@ int main(int argc, char** argv) {
                     mouse_captured  ? "ON" : "OFF");
                 draw_text(ren, font, buf, 4, 20);
 
-                if (top->cursor_hit_valid) {
+                if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: voxel=(%u,%u,%u) mat=0x%02X",
-                        (unsigned)top->cursor_voxel_x,
-                        (unsigned)top->cursor_voxel_y,
-                        (unsigned)top->cursor_voxel_z,
-                        (unsigned)(top->cursor_material_id & 0xFF));
+                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_x,
+                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_y,
+                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_z,
+                        (unsigned)(root->voxel_framebuffer_top__DOT__cursor_material_id & 0xFF));
                 } else {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (no hit)");

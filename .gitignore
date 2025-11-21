@@ -1,0 +1,8 @@
+obj_dir/
+sim/sim_voxel
+*.vcd
+*.fst
+*.o
+*.d
+*.log
+*~
