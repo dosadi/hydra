@@ -1,5 +1,11 @@
 #include "platform.h"
 
+struct BackendOps {
+    bool (*init)(PlatformContext&, const PlatformConfig&) = nullptr;
+    void (*present)(PlatformContext&, const uint32_t*, int, int) = nullptr;
+    void (*shutdown)(PlatformContext&) = nullptr;
+};
+
 static bool is_linux() {
 #if defined(__linux__)
     return true;
@@ -38,16 +44,40 @@ bool platform_backend_supported(PlatformBackend backend) {
     }
 }
 
-bool platform_init(PlatformBackend backend, const PlatformConfig&, PlatformContext& ctx) {
-    // Stub only: report success for SDL; others return false until implemented.
-    (void)ctx;
-    return backend == PlatformBackend::SDL;
+static bool stub_init(PlatformContext& ctx, const PlatformConfig&) {
+    // Tag backend in the user pointer for easy inspection.
+    ctx.user = reinterpret_cast<void*>(0x1);
+    return true;
 }
 
-void platform_present(PlatformBackend, PlatformContext&, const uint32_t*, int, int) {
-    // Stub: nothing to do.
+static void stub_present(PlatformContext&, const uint32_t*, int, int) {}
+static void stub_shutdown(PlatformContext&) {}
+
+static BackendOps get_ops(PlatformBackend) {
+    BackendOps ops;
+    ops.init     = &stub_init;
+    ops.present  = &stub_present;
+    ops.shutdown = &stub_shutdown;
+    return ops;
 }
 
-void platform_shutdown(PlatformBackend, PlatformContext&) {
-    // Stub: nothing to do.
+bool platform_init(PlatformBackend backend, const PlatformConfig& cfg, PlatformContext& ctx) {
+    if (!platform_backend_supported(backend))
+        return false;
+    BackendOps ops = get_ops(backend);
+    return ops.init ? ops.init(ctx, cfg) : false;
+}
+
+void platform_present(PlatformBackend backend, PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
+    if (!platform_backend_supported(backend))
+        return;
+    BackendOps ops = get_ops(backend);
+    if (ops.present) ops.present(ctx, pixels, w, h);
+}
+
+void platform_shutdown(PlatformBackend backend, PlatformContext& ctx) {
+    if (!platform_backend_supported(backend))
+        return;
+    BackendOps ops = get_ops(backend);
+    if (ops.shutdown) ops.shutdown(ctx);
 }
