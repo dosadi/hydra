@@ -120,7 +120,8 @@ module voxel_raycaster_core_pipelined #(
     wire diag_slice_mode = render_config[1];
 
     // Simple hard-coded lighting/shadow references for the demo scene.
-    localparam [5:0] FLOOR_PLANE_Y  = 6'd12;
+    localparam [5:0] FLOOR_MIN_Y    = 6'd8;
+    localparam [5:0] FLOOR_MAX_Y    = 6'd16;
     localparam [5:0] LIGHT_PLANE_Y  = 6'd52;
     localparam [5:0] SHADOW_CX      = 6'd32;
     localparam [5:0] SHADOW_CZ      = 6'd32;
@@ -149,14 +150,14 @@ module voxel_raycaster_core_pipelined #(
     endtask
 
     function automatic is_shadowed_floor;
-        input [5:0] px;
-        input [5:0] pz;
+        input [5:0] fx;
+        input [5:0] fz;
         reg signed [7:0] dx;
         reg signed [7:0] dz;
         reg [15:0] dist2;
     begin
-        dx = $signed({1'b0,px}) - $signed({1'b0,SHADOW_CX});
-        dz = $signed({1'b0,pz}) - $signed({1'b0,SHADOW_CZ});
+        dx = $signed({1'b0,fx}) - $signed({1'b0,SHADOW_CX});
+        dz = $signed({1'b0,fz}) - $signed({1'b0,SHADOW_CZ});
         dist2 = dx*dx + dz*dz;
         is_shadowed_floor = (dist2 <= SHADOW_RADIUS2);
     end
@@ -225,7 +226,7 @@ module voxel_raycaster_core_pipelined #(
         // Simple top-down shadow from the main blob onto the floor plane.
         shadow_hit   = 1'b0;
         shadow_scale = 8'd255;
-        if (voxel_y == FLOOR_PLANE_Y) begin
+        if (voxel_y >= FLOOR_MIN_Y && voxel_y <= FLOOR_MAX_Y) begin
             shadow_hit   = is_shadowed_floor(voxel_x, voxel_z);
             shadow_scale = shadow_hit ? 8'd80 : (8'd180 + (LIGHT_PLANE_Y >> 1)); // brighter with overhead light
 
@@ -438,8 +439,8 @@ module voxel_raycaster_core_pipelined #(
                             reg [5:0] trunc_y;
                             reg [5:0] trunc_z;
                             wide_x  = ray_pos_x >>> FRAC_BITS;
-                            wide_y  = (ray_pos_y + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
-                            wide_z  = (ray_pos_z + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
+                            wide_y  = ray_pos_y >>> FRAC_BITS;
+                            wide_z  = ray_pos_z >>> FRAC_BITS;
                             trunc_x = wide_x[5:0];
                             trunc_y = wide_y[5:0];
                             trunc_z = wide_z[5:0];

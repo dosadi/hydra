@@ -45,5 +45,5 @@ Logging and debug:
 
 Scene notes:
 
-- A warm emissive ceiling (y≈52) shines down onto a cool floor (y≈12); the main cyan sphere casts a soft shadow on the floor.
-- Stand near the floor looking upward to see the light plane; move above the floor to see the shadowed area beneath the sphere.
+- A warm emissive ceiling slab near y≈52 shines down onto a cool floor band near y≈10; the main cyan sphere casts a soft shadow on the floor.
+- Stand near the floor looking upward to see the light slab; move above the floor to see the shadowed area beneath the sphere.
