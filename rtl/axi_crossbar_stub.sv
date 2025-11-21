@@ -1,8 +1,12 @@
 // ============================================================================
 // axi_crossbar_stub.sv
-// - Simple 2x2 fixed-priority AXI crossbar for simulation/bring-up.
-// - Masters: m0 (external), m1 (DMA). Slaves: s0 (voxel window -> BRAM), s1 (SDRAM stub).
-// - Decode: low address window to s0, everything else to s1. m1 has priority.
+// - 2x2 AXI crossbar stub for simulation/bring-up (external + DMA masters to
+//   voxel-window BRAM (s0) and SDRAM stub (s1)).
+// - Single outstanding write and read transaction at a time (per channel);
+//   round-robin arbitration between masters.
+// - Write path: AW arbitrates, then locks W/B to that master until WLAST.
+// - Read path: AR arbitrates, then locks R to that master until RLAST.
+// - Decode: address mask/base selects s0; otherwise s1.
 // ============================================================================
 `timescale 1ns/1ps
 
@@ -23,15 +27,15 @@ module axi_crossbar_stub #(
     input  wire [2:0]            m0_awsize,
     input  wire [1:0]            m0_awburst,
     input  wire                  m0_awvalid,
-    output wire                  m0_awready,
+    output reg                   m0_awready,
     input  wire [DATA_WIDTH-1:0] m0_wdata,
     input  wire [(DATA_WIDTH/8)-1:0] m0_wstrb,
     input  wire                  m0_wlast,
     input  wire                  m0_wvalid,
-    output wire                  m0_wready,
-    output wire [ID_WIDTH-1:0]   m0_bid,
-    output wire [1:0]            m0_bresp,
-    output wire                  m0_bvalid,
+    output reg                   m0_wready,
+    output reg [ID_WIDTH-1:0]    m0_bid,
+    output reg [1:0]             m0_bresp,
+    output reg                   m0_bvalid,
     input  wire                  m0_bready,
     input  wire [ID_WIDTH-1:0]   m0_arid,
     input  wire [ADDR_WIDTH-1:0] m0_araddr,
@@ -39,12 +43,12 @@ module axi_crossbar_stub #(
     input  wire [2:0]            m0_arsize,
     input  wire [1:0]            m0_arburst,
     input  wire                  m0_arvalid,
-    output wire                  m0_arready,
-    output wire [ID_WIDTH-1:0]   m0_rid,
-    output wire [DATA_WIDTH-1:0] m0_rdata,
-    output wire [1:0]            m0_rresp,
-    output wire                  m0_rlast,
-    output wire                  m0_rvalid,
+    output reg                   m0_arready,
+    output reg [ID_WIDTH-1:0]    m0_rid,
+    output reg [DATA_WIDTH-1:0]  m0_rdata,
+    output reg [1:0]             m0_rresp,
+    output reg                   m0_rlast,
+    output reg                   m0_rvalid,
     input  wire                  m0_rready,
 
     // Master 1 (DMA)
@@ -54,15 +58,15 @@ module axi_crossbar_stub #(
     input  wire [2:0]            m1_awsize,
     input  wire [1:0]            m1_awburst,
     input  wire                  m1_awvalid,
-    output wire                  m1_awready,
+    output reg                   m1_awready,
     input  wire [DATA_WIDTH-1:0] m1_wdata,
     input  wire [(DATA_WIDTH/8)-1:0] m1_wstrb,
     input  wire                  m1_wlast,
     input  wire                  m1_wvalid,
-    output wire                  m1_wready,
-    output wire [ID_WIDTH-1:0]   m1_bid,
-    output wire [1:0]            m1_bresp,
-    output wire                  m1_bvalid,
+    output reg                   m1_wready,
+    output reg [ID_WIDTH-1:0]    m1_bid,
+    output reg [1:0]             m1_bresp,
+    output reg                   m1_bvalid,
     input  wire                  m1_bready,
     input  wire [ID_WIDTH-1:0]   m1_arid,
     input  wire [ADDR_WIDTH-1:0] m1_araddr,
@@ -70,171 +74,358 @@ module axi_crossbar_stub #(
     input  wire [2:0]            m1_arsize,
     input  wire [1:0]            m1_arburst,
     input  wire                  m1_arvalid,
-    output wire                  m1_arready,
-    output wire [ID_WIDTH-1:0]   m1_rid,
-    output wire [DATA_WIDTH-1:0] m1_rdata,
-    output wire [1:0]            m1_rresp,
-    output wire                  m1_rlast,
-    output wire                  m1_rvalid,
+    output reg                   m1_arready,
+    output reg [ID_WIDTH-1:0]    m1_rid,
+    output reg [DATA_WIDTH-1:0]  m1_rdata,
+    output reg [1:0]             m1_rresp,
+    output reg                   m1_rlast,
+    output reg                   m1_rvalid,
     input  wire                  m1_rready,
 
-    // Slave 0 (voxel window / BRAM)
-    output wire [ID_WIDTH-1:0]   s0_awid,
-    output wire [ADDR_WIDTH-1:0] s0_awaddr,
-    output wire [7:0]            s0_awlen,
-    output wire [2:0]            s0_awsize,
-    output wire [1:0]            s0_awburst,
-    output wire                  s0_awvalid,
+    // Slave 0 (voxel BRAM window)
+    output reg  [ID_WIDTH-1:0]   s0_awid,
+    output reg  [ADDR_WIDTH-1:0] s0_awaddr,
+    output reg  [7:0]            s0_awlen,
+    output reg  [2:0]            s0_awsize,
+    output reg  [1:0]            s0_awburst,
+    output reg                   s0_awvalid,
     input  wire                  s0_awready,
-    output wire [DATA_WIDTH-1:0] s0_wdata,
-    output wire [(DATA_WIDTH/8)-1:0] s0_wstrb,
-    output wire                  s0_wlast,
-    output wire                  s0_wvalid,
+    output reg  [DATA_WIDTH-1:0] s0_wdata,
+    output reg  [(DATA_WIDTH/8)-1:0] s0_wstrb,
+    output reg                   s0_wlast,
+    output reg                   s0_wvalid,
     input  wire                  s0_wready,
     input  wire [ID_WIDTH-1:0]   s0_bid,
     input  wire [1:0]            s0_bresp,
     input  wire                  s0_bvalid,
-    output wire                  s0_bready,
-    output wire [ID_WIDTH-1:0]   s0_arid,
-    output wire [ADDR_WIDTH-1:0] s0_araddr,
-    output wire [7:0]            s0_arlen,
-    output wire [2:0]            s0_arsize,
-    output wire [1:0]            s0_arburst,
-    output wire                  s0_arvalid,
+    output reg                   s0_bready,
+    output reg  [ID_WIDTH-1:0]   s0_arid,
+    output reg  [ADDR_WIDTH-1:0] s0_araddr,
+    output reg  [7:0]            s0_arlen,
+    output reg  [2:0]            s0_arsize,
+    output reg  [1:0]            s0_arburst,
+    output reg                   s0_arvalid,
     input  wire                  s0_arready,
     input  wire [ID_WIDTH-1:0]   s0_rid,
     input  wire [DATA_WIDTH-1:0] s0_rdata,
     input  wire [1:0]            s0_rresp,
     input  wire                  s0_rlast,
     input  wire                  s0_rvalid,
-    output wire                  s0_rready,
+    output reg                   s0_rready,
 
     // Slave 1 (SDRAM stub)
-    output wire [ID_WIDTH-1:0]   s1_awid,
-    output wire [ADDR_WIDTH-1:0] s1_awaddr,
-    output wire [7:0]            s1_awlen,
-    output wire [2:0]            s1_awsize,
-    output wire [1:0]            s1_awburst,
-    output wire                  s1_awvalid,
+    output reg  [ID_WIDTH-1:0]   s1_awid,
+    output reg  [ADDR_WIDTH-1:0] s1_awaddr,
+    output reg  [7:0]            s1_awlen,
+    output reg  [2:0]            s1_awsize,
+    output reg  [1:0]            s1_awburst,
+    output reg                   s1_awvalid,
     input  wire                  s1_awready,
-    output wire [DATA_WIDTH-1:0] s1_wdata,
-    output wire [(DATA_WIDTH/8)-1:0] s1_wstrb,
-    output wire                  s1_wlast,
-    output wire                  s1_wvalid,
+    output reg  [DATA_WIDTH-1:0] s1_wdata,
+    output reg  [(DATA_WIDTH/8)-1:0] s1_wstrb,
+    output reg                   s1_wlast,
+    output reg                   s1_wvalid,
     input  wire                  s1_wready,
     input  wire [ID_WIDTH-1:0]   s1_bid,
     input  wire [1:0]            s1_bresp,
     input  wire                  s1_bvalid,
-    output wire                  s1_bready,
-    output wire [ID_WIDTH-1:0]   s1_arid,
-    output wire [ADDR_WIDTH-1:0] s1_araddr,
-    output wire [7:0]            s1_arlen,
-    output wire [2:0]            s1_arsize,
-    output wire [1:0]            s1_arburst,
-    output wire                  s1_arvalid,
+    output reg                   s1_bready,
+    output reg  [ID_WIDTH-1:0]   s1_arid,
+    output reg  [ADDR_WIDTH-1:0] s1_araddr,
+    output reg  [7:0]            s1_arlen,
+    output reg  [2:0]            s1_arsize,
+    output reg  [1:0]            s1_arburst,
+    output reg                   s1_arvalid,
     input  wire                  s1_arready,
     input  wire [ID_WIDTH-1:0]   s1_rid,
     input  wire [DATA_WIDTH-1:0] s1_rdata,
     input  wire [1:0]            s1_rresp,
     input  wire                  s1_rlast,
     input  wire                  s1_rvalid,
-    output wire                  s1_rready
+    output reg                   s1_rready
 );
 
-    // Decode helpers
-    wire m0_to_s0 = ((m0_awaddr & S0_MASK) == S0_BASE);
+    wire m0_aw_s0 = ((m0_awaddr & S0_MASK) == S0_BASE);
     wire m0_ar_s0 = ((m0_araddr & S0_MASK) == S0_BASE);
-    wire m1_to_s0 = ((m1_awaddr & S0_MASK) == S0_BASE);
+    wire m1_aw_s0 = ((m1_awaddr & S0_MASK) == S0_BASE);
     wire m1_ar_s0 = ((m1_araddr & S0_MASK) == S0_BASE);
 
-    // Round-robin arbitration between masters
-    reg last_grant;
-    wire m0_req = m0_awvalid | m0_arvalid | m0_wvalid;
-    wire m1_req = m1_awvalid | m1_arvalid | m1_wvalid;
-    wire grant_m1 = (m1_req && !m0_req) ? 1'b1 :
-                    (m0_req && !m1_req) ? 1'b0 : last_grant;
+    // Write channel arbitration/state
+    reg w_owner; // 0=m0,1=m1
+    reg w_owner_valid;
+    reg w_owner_s0;
+    reg last_aw_grant;
 
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n)
-            last_grant <= 1'b0;
-        else if (m0_req || m1_req)
-            last_grant <= ~grant_m1;
+    // Read channel arbitration/state
+    reg r_owner;
+    reg r_owner_valid;
+    reg r_owner_s0;
+    reg last_ar_grant;
+
+    // ---------------- Write address arbitration ----------------
+    always @(*) begin
+        s0_awvalid = 1'b0;
+        s1_awvalid = 1'b0;
+        s0_awid    = {ID_WIDTH{1'b0}};
+        s1_awid    = {ID_WIDTH{1'b0}};
+        s0_awaddr  = {ADDR_WIDTH{1'b0}};
+        s1_awaddr  = {ADDR_WIDTH{1'b0}};
+        s0_awlen   = 8'd0; s1_awlen = 8'd0;
+        s0_awsize  = 3'd0; s1_awsize = 3'd0;
+        s0_awburst = 2'd0; s1_awburst= 2'd0;
+
+        m0_awready = 1'b0;
+        m1_awready = 1'b0;
+
+        if (!w_owner_valid) begin
+            // choose among valid masters (RR)
+            if (m0_awvalid && m1_awvalid) begin
+                if (last_aw_grant == 1'b0) begin
+                    // grant m1
+                    if (m1_aw_s0) begin
+                        s0_awvalid = 1'b1; s0_awid = m1_awid; s0_awaddr = m1_awaddr; s0_awlen = m1_awlen; s0_awsize = m1_awsize; s0_awburst = m1_awburst;
+                        m1_awready = s0_awready;
+                    end else begin
+                        s1_awvalid = 1'b1; s1_awid = m1_awid; s1_awaddr = m1_awaddr; s1_awlen = m1_awlen; s1_awsize = m1_awsize; s1_awburst = m1_awburst;
+                        m1_awready = s1_awready;
+                    end
+                end else begin
+                    // grant m0
+                    if (m0_aw_s0) begin
+                        s0_awvalid = 1'b1; s0_awid = m0_awid; s0_awaddr = m0_awaddr; s0_awlen = m0_awlen; s0_awsize = m0_awsize; s0_awburst = m0_awburst;
+                        m0_awready = s0_awready;
+                    end else begin
+                        s1_awvalid = 1'b1; s1_awid = m0_awid; s1_awaddr = m0_awaddr; s1_awlen = m0_awlen; s1_awsize = m0_awsize; s1_awburst = m0_awburst;
+                        m0_awready = s1_awready;
+                    end
+                end
+            end else if (m1_awvalid) begin
+                if (m1_aw_s0) begin
+                    s0_awvalid = 1'b1; s0_awid = m1_awid; s0_awaddr = m1_awaddr; s0_awlen = m1_awlen; s0_awsize = m1_awsize; s0_awburst = m1_awburst;
+                    m1_awready = s0_awready;
+                end else begin
+                    s1_awvalid = 1'b1; s1_awid = m1_awid; s1_awaddr = m1_awaddr; s1_awlen = m1_awlen; s1_awsize = m1_awsize; s1_awburst = m1_awburst;
+                    m1_awready = s1_awready;
+                end
+            end else if (m0_awvalid) begin
+                if (m0_aw_s0) begin
+                    s0_awvalid = 1'b1; s0_awid = m0_awid; s0_awaddr = m0_awaddr; s0_awlen = m0_awlen; s0_awsize = m0_awsize; s0_awburst = m0_awburst;
+                    m0_awready = s0_awready;
+                end else begin
+                    s1_awvalid = 1'b1; s1_awid = m0_awid; s1_awaddr = m0_awaddr; s1_awlen = m0_awlen; s1_awsize = m0_awsize; s1_awburst = m0_awburst;
+                    m0_awready = s1_awready;
+                end
+            end
+        end
     end
 
-    // AW channel
-    assign s0_awid    = grant_m1 ? m1_awid   : m0_awid;
-    assign s0_awaddr  = grant_m1 ? m1_awaddr : m0_awaddr;
-    assign s0_awlen   = grant_m1 ? m1_awlen  : m0_awlen;
-    assign s0_awsize  = grant_m1 ? m1_awsize : m0_awsize;
-    assign s0_awburst = grant_m1 ? m1_awburst: m0_awburst;
-    assign s0_awvalid = grant_m1 ? (m1_awvalid && m1_to_s0) : (m0_awvalid && m0_to_s0);
+    // Lock write ownership
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            w_owner_valid <= 1'b0;
+            w_owner       <= 1'b0;
+            w_owner_s0    <= 1'b0;
+            last_aw_grant <= 1'b0;
+        end else begin
+            if (!w_owner_valid) begin
+                // capture AW handshake
+                if (m0_awready && m0_awvalid) begin
+                    w_owner_valid <= 1'b1;
+                    w_owner       <= 1'b0;
+                    w_owner_s0    <= m0_aw_s0;
+                    last_aw_grant <= 1'b0;
+                end else if (m1_awready && m1_awvalid) begin
+                    w_owner_valid <= 1'b1;
+                    w_owner       <= 1'b1;
+                    w_owner_s0    <= m1_aw_s0;
+                    last_aw_grant <= 1'b1;
+                end
+            end else begin
+                // release on wlast handshake
+                if (w_owner_s0 ? (s0_wvalid && s0_wready && s0_wlast) :
+                                 (s1_wvalid && s1_wready && s1_wlast))
+                    w_owner_valid <= 1'b0;
+            end
+        end
+    end
 
-    assign s1_awid    = grant_m1 ? m1_awid   : m0_awid;
-    assign s1_awaddr  = grant_m1 ? m1_awaddr : m0_awaddr;
-    assign s1_awlen   = grant_m1 ? m1_awlen  : m0_awlen;
-    assign s1_awsize  = grant_m1 ? m1_awsize : m0_awsize;
-    assign s1_awburst = grant_m1 ? m1_awburst: m0_awburst;
-    assign s1_awvalid = grant_m1 ? (m1_awvalid && !m1_to_s0) : (m0_awvalid && !m0_to_s0);
+    // W channel routing
+    always @(*) begin
+        s0_wvalid = 1'b0; s1_wvalid = 1'b0;
+        s0_wdata  = {DATA_WIDTH{1'b0}}; s1_wdata = {DATA_WIDTH{1'b0}};
+        s0_wstrb  = {DATA_WIDTH/8{1'b0}}; s1_wstrb = {DATA_WIDTH/8{1'b0}};
+        s0_wlast  = 1'b0; s1_wlast = 1'b0;
+        m0_wready = 1'b0; m1_wready = 1'b0;
 
-    assign m0_awready = m0_to_s0 ? s0_awready : s1_awready;
-    assign m1_awready = m1_to_s0 ? s0_awready : s1_awready;
+        if (w_owner_valid) begin
+            if (w_owner == 1'b0) begin
+                if (w_owner_s0) begin
+                    s0_wvalid = m0_wvalid;
+                    s0_wdata  = m0_wdata;
+                    s0_wstrb  = m0_wstrb;
+                    s0_wlast  = m0_wlast;
+                    m0_wready = s0_wready;
+                end else begin
+                    s1_wvalid = m0_wvalid;
+                    s1_wdata  = m0_wdata;
+                    s1_wstrb  = m0_wstrb;
+                    s1_wlast  = m0_wlast;
+                    m0_wready = s1_wready;
+                end
+            end else begin
+                if (w_owner_s0) begin
+                    s0_wvalid = m1_wvalid;
+                    s0_wdata  = m1_wdata;
+                    s0_wstrb  = m1_wstrb;
+                    s0_wlast  = m1_wlast;
+                    m1_wready = s0_wready;
+                end else begin
+                    s1_wvalid = m1_wvalid;
+                    s1_wdata  = m1_wdata;
+                    s1_wstrb  = m1_wstrb;
+                    s1_wlast  = m1_wlast;
+                    m1_wready = s1_wready;
+                end
+            end
+        end
+    end
 
-    // W channel
-    assign s0_wdata   = grant_m1 ? m1_wdata  : m0_wdata;
-    assign s0_wstrb   = grant_m1 ? m1_wstrb  : m0_wstrb;
-    assign s0_wlast   = grant_m1 ? m1_wlast  : m0_wlast;
-    assign s0_wvalid  = grant_m1 ? (m1_wvalid && m1_to_s0) : (m0_wvalid && m0_to_s0);
+    // B channel routing
+    always @(*) begin
+        m0_bvalid = 1'b0; m1_bvalid = 1'b0;
+        m0_bresp  = 2'b00; m1_bresp = 2'b00;
+        m0_bid    = {ID_WIDTH{1'b0}}; m1_bid = {ID_WIDTH{1'b0}};
+        s0_bready = 1'b0; s1_bready = 1'b0;
+        if (w_owner_valid) begin
+            if (w_owner == 1'b0) begin
+                if (w_owner_s0) begin
+                    m0_bvalid = s0_bvalid; m0_bresp = s0_bresp; m0_bid = s0_bid;
+                    s0_bready = m0_bready;
+                end else begin
+                    m0_bvalid = s1_bvalid; m0_bresp = s1_bresp; m0_bid = s1_bid;
+                    s1_bready = m0_bready;
+                end
+            end else begin
+                if (w_owner_s0) begin
+                    m1_bvalid = s0_bvalid; m1_bresp = s0_bresp; m1_bid = s0_bid;
+                    s0_bready = m1_bready;
+                end else begin
+                    m1_bvalid = s1_bvalid; m1_bresp = s1_bresp; m1_bid = s1_bid;
+                    s1_bready = m1_bready;
+                end
+            end
+        end
+    end
 
-    assign s1_wdata   = grant_m1 ? m1_wdata  : m0_wdata;
-    assign s1_wstrb   = grant_m1 ? m1_wstrb  : m0_wstrb;
-    assign s1_wlast   = grant_m1 ? m1_wlast  : m0_wlast;
-    assign s1_wvalid  = grant_m1 ? (m1_wvalid && !m1_to_s0) : (m0_wvalid && !m0_to_s0);
+    // ---------------- Read address arbitration ----------------
+    always @(*) begin
+        s0_arvalid = 1'b0;
+        s1_arvalid = 1'b0;
+        s0_arid    = {ID_WIDTH{1'b0}};
+        s1_arid    = {ID_WIDTH{1'b0}};
+        s0_araddr  = {ADDR_WIDTH{1'b0}};
+        s1_araddr  = {ADDR_WIDTH{1'b0}};
+        s0_arlen   = 8'd0; s1_arlen = 8'd0;
+        s0_arsize  = 3'd0; s1_arsize = 3'd0;
+        s0_arburst = 2'd0; s1_arburst= 2'd0;
+        m0_arready = 1'b0; m1_arready = 1'b0;
 
-    assign m0_wready  = m0_to_s0 ? s0_wready : s1_wready;
-    assign m1_wready  = m1_to_s0 ? s0_wready : s1_wready;
+        if (!r_owner_valid) begin
+            if (m0_arvalid && m1_arvalid) begin
+                if (last_ar_grant == 1'b0) begin
+                    // grant m1
+                    if (m1_ar_s0) begin
+                        s0_arvalid = 1'b1; s0_arid = m1_arid; s0_araddr = m1_araddr; s0_arlen = m1_arlen; s0_arsize = m1_arsize; s0_arburst = m1_arburst;
+                        m1_arready = s0_arready;
+                    end else begin
+                        s1_arvalid = 1'b1; s1_arid = m1_arid; s1_araddr = m1_araddr; s1_arlen = m1_arlen; s1_arsize = m1_arsize; s1_arburst = m1_arburst;
+                        m1_arready = s1_arready;
+                    end
+                end else begin
+                    // grant m0
+                    if (m0_ar_s0) begin
+                        s0_arvalid = 1'b1; s0_arid = m0_arid; s0_araddr = m0_araddr; s0_arlen = m0_arlen; s0_arsize = m0_arsize; s0_arburst = m0_arburst;
+                        m0_arready = s0_arready;
+                    end else begin
+                        s1_arvalid = 1'b1; s1_arid = m0_arid; s1_araddr = m0_araddr; s1_arlen = m0_arlen; s1_arsize = m0_arsize; s1_arburst = m0_arburst;
+                        m0_arready = s1_arready;
+                    end
+                end
+            end else if (m1_arvalid) begin
+                if (m1_ar_s0) begin
+                    s0_arvalid = 1'b1; s0_arid = m1_arid; s0_araddr = m1_araddr; s0_arlen = m1_arlen; s0_arsize = m1_arsize; s0_arburst = m1_arburst;
+                    m1_arready = s0_arready;
+                end else begin
+                    s1_arvalid = 1'b1; s1_arid = m1_arid; s1_araddr = m1_araddr; s1_arlen = m1_arlen; s1_arsize = m1_arsize; s1_arburst = m1_arburst;
+                    m1_arready = s1_arready;
+                end
+            end else if (m0_arvalid) begin
+                if (m0_ar_s0) begin
+                    s0_arvalid = 1'b1; s0_arid = m0_arid; s0_araddr = m0_araddr; s0_arlen = m0_arlen; s0_arsize = m0_arsize; s0_arburst = m0_arburst;
+                    m0_arready = s0_arready;
+                end else begin
+                    s1_arvalid = 1'b1; s1_arid = m0_arid; s1_araddr = m0_araddr; s1_arlen = m0_arlen; s1_arsize = m0_arsize; s1_arburst = m0_arburst;
+                    m0_arready = s1_arready;
+                end
+            end
+        end
+    end
 
-    // B channel
-    assign m0_bid     = m0_to_s0 ? s0_bid    : s1_bid;
-    assign m0_bresp   = m0_to_s0 ? s0_bresp  : s1_bresp;
-    assign m0_bvalid  = m0_to_s0 ? s0_bvalid : s1_bvalid;
-    assign s0_bready  = m0_to_s0 ? m0_bready : 1'b0;
-    assign s1_bready  = m0_to_s0 ? 1'b0      : m0_bready;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            r_owner_valid <= 1'b0;
+            r_owner       <= 1'b0;
+            r_owner_s0    <= 1'b0;
+            last_ar_grant <= 1'b0;
+        end else begin
+            if (!r_owner_valid) begin
+                if (m0_arready && m0_arvalid) begin
+                    r_owner_valid <= 1'b1;
+                    r_owner       <= 1'b0;
+                    r_owner_s0    <= m0_ar_s0;
+                    last_ar_grant <= 1'b0;
+                end else if (m1_arready && m1_arvalid) begin
+                    r_owner_valid <= 1'b1;
+                    r_owner       <= 1'b1;
+                    r_owner_s0    <= m1_ar_s0;
+                    last_ar_grant <= 1'b1;
+                end
+            end else begin
+                if (r_owner_s0 ? (s0_rvalid && s0_rready && s0_rlast) :
+                                 (s1_rvalid && s1_rready && s1_rlast))
+                    r_owner_valid <= 1'b0;
+            end
+        end
+    end
 
-    assign m1_bid     = m1_to_s0 ? s0_bid    : s1_bid;
-    assign m1_bresp   = m1_to_s0 ? s0_bresp  : s1_bresp;
-    assign m1_bvalid  = m1_to_s0 ? s0_bvalid : s1_bvalid;
+    // R channel routing
+    always @(*) begin
+        m0_rvalid = 1'b0; m1_rvalid = 1'b0;
+        m0_rdata  = {DATA_WIDTH{1'b0}}; m1_rdata = {DATA_WIDTH{1'b0}};
+        m0_rresp  = 2'b00; m1_rresp = 2'b00;
+        m0_rid    = {ID_WIDTH{1'b0}}; m1_rid = {ID_WIDTH{1'b0}};
+        m0_rlast  = 1'b0; m1_rlast = 1'b0;
+        s0_rready = 1'b0; s1_rready = 1'b0;
 
-    // AR channel
-    assign s0_arid    = grant_m1 ? m1_arid   : m0_arid;
-    assign s0_araddr  = grant_m1 ? m1_araddr : m0_araddr;
-    assign s0_arlen   = grant_m1 ? m1_arlen  : m0_arlen;
-    assign s0_arsize  = grant_m1 ? m1_arsize : m0_arsize;
-    assign s0_arburst = grant_m1 ? m1_arburst: m0_arburst;
-    assign s0_arvalid = grant_m1 ? (m1_arvalid && m1_ar_s0) : (m0_arvalid && m0_ar_s0);
-
-    assign s1_arid    = grant_m1 ? m1_arid   : m0_arid;
-    assign s1_araddr  = grant_m1 ? m1_araddr : m0_araddr;
-    assign s1_arlen   = grant_m1 ? m1_arlen  : m0_arlen;
-    assign s1_arsize  = grant_m1 ? m1_arsize : m0_arsize;
-    assign s1_arburst = grant_m1 ? m1_arburst: m0_arburst;
-    assign s1_arvalid = grant_m1 ? (m1_arvalid && !m1_ar_s0) : (m0_arvalid && !m0_ar_s0);
-
-    assign m0_arready = m0_ar_s0 ? s0_arready : s1_arready;
-    assign m1_arready = m1_ar_s0 ? s0_arready : s1_arready;
-
-    // R channel
-    assign m0_rid     = m0_ar_s0 ? s0_rid    : s1_rid;
-    assign m0_rdata   = m0_ar_s0 ? s0_rdata  : s1_rdata;
-    assign m0_rresp   = m0_ar_s0 ? s0_rresp  : s1_rresp;
-    assign m0_rlast   = m0_ar_s0 ? s0_rlast  : s1_rlast;
-    assign m0_rvalid  = m0_ar_s0 ? s0_rvalid : s1_rvalid;
-    assign s0_rready  = m0_ar_s0 ? m0_rready : 1'b0;
-    assign s1_rready  = m0_ar_s0 ? 1'b0      : m0_rready;
-
-    assign m1_rid     = m1_ar_s0 ? s0_rid    : s1_rid;
-    assign m1_rdata   = m1_ar_s0 ? s0_rdata  : s1_rdata;
-    assign m1_rresp   = m1_ar_s0 ? s0_rresp  : s1_rresp;
-    assign m1_rlast   = m1_ar_s0 ? s0_rlast  : s1_rlast;
-    assign m1_rvalid  = m1_ar_s0 ? s0_rvalid : s1_rvalid;
+        if (r_owner_valid) begin
+            if (r_owner == 1'b0) begin
+                if (r_owner_s0) begin
+                    m0_rvalid = s0_rvalid; m0_rdata = s0_rdata; m0_rresp = s0_rresp; m0_rid = s0_rid; m0_rlast = s0_rlast;
+                    s0_rready = m0_rready;
+                end else begin
+                    m0_rvalid = s1_rvalid; m0_rdata = s1_rdata; m0_rresp = s1_rresp; m0_rid = s1_rid; m0_rlast = s1_rlast;
+                    s1_rready = m0_rready;
+                end
+            end else begin
+                if (r_owner_s0) begin
+                    m1_rvalid = s0_rvalid; m1_rdata = s0_rdata; m1_rresp = s0_rresp; m1_rid = s0_rid; m1_rlast = s0_rlast;
+                    s0_rready = m1_rready;
+                end else begin
+                    m1_rvalid = s1_rvalid; m1_rdata = s1_rdata; m1_rresp = s1_rresp; m1_rid = s1_rid; m1_rlast = s1_rlast;
+                    s1_rready = m1_rready;
+                end
+            end
+        end
+    end
 
 endmodule
