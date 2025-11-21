@@ -24,10 +24,11 @@ Goal: standardize around a PCIe control/data fabric (no Wishbone exposure upstre
   - DDR↔voxel BRAM: small LiteDMA stream2mem/mem2stream for bulk voxel uploads (or PCIe DMA directly if BRAM is mapped into BAR space).
 
 ## Simulation/CI Stubs
-- Provide `ifdef SIM` stubs:
-  - PCIe: simple AXI-Lite master model plus loopback DMA FIFO.
-  - DRAM: BRAM-backed “SDRAM” model with same width interface.
-  - HDMI: timing counter that logs frame/line events instead of TMDS.
+- Stubs now in-tree (for CI or early integration):
+  - `rtl/axil_csr_stub.sv` – AXI4-Lite CSR register file (use for BAR0 placeholder).
+  - `rtl/axi_sdram_stub.sv` – AXI memory model acting as fake SDRAM/DDR.
+  - `rtl/axi_stream_sink_stub.sv` – AXI-Stream sink for HDMI/TMDS-style video.
+  - (Add PCIe-DMA loopback stub when we wire BAR/DMA control paths.)
 - CI jobs: Verilator lint + targeted sims (DMA loopback, CSR reads/writes, BRAM-backed HDMI stub), plus `yosys -p "read_verilog ...; synth -top ..."`.
 
 ## Fetching IP (when network is allowed)
@@ -41,7 +42,7 @@ Pinned commit hashes should be recorded in `third_party/README.md`.
 1) Add `third_party/` fetch script with pinned commits (LitePCIe, LiteDRAM, LiteICLink, LiteDMA helpers).
 2) Define AXI-Lite CSR map for BAR0 (camera/flags/world/DMA/HDMI) and add a thin AXI-Lite slave that drives existing voxel regs.
 3) Add `ifdef SIM` stubs for PCIe, DRAM, and HDMI so CI can run without the real cores.
-4) Wire BRAM-backed “SDRAM” into the voxel core path for sim; keep LiteDRAM port wiring in place for real FPGA builds.
+4) Wire BRAM-backed “SDRAM” into the voxel core path for sim; keep LiteDRAM port wiring in place for real FPGA builds (use `axi_sdram_stub`).
 5) Create a Nexys Video synthesis target (constraints + LiteDRAM PHY params + LitePCIe x4 config); keep a KC705 variant as fallback.
 6) Add a minimal DMA CSR block (mem2mem) and a smoke test that copies a pattern through the stub DRAM and verifies contents.
 
