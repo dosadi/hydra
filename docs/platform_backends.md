@@ -5,7 +5,7 @@ Purpose: keep the build ready for future GL/Vulkan/Wayland/X11/fbdev/Win32/macOS
 Current state:
 
 - Stub API lives in `sim/platform/platform.h` with a minimal `PlatformBackend` enum and no-op lifecycle functions.
-- Implementation is stubbed in `sim/platform/platform_stub.cpp`; only `PlatformBackend::SDL` reports “supported” to match the existing SDL viewer.
+- Implementation is stubbed in `sim/platform/platform_stub.cpp`; `PlatformBackend::SDL` reports “supported”, while Linux-only backends (Wayland/X11/fbdev) and cross backends (GL/Vulkan) report “supported” based on host OS but still return false from init until implemented.
 - Makefile builds the stub alongside `live_sdl_main.cpp` so downstream code can include the header without link errors.
 
 Planned follow-ons (per-OS/driver):
