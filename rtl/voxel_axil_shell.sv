@@ -159,13 +159,9 @@ module voxel_axil_shell #(
     );
 
     // --------------------------------------------------------------------
-    // SDRAM stub (AXI memory) with simple arbitration between external and DMA master,
-    // plus address decode for a low-range "voxel BRAM window" (writes -> dbg port).
+    // SDRAM + voxel window crossbar (2x2 stub)
     localparam [27:0] VOXEL_WIN_MASK = 28'h0FF_F000; // 256 KiB window
     localparam [27:0] VOXEL_WIN_BASE = 28'h000_0000;
-
-    wire ext_voxel_aw = ((ext_axi_awaddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
-    wire ext_voxel_ar = ((ext_axi_araddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
 
     // DMA master wires
     wire [3:0]  m1_awid;
@@ -186,9 +182,6 @@ module voxel_axil_shell #(
     wire [1:0]  m1_arburst;
     wire        m1_arvalid;
     wire        m1_rready;
-
-    // Simple fixed-priority mux: DMA master (m1) wins when busy; else external.
-    wire use_dma = dma_busy | dma_start_pulse;
 
     wire [3:0]  s_axi_awid   = use_dma               ? m1_awid   :
                                (ext_voxel_aw ? 4'd0  : ext_axi_awid);
