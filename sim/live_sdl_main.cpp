@@ -141,7 +141,9 @@ int main(int argc, char** argv) {
     uint64_t selection_word = 0;
 
     auto update_mouse_capture = [&]() {
-        SDL_SetRelativeMouseMode(mouse_captured ? SDL_TRUE : SDL_FALSE);
+        if (SDL_SetRelativeMouseMode(mouse_captured ? SDL_TRUE : SDL_FALSE) != 0) {
+            std::fprintf(stderr, "Warning: SetRelativeMouseMode failed: %s\n", SDL_GetError());
+        }
         SDL_ShowCursor(mouse_captured ? SDL_FALSE : SDL_TRUE);
     };
 
@@ -193,27 +195,32 @@ int main(int argc, char** argv) {
         while (SDL_PollEvent(&ev)) {
             if (ev.type == SDL_QUIT) {
                 running = false;
+            } else if (ev.type == SDL_WINDOWEVENT) {
+                if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED ||
+                    ev.window.event == SDL_WINDOWEVENT_TAKE_FOCUS) {
+                    update_mouse_capture();
+                }
             } else if (ev.type == SDL_KEYDOWN) {
-                SDL_Keycode key = ev.key.keysym.sym;
+                SDL_Scancode sc = ev.key.keysym.scancode;
 
-                if (key == SDLK_ESCAPE) {
+                if (sc == SDL_SCANCODE_ESCAPE) {
                     running = false;
-                } else if (key == SDLK_1) {
+                } else if (sc == SDL_SCANCODE_1) {
                     smooth_surfaces = !smooth_surfaces;
                     apply_flags_to_dut();
-                } else if (key == SDLK_2) {
+                } else if (sc == SDL_SCANCODE_2) {
                     curvature = !curvature;
                     apply_flags_to_dut();
-                } else if (key == SDLK_3) {
+                } else if (sc == SDL_SCANCODE_3) {
                     extra_light = !extra_light;
                     apply_flags_to_dut();
-                } else if (key == SDLK_m) {
+                } else if (sc == SDL_SCANCODE_M) {
                     mouse_captured = !mouse_captured;
                     update_mouse_capture();
                 }
 
                 // Selection
-                else if (key == SDLK_f) {
+                else if (sc == SDL_SCANCODE_F) {
                     if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
                         selection_active = true;
                         selection_x = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_x);
@@ -222,7 +229,7 @@ int main(int argc, char** argv) {
                         selection_word = static_cast<uint64_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_data);
                         apply_selection_to_dut();
                     }
-                } else if (key == SDLK_g) {
+                } else if (sc == SDL_SCANCODE_G) {
                     selection_active = false;
                     selection_word   = 0;
                     apply_selection_to_dut();
@@ -242,26 +249,26 @@ int main(int argc, char** argv) {
 
                     bool do_write = false;
 
-                    if (key == SDLK_c) {
+                    if (sc == SDL_SCANCODE_C) {
                         material_type = (material_type + 1) & 0x0F;
                         w &= ~((uint64_t)0x0F << 4);
                         w |= (uint64_t(material_type) << 4);
                         do_write = true;
-                    } else if (key == SDLK_x) {
+                    } else if (sc == SDL_SCANCODE_X) {
                         int val = emissive + 16;
                         if (val > 255) val = 255;
                         emissive = (uint8_t)val;
                         w &= ~((uint64_t)0xFF << 48);
                         w |= (uint64_t)emissive << 48;
                         do_write = true;
-                    } else if (key == SDLK_z) {
+                    } else if (sc == SDL_SCANCODE_Z) {
                         int val = emissive - 16;
                         if (val < 0) val = 0;
                         emissive = (uint8_t)val;
                         w &= ~((uint64_t)0xFF << 48);
                         w |= (uint64_t)emissive << 48;
                         do_write = true;
-                    } else if (key == SDLK_b) {
+                    } else if (sc == SDL_SCANCODE_B) {
                         auto saturate_add = [](uint8_t c, int delta) -> uint8_t {
                             int v = c + delta;
                             if (v < 0) v = 0;
