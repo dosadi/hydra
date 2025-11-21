@@ -280,29 +280,19 @@ module voxel_axil_shell #(
         end
     end
 
-    assign ext_axi_awready = use_dma ? 1'b0 :
-                             (ext_voxel_aw ? 1'b1 : sdram_awready_int);
-    assign ext_axi_wready  = use_dma ? 1'b0 :
-                             (ext_voxel_aw ? 1'b1 : sdram_wready_int);
-    assign ext_axi_bresp   = use_dma ? 2'b00 :
-                             (ext_voxel_aw ? ext_bresp_voxel : sdram_bresp_int);
-    assign ext_axi_bvalid  = use_dma ? 1'b0 :
-                             (ext_voxel_aw ? ext_bvalid_voxel : sdram_bvalid_int);
-    assign ext_axi_bid     = use_dma ? 4'd0 :
-                             (ext_voxel_aw ? 4'd0 : sdram_bid_int);
+    // External responses: allow voxel window even while DMA active; gate SDRAM path when DMA owns bus.
+    assign ext_axi_awready = ext_voxel_aw ? 1'b1 : (use_dma ? 1'b0 : sdram_awready_int);
+    assign ext_axi_wready  = ext_voxel_aw ? 1'b1 : (use_dma ? 1'b0 : sdram_wready_int);
+    assign ext_axi_bresp   = ext_voxel_aw ? ext_bresp_voxel : (use_dma ? 2'b00 : sdram_bresp_int);
+    assign ext_axi_bvalid  = ext_voxel_aw ? ext_bvalid_voxel : (use_dma ? 1'b0 : sdram_bvalid_int);
+    assign ext_axi_bid     = ext_voxel_aw ? 4'd0 : (use_dma ? 4'd0 : sdram_bid_int);
 
-    assign ext_axi_arready = use_dma ? 1'b0 :
-                             (ext_voxel_ar ? 1'b1 : sdram_arready_int);
-    assign ext_axi_rdata   = use_dma ? 64'd0 :
-                             (ext_voxel_ar ? ext_rdata_voxel : sdram_rdata_int);
-    assign ext_axi_rresp   = use_dma ? 2'b00 :
-                             (ext_voxel_ar ? ext_rresp_voxel : sdram_rresp_int);
-    assign ext_axi_rlast   = use_dma ? 1'b0 :
-                             (ext_voxel_ar ? ext_rlast_voxel : sdram_rlast_int);
-    assign ext_axi_rvalid  = use_dma ? 1'b0 :
-                             (ext_voxel_ar ? ext_rvalid_voxel : sdram_rvalid_int);
-    assign ext_axi_rid     = use_dma ? 4'd0 :
-                             (ext_voxel_ar ? ext_rid_voxel : sdram_rid_int);
+    assign ext_axi_arready = ext_voxel_ar ? 1'b1 : (use_dma ? 1'b0 : sdram_arready_int);
+    assign ext_axi_rdata   = ext_voxel_ar ? ext_rdata_voxel : (use_dma ? 64'd0 : sdram_rdata_int);
+    assign ext_axi_rresp   = ext_voxel_ar ? ext_rresp_voxel : (use_dma ? 2'b00 : sdram_rresp_int);
+    assign ext_axi_rlast   = ext_voxel_ar ? ext_rlast_voxel : (use_dma ? 1'b0 : sdram_rlast_int);
+    assign ext_axi_rvalid  = ext_voxel_ar ? ext_rvalid_voxel : (use_dma ? 1'b0 : sdram_rvalid_int);
+    assign ext_axi_rid     = ext_voxel_ar ? ext_rid_voxel : (use_dma ? 4'd0 : sdram_rid_int);
 
     // Internal SDRAM stub signals
     wire sdram_awready_int, sdram_wready_int, sdram_bvalid_int, sdram_arready_int, sdram_rlast_int, sdram_rvalid_int;
