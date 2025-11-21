@@ -4,6 +4,7 @@
 // - Outputs extended 96-bit pixel as 3x32-bit words.
 // - Supports:
 //   * render_config[0] = "extra light" mode
+//   * render_config[1] = diagnostic slice mode (orthographic Y/Z slices)
 //   * cursor ray info for center pixel
 //   * selection highlight (sel_*)
 // ============================================================================
@@ -11,8 +12,8 @@
 `timescale 1ns/1ps
 
 module voxel_raycaster_core_pipelined #(
-    parameter SCREEN_WIDTH    = 320,
-    parameter SCREEN_HEIGHT   = 240,
+    parameter SCREEN_WIDTH    = 480,
+    parameter SCREEN_HEIGHT   = 360,
     parameter VOXEL_GRID_SIZE = 64,
     parameter COORD_WIDTH     = 16,
     parameter FRAC_BITS       = 8
@@ -108,6 +109,15 @@ module voxel_raycaster_core_pipelined #(
     localparam ACC_WIDTH = 24;
     reg signed [ACC_WIDTH-1:0] ray_pos_x, ray_pos_y, ray_pos_z;
     reg [5:0] sample_voxel_x, sample_voxel_y, sample_voxel_z;
+    reg [5:0] map_voxel_y, map_voxel_z;
+    localparam integer NUM_SLICES = 3;
+    localparam [5:0] SLICE_X0 = 6'd24;
+    localparam [5:0] SLICE_X1 = 6'd32;
+    localparam [5:0] SLICE_X2 = 6'd40;
+    reg [1:0] slice_idx;
+    reg       best_hit;
+    reg [7:0] best_emissive;
+    wire diag_slice_mode = render_config[1];
 
     // --------------------------------------------------------------------
     // Advanced lighting helper (simplified).
@@ -152,11 +162,11 @@ module voxel_raycaster_core_pipelined #(
             out_b = voxel_color[7:0];
         end
 
-        // Emission
+        // Emission: brighten proportional to existing color to preserve hue
         if (voxel_emissive != 0) begin
-            tmp = out_r + voxel_emissive; out_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-            tmp = out_g + voxel_emissive; out_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-            tmp = out_b + voxel_emissive; out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_r + ((voxel_emissive * out_r) >> 8); out_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_g + ((voxel_emissive * out_g) >> 8); out_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            tmp = out_b + ((voxel_emissive * out_b) >> 8); out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
         end
 
         // Material fields
@@ -243,6 +253,9 @@ module voxel_raycaster_core_pipelined #(
             cursor_material_id <= 8'd0;
             cursor_voxel_data  <= 64'd0;
             dbg_hit_count    <= 32'd0;
+            slice_idx        <= 2'd0;
+            best_hit         <= 1'b0;
+            best_emissive    <= 8'd0;
         end else begin
             pixel_write_en <= 1'b0;
             voxel_read_en  <= 1'b0;
@@ -265,6 +278,9 @@ module voxel_raycaster_core_pipelined #(
                 S_RENDER_PIXEL: begin
                     ray_steps   <= 8'd0;
                     hit         <= 1'b0;
+                    slice_idx   <= 2'd0;
+                    best_hit    <= 1'b0;
+                    best_emissive <= 8'd0;
 
                     // Deterministic orthographic scan: map screen to Y/Z, march along -X
                     begin : dir_calc
@@ -276,6 +292,8 @@ module voxel_raycaster_core_pipelined #(
                         ray_pos_x <= (VOXEL_GRID_SIZE-1) <<< FRAC_BITS;
                         ray_pos_y <= map_y <<< FRAC_BITS;
                         ray_pos_z <= map_z <<< FRAC_BITS;
+                        map_voxel_y <= map_y[5:0];
+                        map_voxel_z <= map_z[5:0];
                     end
 
                     cursor_sample <= (pixel_x == (SCREEN_WIDTH  >> 1)) &&
@@ -286,79 +304,168 @@ module voxel_raycaster_core_pipelined #(
 
                 // Advance ray along -X
                 S_STEP: begin
-                    if (ray_steps >= 8'd128 || hit) begin
-                        if (!hit) begin
-                            // sky pixel (dark blue), bypass voxel-based shader
-                            pixel_word0      <= {8'd0, 8'd0, 8'd255, 8'd0};
-                            pixel_word1      <= {8'd30, 8'd30, 8'd60, 8'hFF};
-                            pixel_word2      <= {8'd0, 8'd0, 8'd127, 8'd0};
-                            pixel_reflection <= 8'd0;
-                            pixel_refraction <= 8'd0;
-                            pixel_attenuation<= 8'd255;
-                            pixel_emission   <= 8'd0;
-                            pixel_r          <= 8'd30;
-                            pixel_g          <= 8'd30;
-                            pixel_b          <= 8'd60;
-                            pixel_material_id<= 8'hFF;
-                            pixel_normal_x   <= 8'd0;
-                            pixel_normal_y   <= 8'd0;
-                            pixel_normal_z   <= 8'd127;
-                            pixel_curvature  <= 8'd0;
-                            state            <= S_WRITE;
+                    if (diag_slice_mode) begin
+                        if (slice_idx >= NUM_SLICES[1:0]) begin
+                            if (!best_hit) begin
+                                // sky pixel (dark blue) with slight vertical gradient
+                                reg [7:0] sky_r, sky_g, sky_b;
+                                sky_r = 8'd10 + (pixel_y[7:0] >> 3);
+                                sky_g = 8'd40 + (pixel_y[7:0] >> 3);
+                                sky_b = 8'd90 + (pixel_y[7:0] >> 2);
+                                pixel_word0      <= {8'd0, 8'd0, 8'd255, 8'd0};
+                                pixel_word1      <= {sky_r, sky_g, sky_b, 8'hFF};
+                                pixel_word2      <= {8'd0, 8'd0, 8'd127, 8'd0};
+                                pixel_reflection <= 8'd0;
+                                pixel_refraction <= 8'd0;
+                                pixel_attenuation<= 8'd255;
+                                pixel_emission   <= 8'd0;
+                                pixel_r          <= sky_r;
+                                pixel_g          <= sky_g;
+                                pixel_b          <= sky_b;
+                                pixel_material_id<= 8'hFF;
+                                pixel_normal_x   <= 8'd0;
+                                pixel_normal_y   <= 8'd0;
+                                pixel_normal_z   <= 8'd127;
+                                pixel_curvature  <= 8'd0;
+                                state            <= S_WRITE;
+                            end else begin
+                                hit <= best_hit;
+                                compute_pixel_data();
+                                state <= S_WRITE;
+                            end
                         end else begin
-                            compute_pixel_data();
-                            state <= S_WRITE;
+                            // Single sample on this slice for orthographic view
+                            reg [5:0] trunc_y;
+                            reg [5:0] trunc_z;
+                            reg [5:0] cur_x;
+                            case (slice_idx)
+                                2'd0: cur_x = SLICE_X0;
+                                2'd1: cur_x = SLICE_X1;
+                                default: cur_x = SLICE_X2;
+                            endcase
+                            trunc_y = map_voxel_y;
+                            trunc_z = map_voxel_z;
+                            sample_voxel_x <= cur_x;
+                            sample_voxel_y <= trunc_y;
+                            sample_voxel_z <= trunc_z;
+                            voxel_x        <= cur_x;
+                            voxel_y        <= trunc_y;
+                            voxel_z        <= trunc_z;
+                            voxel_addr     <= {cur_x, trunc_y, trunc_z};
+                            voxel_read_en <= 1'b1;
+                            state         <= S_FETCH;
+
+                            // Move to next slice (ray_steps mirrors slice count for attenuation)
+                            ray_steps <= slice_idx + 1'b1;
                         end
                     end else begin
-                        // Sample current ray position -> voxel coords (wrap into 0..63)
-                        reg [ACC_WIDTH-1:0] wide_x;
-                        reg [ACC_WIDTH-1:0] wide_y;
-                        reg [ACC_WIDTH-1:0] wide_z;
-                        reg [5:0] trunc_x;
-                        reg [5:0] trunc_y;
-                        reg [5:0] trunc_z;
-                        wide_x  = ray_pos_x >>> FRAC_BITS;
-                        wide_y  = (ray_pos_y + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
-                        wide_z  = (ray_pos_z + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
-                        trunc_x = wide_x[5:0];
-                        trunc_y = wide_y[5:0];
-                        trunc_z = wide_z[5:0];
-                        sample_voxel_x <= trunc_x;
-                        sample_voxel_y <= trunc_y;
-                        sample_voxel_z <= trunc_z;
-                        voxel_x        <= trunc_x;
-                        voxel_y        <= trunc_y;
-                        voxel_z        <= trunc_z;
-                        voxel_addr     <= {trunc_x, trunc_y, trunc_z};
-                        voxel_read_en <= 1'b1;
-                        state         <= S_FETCH;
+                        if (ray_steps >= 8'd128 || hit) begin
+                            if (!hit) begin
+                                // sky pixel (dark blue) with slight vertical gradient
+                                reg [7:0] sky_r, sky_g, sky_b;
+                                sky_r = 8'd10 + (pixel_y[7:0] >> 3);
+                                sky_g = 8'd40 + (pixel_y[7:0] >> 3);
+                                sky_b = 8'd90 + (pixel_y[7:0] >> 2);
+                                pixel_word0      <= {8'd0, 8'd0, 8'd255, 8'd0};
+                                pixel_word1      <= {sky_r, sky_g, sky_b, 8'hFF};
+                                pixel_word2      <= {8'd0, 8'd0, 8'd127, 8'd0};
+                                pixel_reflection <= 8'd0;
+                                pixel_refraction <= 8'd0;
+                                pixel_attenuation<= 8'd255;
+                                pixel_emission   <= 8'd0;
+                                pixel_r          <= sky_r;
+                                pixel_g          <= sky_g;
+                                pixel_b          <= sky_b;
+                                pixel_material_id<= 8'hFF;
+                                pixel_normal_x   <= 8'd0;
+                                pixel_normal_y   <= 8'd0;
+                                pixel_normal_z   <= 8'd127;
+                                pixel_curvature  <= 8'd0;
+                                state            <= S_WRITE;
+                            end else begin
+                                compute_pixel_data();
+                                state <= S_WRITE;
+                            end
+                        end else begin
+                            // Sample current ray position -> voxel coords (wrap into 0..63)
+                            reg signed [ACC_WIDTH-1:0] wide_x;
+                            reg signed [ACC_WIDTH-1:0] wide_y;
+                            reg signed [ACC_WIDTH-1:0] wide_z;
+                            reg [5:0] trunc_x;
+                            reg [5:0] trunc_y;
+                            reg [5:0] trunc_z;
+                            wide_x  = ray_pos_x >>> FRAC_BITS;
+                            wide_y  = (ray_pos_y + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
+                            wide_z  = (ray_pos_z + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
+                            trunc_x = wide_x[5:0];
+                            trunc_y = wide_y[5:0];
+                            trunc_z = wide_z[5:0];
+                            sample_voxel_x <= trunc_x;
+                            sample_voxel_y <= trunc_y;
+                            sample_voxel_z <= trunc_z;
+                            voxel_x        <= trunc_x;
+                            voxel_y        <= trunc_y;
+                            voxel_z        <= trunc_z;
+                            voxel_addr     <= {trunc_x, trunc_y, trunc_z};
+                            voxel_read_en <= 1'b1;
+                            state         <= S_FETCH;
 
-                        // Step along -X by half a voxel to increase sampling density
-                        ray_pos_x <= ray_pos_x - (18'sd1 <<< (FRAC_BITS-1));
-                        ray_steps <= ray_steps + 1'b1;
+                            // Step along -X by half a voxel to increase sampling density
+                            ray_pos_x <= ray_pos_x - (18'sd1 <<< (FRAC_BITS-1));
+                            ray_steps <= ray_steps + 1'b1;
+                        end
                     end
                 end
 
                 S_FETCH: begin
                     // Sample, test occupancy
-                    if (!hit && voxel_data != 64'd0 && voxel_data[47:40] > 8'd10) begin
-                        hit <= 1'b1;
-                        dbg_hit_count <= dbg_hit_count + 1'b1;
+                    if (diag_slice_mode) begin
+                        if (voxel_data != 64'd0 && voxel_data[47:40] > 8'd10) begin
+                            // Prefer higher emissive voxels; otherwise keep first hit
+                            if (!best_hit || voxel_data[55:48] > best_emissive) begin
+                                best_hit         <= 1'b1;
+                                best_emissive    <= voxel_data[55:48];
+                                hit              <= 1'b1;
+                                dbg_hit_count    <= dbg_hit_count + 1'b1;
 
-                        voxel_material_props <= voxel_data[63:56];
-                        voxel_emissive       <= voxel_data[55:48];
-                        voxel_alpha          <= voxel_data[47:40];
-                        voxel_light          <= voxel_data[39:32];
-                        voxel_color          <= voxel_data[31:8];
-                        voxel_material_type  <= voxel_data[7:4];
+                                voxel_material_props <= voxel_data[63:56];
+                                voxel_emissive       <= voxel_data[55:48];
+                                voxel_alpha          <= voxel_data[47:40];
+                                voxel_light          <= voxel_data[39:32];
+                                voxel_color          <= voxel_data[31:8];
+                                voxel_material_type  <= voxel_data[7:4];
 
-                        if (cursor_sample && !cursor_hit_valid) begin
-                            cursor_hit_valid    <= 1'b1;
-                            cursor_voxel_x      <= voxel_x;
-                            cursor_voxel_y      <= voxel_y;
-                            cursor_voxel_z      <= voxel_z;
-                            cursor_material_id  <= {voxel_material_type, 4'h0};
-                            cursor_voxel_data   <= voxel_data;
+                                if (cursor_sample && !cursor_hit_valid) begin
+                                    cursor_hit_valid    <= 1'b1;
+                                    cursor_voxel_x      <= voxel_x;
+                                    cursor_voxel_y      <= voxel_y;
+                                    cursor_voxel_z      <= voxel_z;
+                                    cursor_material_id  <= {voxel_material_type, 4'h0};
+                                    cursor_voxel_data   <= voxel_data;
+                                end
+                            end
+                        end
+                        slice_idx <= slice_idx + 1'b1;
+                    end else begin
+                        if (!hit && voxel_data != 64'd0 && voxel_data[47:40] > 8'd10) begin
+                            hit <= 1'b1;
+                            dbg_hit_count <= dbg_hit_count + 1'b1;
+
+                            voxel_material_props <= voxel_data[63:56];
+                            voxel_emissive       <= voxel_data[55:48];
+                            voxel_alpha          <= voxel_data[47:40];
+                            voxel_light          <= voxel_data[39:32];
+                            voxel_color          <= voxel_data[31:8];
+                            voxel_material_type  <= voxel_data[7:4];
+
+                            if (cursor_sample && !cursor_hit_valid) begin
+                                cursor_hit_valid    <= 1'b1;
+                                cursor_voxel_x      <= voxel_x;
+                                cursor_voxel_y      <= voxel_y;
+                                cursor_voxel_z      <= voxel_z;
+                                cursor_material_id  <= {voxel_material_type, 4'h0};
+                                cursor_voxel_data   <= voxel_data;
+                            end
                         end
                     end
 

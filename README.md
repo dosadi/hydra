@@ -41,3 +41,4 @@ Logging and debug:
 - `LOG_FRAMES=1 ./sim_voxel` – print per-frame stats (pixels written, nonzero pixels, hit count).
 - `LOG_KEYS=1 ./sim_voxel` – print key down/up events (for input debugging).
 - HUD shows FPS, flags, and “Hits this frame” to confirm scene intersections.
+- `[O]` toggles a diagnostic slice renderer on/off (helps if the main march misses objects).

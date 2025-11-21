@@ -7,8 +7,8 @@
 `timescale 1ns/1ps
 
 module voxel_framebuffer_top #(
-    parameter SCREEN_WIDTH    = 320,
-    parameter SCREEN_HEIGHT   = 240,
+    parameter SCREEN_WIDTH    = 480,
+    parameter SCREEN_HEIGHT   = 360,
     parameter VOXEL_GRID_SIZE = 64,
     parameter COORD_WIDTH     = 16,
     parameter FRAC_BITS       = 8
@@ -41,6 +41,7 @@ module voxel_framebuffer_top #(
     reg cfg_smooth_surfaces;
     reg cfg_curvature;
     reg cfg_extra_light;
+    reg cfg_diag_slice;
 
     // Selection controls
     reg       sel_active;
@@ -96,6 +97,7 @@ module voxel_framebuffer_top #(
         cfg_smooth_surfaces <= 1'b1;
         cfg_curvature       <= 1'b1;
         cfg_extra_light     <= 1'b0;
+        cfg_diag_slice      <= 1'b1;
 
         sel_active   <= 1'b0;
         sel_voxel_x  <= 6'd0;
@@ -140,7 +142,7 @@ module voxel_framebuffer_top #(
     );
 
     // Core config word
-    wire [31:0] render_config = {31'd0, cfg_extra_light};
+    wire [31:0] render_config = {30'd0, cfg_diag_slice, cfg_extra_light};
 
     voxel_raycaster_core_pipelined #(
         .SCREEN_WIDTH    (SCREEN_WIDTH),

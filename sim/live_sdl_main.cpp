@@ -19,8 +19,8 @@
 #include <cstdlib>
 #include <cctype>
 
-static const int   SCREEN_WIDTH  = 320;
-static const int   SCREEN_HEIGHT = 240;
+static const int   SCREEN_WIDTH  = 480;
+static const int   SCREEN_HEIGHT = 360;
 static const int   HUD_HEIGHT    = 132;
 static const float FX            = 256.0f;  // fixed-point scale
 
@@ -198,6 +198,7 @@ int main(int argc, char** argv) {
     bool smooth_surfaces = true;
     bool curvature       = true;
     bool extra_light     = false;
+    bool diag_slice      = true;
 
     bool mouse_captured  = true;
 
@@ -238,6 +239,7 @@ int main(int argc, char** argv) {
         root->voxel_framebuffer_top__DOT__cfg_smooth_surfaces = smooth_surfaces ? 1 : 0;
         root->voxel_framebuffer_top__DOT__cfg_curvature       = curvature       ? 1 : 0;
         root->voxel_framebuffer_top__DOT__cfg_extra_light     = extra_light     ? 1 : 0;
+        root->voxel_framebuffer_top__DOT__cfg_diag_slice      = diag_slice     ? 1 : 0;
     };
 
     auto apply_selection_to_dut = [&]() {
@@ -314,6 +316,14 @@ int main(int argc, char** argv) {
                             apply_flags_to_dut();
                             if (log_keys && log_keys_count < 200) {
                                 std::fprintf(stderr, "toggle extra_light -> %d\n", extra_light ? 1 : 0);
+                                ++log_keys_count;
+                            }
+                            break;
+                        case SDLK_o:
+                            diag_slice = !diag_slice;
+                            apply_flags_to_dut();
+                            if (log_keys && log_keys_count < 200) {
+                                std::fprintf(stderr, "toggle diag_slice -> %d\n", diag_slice ? 1 : 0);
                                 ++log_keys_count;
                             }
                             break;
@@ -534,8 +544,9 @@ int main(int argc, char** argv) {
                 draw_text(ren, font, buf, 4, 36);
 
                 std::snprintf(buf, sizeof(buf),
-                    "[3] Extra %s   [M] Mouse %s",
+                    "[3] Extra %s  [O] Slice %s  [M] Mouse %s",
                     extra_light    ? "ON" : "OFF",
+                    diag_slice     ? "ON" : "OFF",
                     mouse_captured ? "ON" : "OFF");
                 draw_text(ren, font, buf, 4, 52);
 
