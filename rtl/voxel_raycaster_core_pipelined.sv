@@ -110,11 +110,10 @@ module voxel_raycaster_core_pipelined #(
     reg signed [ACC_WIDTH-1:0] ray_pos_x, ray_pos_y, ray_pos_z;
     reg [5:0] sample_voxel_x, sample_voxel_y, sample_voxel_z;
     reg [5:0] map_voxel_y, map_voxel_z;
-    localparam integer NUM_SLICES = 3;
-    localparam [5:0] SLICE_X0 = 6'd24;
-    localparam [5:0] SLICE_X1 = 6'd32;
-    localparam [5:0] SLICE_X2 = 6'd40;
-    reg [1:0] slice_idx;
+    localparam integer NUM_SLICES = 7;
+    localparam [5:0] SLICE_X0 = 6'd8;
+    localparam [5:0] SLICE_STEP = 6'd8;
+    reg [2:0] slice_idx;
     reg       best_hit;
     reg [7:0] best_emissive;
     wire diag_slice_mode = render_config[1];
@@ -349,7 +348,7 @@ module voxel_raycaster_core_pipelined #(
                 // Advance ray along -X
                 S_STEP: begin
                     if (diag_slice_mode) begin
-                        if (slice_idx >= NUM_SLICES[1:0]) begin
+                        if (slice_idx >= NUM_SLICES[2:0]) begin
                             if (!best_hit) begin
                                 // sky pixel (dark blue) with slight vertical gradient
                                 reg [7:0] sky_r, sky_g, sky_b;
@@ -382,11 +381,7 @@ module voxel_raycaster_core_pipelined #(
                             reg [5:0] trunc_y;
                             reg [5:0] trunc_z;
                             reg [5:0] cur_x;
-                            case (slice_idx)
-                                2'd0: cur_x = SLICE_X0;
-                                2'd1: cur_x = SLICE_X1;
-                                default: cur_x = SLICE_X2;
-                            endcase
+                            cur_x   = SLICE_X0 + (slice_idx * SLICE_STEP);
                             trunc_y = map_voxel_y;
                             trunc_z = map_voxel_z;
                             sample_voxel_x <= cur_x;
