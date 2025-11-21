@@ -147,8 +147,19 @@ module axi_crossbar_stub #(
     wire m1_to_s0 = ((m1_awaddr & S0_MASK) == S0_BASE);
     wire m1_ar_s0 = ((m1_araddr & S0_MASK) == S0_BASE);
 
-    wire grant_m1 = m1_awvalid | m1_wvalid | m1_arvalid; // crude priority
-    wire m0_active = ~grant_m1;
+    // Round-robin arbitration between masters
+    reg last_grant;
+    wire m0_req = m0_awvalid | m0_arvalid | m0_wvalid;
+    wire m1_req = m1_awvalid | m1_arvalid | m1_wvalid;
+    wire grant_m1 = (m1_req && !m0_req) ? 1'b1 :
+                    (m0_req && !m1_req) ? 1'b0 : last_grant;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            last_grant <= 1'b0;
+        else if (m0_req || m1_req)
+            last_grant <= ~grant_m1;
+    end
 
     // AW channel
     assign s0_awid    = grant_m1 ? m1_awid   : m0_awid;
