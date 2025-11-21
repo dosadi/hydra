@@ -111,8 +111,8 @@ module voxel_raycaster_core_pipelined #(
     reg [5:0] sample_voxel_x, sample_voxel_y, sample_voxel_z;
     reg [5:0] map_voxel_y, map_voxel_z;
     localparam integer NUM_SLICES = 7;
-    localparam [5:0] SLICE_X0 = 6'd8;
-    localparam [5:0] SLICE_STEP = 6'd8;
+    localparam [5:0] SLICE_X_START = 6'd56; // march slices from camera side toward origin
+    localparam [5:0] SLICE_STEP    = 6'd8;
     reg [2:0] slice_idx;
     reg       best_hit;
     reg [7:0] best_emissive;
@@ -381,7 +381,7 @@ module voxel_raycaster_core_pipelined #(
                             reg [5:0] trunc_y;
                             reg [5:0] trunc_z;
                             reg [5:0] cur_x;
-                            cur_x   = SLICE_X0 + (slice_idx * SLICE_STEP);
+                            cur_x   = SLICE_X_START - (slice_idx * SLICE_STEP);
                             trunc_y = map_voxel_y;
                             trunc_z = map_voxel_z;
                             sample_voxel_x <= cur_x;
@@ -459,29 +459,26 @@ module voxel_raycaster_core_pipelined #(
                 S_FETCH: begin
                     // Sample, test occupancy
                     if (diag_slice_mode) begin
-                        if (voxel_data != 64'd0 && voxel_data[47:40] > 8'd10) begin
-                            // Prefer higher emissive voxels; otherwise keep first hit
-                            if (!best_hit || voxel_data[55:48] > best_emissive) begin
-                                best_hit         <= 1'b1;
-                                best_emissive    <= voxel_data[55:48];
-                                hit              <= 1'b1;
-                                dbg_hit_count    <= dbg_hit_count + 1'b1;
+                        if (voxel_data != 64'd0 && voxel_data[47:40] > 8'd10 && !best_hit) begin
+                            best_hit         <= 1'b1;
+                            best_emissive    <= voxel_data[55:48];
+                            hit              <= 1'b1;
+                            dbg_hit_count    <= dbg_hit_count + 1'b1;
 
-                                voxel_material_props <= voxel_data[63:56];
-                                voxel_emissive       <= voxel_data[55:48];
-                                voxel_alpha          <= voxel_data[47:40];
-                                voxel_light          <= voxel_data[39:32];
-                                voxel_color          <= voxel_data[31:8];
-                                voxel_material_type  <= voxel_data[7:4];
+                            voxel_material_props <= voxel_data[63:56];
+                            voxel_emissive       <= voxel_data[55:48];
+                            voxel_alpha          <= voxel_data[47:40];
+                            voxel_light          <= voxel_data[39:32];
+                            voxel_color          <= voxel_data[31:8];
+                            voxel_material_type  <= voxel_data[7:4];
 
-                                if (cursor_sample && !cursor_hit_valid) begin
-                                    cursor_hit_valid    <= 1'b1;
-                                    cursor_voxel_x      <= voxel_x;
-                                    cursor_voxel_y      <= voxel_y;
-                                    cursor_voxel_z      <= voxel_z;
-                                    cursor_material_id  <= {voxel_material_type, 4'h0};
-                                    cursor_voxel_data   <= voxel_data;
-                                end
+                            if (cursor_sample && !cursor_hit_valid) begin
+                                cursor_hit_valid    <= 1'b1;
+                                cursor_voxel_x      <= voxel_x;
+                                cursor_voxel_y      <= voxel_y;
+                                cursor_voxel_z      <= voxel_z;
+                                cursor_material_id  <= {voxel_material_type, 4'h0};
+                                cursor_voxel_data   <= voxel_data;
                             end
                         end
                         slice_idx <= slice_idx + 1'b1;
