@@ -2,9 +2,9 @@
 // voxel_axil_shell.sv
 // - AXI-Lite + AXI stub shell around voxel_framebuffer_top for simulation/bring-up.
 // - Instantiates:
-//     * axil_csr_stub  : placeholder BAR0/CSR register file (AXI4-Lite).
-//     * axi_sdram_stub : BRAM-backed AXI memory (stand-in for SDRAM/DDR).
-//     * axi_stream_sink_stub : captures pixel stream (stand-in for HDMI sink).
+//     * voxel_axil_csr      : AXI4-Lite CSR block driving voxel controls.
+//     * axi_sdram_stub      : BRAM-backed AXI memory (stand-in for SDRAM/DDR).
+//     * axi_stream_sink_stub: captures pixel stream (stand-in for HDMI sink).
 // - Connects voxel_framebuffer_top pixel writes into the AXI-Stream sink and
 //   exposes a simple AXI-Lite/AXI presence for early fabric testing.
 // ============================================================================
@@ -79,12 +79,37 @@ module voxel_axil_shell #(
 );
 
     // --------------------------------------------------------------------
-    // CSR stub (AXI-Lite)
+    // CSR block (AXI-Lite) driving voxel controls
     // --------------------------------------------------------------------
-    axil_csr_stub #(
+    wire         cam_load_pulse;
+    wire signed [15:0] cam_x;
+    wire signed [15:0] cam_y;
+    wire signed [15:0] cam_z;
+    wire signed [15:0] cam_dir_x;
+    wire signed [15:0] cam_dir_y;
+    wire signed [15:0] cam_dir_z;
+    wire signed [15:0] cam_plane_x;
+    wire signed [15:0] cam_plane_y;
+
+    wire         flags_load_pulse;
+    wire         flag_smooth;
+    wire         flag_curvature;
+    wire         flag_extra_light;
+    wire         flag_diag_slice;
+
+    wire         sel_load_pulse;
+    wire         sel_active;
+    wire [5:0]   sel_x;
+    wire [5:0]   sel_y;
+    wire [5:0]   sel_z;
+
+    wire         dbg_we_pulse;
+    wire [17:0]  dbg_addr;
+    wire [63:0]  dbg_wdata;
+
+    voxel_axil_csr #(
         .ADDR_WIDTH(16),
-        .DATA_WIDTH(32),
-        .NUM_REGS   (16)
+        .DATA_WIDTH(32)
     ) u_csr (
         .clk            (clk),
         .rst_n          (rst_n),
@@ -104,7 +129,33 @@ module voxel_axil_shell #(
         .s_axil_rdata   (s_axil_rdata),
         .s_axil_rresp   (s_axil_rresp),
         .s_axil_rvalid  (s_axil_rvalid),
-        .s_axil_rready  (s_axil_rready)
+        .s_axil_rready  (s_axil_rready),
+
+        .cam_load_pulse (cam_load_pulse),
+        .cam_x          (cam_x),
+        .cam_y          (cam_y),
+        .cam_z          (cam_z),
+        .cam_dir_x      (cam_dir_x),
+        .cam_dir_y      (cam_dir_y),
+        .cam_dir_z      (cam_dir_z),
+        .cam_plane_x    (cam_plane_x),
+        .cam_plane_y    (cam_plane_y),
+
+        .flags_load_pulse(flags_load_pulse),
+        .flag_smooth    (flag_smooth),
+        .flag_curvature (flag_curvature),
+        .flag_extra_light(flag_extra_light),
+        .flag_diag_slice(flag_diag_slice),
+
+        .sel_load_pulse (sel_load_pulse),
+        .sel_active     (sel_active),
+        .sel_x          (sel_x),
+        .sel_y          (sel_y),
+        .sel_z          (sel_z),
+
+        .dbg_we_pulse   (dbg_we_pulse),
+        .dbg_addr       (dbg_addr),
+        .dbg_wdata      (dbg_wdata)
     );
 
     // --------------------------------------------------------------------
@@ -169,7 +220,29 @@ module voxel_axil_shell #(
         .pixel_word0    (pixel_word0),
         .pixel_word1    (pixel_word1),
         .pixel_word2    (pixel_word2),
-        .frame_done     (frame_done)
+        .frame_done     (frame_done),
+        .cam_load       (cam_load_pulse),
+        .cam_x_in       (cam_x),
+        .cam_y_in       (cam_y),
+        .cam_z_in       (cam_z),
+        .cam_dir_x_in   (cam_dir_x),
+        .cam_dir_y_in   (cam_dir_y),
+        .cam_dir_z_in   (cam_dir_z),
+        .cam_plane_x_in (cam_plane_x),
+        .cam_plane_y_in (cam_plane_y),
+        .flags_load     (flags_load_pulse),
+        .flag_smooth_in (flag_smooth),
+        .flag_curvature_in(flag_curvature),
+        .flag_extra_light_in(flag_extra_light),
+        .flag_diag_slice_in(flag_diag_slice),
+        .sel_load       (sel_load_pulse),
+        .sel_active_in  (sel_active),
+        .sel_voxel_x_in (sel_x),
+        .sel_voxel_y_in (sel_y),
+        .sel_voxel_z_in (sel_z),
+        .dbg_ext_write_en  (dbg_we_pulse),
+        .dbg_ext_write_addr(dbg_addr),
+        .dbg_ext_write_data(dbg_wdata)
     );
 
     localparam integer TOTAL_PIXELS = SCREEN_WIDTH * SCREEN_HEIGHT;

@@ -127,6 +127,29 @@ int main(int argc, char** argv) {
     auto* root = top->rootp;  // Access internal regs exposed by Verilator
     top->clk   = 0;
     top->rst_n = 0;
+    // Default AXI shell inputs (unused in this harness)
+    top->cam_load        = 0;
+    top->cam_x_in        = 0;
+    top->cam_y_in        = 0;
+    top->cam_z_in        = 0;
+    top->cam_dir_x_in    = 0;
+    top->cam_dir_y_in    = 0;
+    top->cam_dir_z_in    = 0;
+    top->cam_plane_x_in  = 0;
+    top->cam_plane_y_in  = 0;
+    top->flags_load      = 0;
+    top->flag_smooth_in  = 0;
+    top->flag_curvature_in = 0;
+    top->flag_extra_light_in = 0;
+    top->flag_diag_slice_in  = 0;
+    top->sel_load        = 0;
+    top->sel_active_in   = 0;
+    top->sel_voxel_x_in  = 0;
+    top->sel_voxel_y_in  = 0;
+    top->sel_voxel_z_in  = 0;
+    top->dbg_ext_write_en   = 0;
+    top->dbg_ext_write_addr = 0;
+    top->dbg_ext_write_data = 0;
 
     const bool log_keys = (std::getenv("LOG_KEYS") != nullptr);
     const bool log_frames = (std::getenv("LOG_FRAMES") != nullptr);

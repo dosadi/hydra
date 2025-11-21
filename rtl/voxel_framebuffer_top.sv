@@ -24,7 +24,34 @@ module voxel_framebuffer_top #(
     output wire [31:0]  pixel_word2,
 
     // Frame done pulse
-    output wire         frame_done
+    output wire         frame_done,
+
+    // Optional external control (AXI-Lite shell / host)
+    input  wire         cam_load,
+    input  wire signed [15:0] cam_x_in,
+    input  wire signed [15:0] cam_y_in,
+    input  wire signed [15:0] cam_z_in,
+    input  wire signed [15:0] cam_dir_x_in,
+    input  wire signed [15:0] cam_dir_y_in,
+    input  wire signed [15:0] cam_dir_z_in,
+    input  wire signed [15:0] cam_plane_x_in,
+    input  wire signed [15:0] cam_plane_y_in,
+
+    input  wire         flags_load,
+    input  wire         flag_smooth_in,
+    input  wire         flag_curvature_in,
+    input  wire         flag_extra_light_in,
+    input  wire         flag_diag_slice_in,
+
+    input  wire         sel_load,
+    input  wire         sel_active_in,
+    input  wire [5:0]   sel_voxel_x_in,
+    input  wire [5:0]   sel_voxel_y_in,
+    input  wire [5:0]   sel_voxel_z_in,
+
+    input  wire         dbg_ext_write_en,
+    input  wire [17:0]  dbg_ext_write_addr,
+    input  wire [63:0]  dbg_ext_write_data
 );
 
     // Camera registers (host-writeable)
@@ -127,9 +154,13 @@ module voxel_framebuffer_top #(
     );
 
     // Memory write arbitration: debug writes override world_gen
-    wire [17:0] mem_write_addr = dbg_write_en ? dbg_write_addr : world_waddr;
-    wire        mem_write_en   = dbg_write_en | world_wen;
-    wire [63:0] mem_write_data = dbg_write_en ? dbg_write_data : world_wdata;
+    wire        dbg_write_en_mux   = dbg_write_en | dbg_ext_write_en;
+    wire [17:0] dbg_write_addr_mux = dbg_ext_write_en ? dbg_ext_write_addr : dbg_write_addr;
+    wire [63:0] dbg_write_data_mux = dbg_ext_write_en ? dbg_ext_write_data : dbg_write_data;
+
+    wire [17:0] mem_write_addr = dbg_write_en_mux ? dbg_write_addr_mux : world_waddr;
+    wire        mem_write_en   = dbg_write_en_mux | world_wen;
+    wire [63:0] mem_write_data = dbg_write_en_mux ? dbg_write_data_mux : world_wdata;
 
     voxel_memory_64 geom_mem (
         .clk        (clk),
@@ -228,6 +259,67 @@ module voxel_framebuffer_top #(
                 start <= 1'b1;
             else if (world_ready && busy_d && !busy)
                 start <= 1'b1;
+        end
+    end
+
+    // External control updates (camera/flags/selection/debug write)
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            cam_x  <= 16'sd10 <<< FRAC_BITS;
+            cam_y  <= 16'sd10 <<< FRAC_BITS;
+            cam_z  <= 16'sd10 <<< FRAC_BITS;
+            cam_dir_x   <= 16'sd256;
+            cam_dir_y   <= 16'sd0;
+            cam_dir_z   <= 16'sd0;
+            cam_plane_x <= 16'sd0;
+            cam_plane_y <= 16'sd170;
+
+            cfg_smooth_surfaces <= 1'b1;
+            cfg_curvature       <= 1'b1;
+            cfg_extra_light     <= 1'b0;
+            cfg_diag_slice      <= 1'b0;
+
+            sel_active   <= 1'b0;
+            sel_voxel_x  <= 6'd0;
+            sel_voxel_y  <= 6'd0;
+            sel_voxel_z  <= 6'd0;
+
+            dbg_write_addr <= 18'd0;
+            dbg_write_en   <= 1'b0;
+            dbg_write_data <= 64'd0;
+        end else begin
+            dbg_write_en <= 1'b0;
+
+            if (cam_load) begin
+                cam_x       <= cam_x_in;
+                cam_y       <= cam_y_in;
+                cam_z       <= cam_z_in;
+                cam_dir_x   <= cam_dir_x_in;
+                cam_dir_y   <= cam_dir_y_in;
+                cam_dir_z   <= cam_dir_z_in;
+                cam_plane_x <= cam_plane_x_in;
+                cam_plane_y <= cam_plane_y_in;
+            end
+
+            if (flags_load) begin
+                cfg_smooth_surfaces <= flag_smooth_in;
+                cfg_curvature       <= flag_curvature_in;
+                cfg_extra_light     <= flag_extra_light_in;
+                cfg_diag_slice      <= flag_diag_slice_in;
+            end
+
+            if (sel_load) begin
+                sel_active  <= sel_active_in;
+                sel_voxel_x <= sel_voxel_x_in;
+                sel_voxel_y <= sel_voxel_y_in;
+                sel_voxel_z <= sel_voxel_z_in;
+            end
+
+            if (dbg_ext_write_en) begin
+                dbg_write_en   <= 1'b1;
+                dbg_write_addr <= dbg_ext_write_addr;
+                dbg_write_data <= dbg_ext_write_data;
+            end
         end
     end
 
