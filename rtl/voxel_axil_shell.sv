@@ -159,26 +159,13 @@ module voxel_axil_shell #(
     );
 
     // --------------------------------------------------------------------
-    // SDRAM stub (AXI memory) with simple arbitration between external and DMA master
-    // External master wires
-    wire [3:0]  m0_awid    = ext_axi_awid;
-    wire [27:0] m0_awaddr  = ext_axi_awaddr;
-    wire [7:0]  m0_awlen   = ext_axi_awlen;
-    wire [2:0]  m0_awsize  = ext_axi_awsize;
-    wire [1:0]  m0_awburst = ext_axi_awburst;
-    wire        m0_awvalid = ext_axi_awvalid;
-    wire [63:0] m0_wdata   = ext_axi_wdata;
-    wire [7:0]  m0_wstrb   = ext_axi_wstrb;
-    wire        m0_wlast   = ext_axi_wlast;
-    wire        m0_wvalid  = ext_axi_wvalid;
-    wire        m0_bready  = ext_axi_bready;
-    wire [3:0]  m0_arid    = ext_axi_arid;
-    wire [27:0] m0_araddr  = ext_axi_araddr;
-    wire [7:0]  m0_arlen   = ext_axi_arlen;
-    wire [2:0]  m0_arsize  = ext_axi_arsize;
-    wire [1:0]  m0_arburst = ext_axi_arburst;
-    wire        m0_arvalid = ext_axi_arvalid;
-    wire        m0_rready  = ext_axi_rready;
+    // SDRAM stub (AXI memory) with simple arbitration between external and DMA master,
+    // plus address decode for a low-range "voxel BRAM window" (writes -> dbg port).
+    localparam [27:0] VOXEL_WIN_MASK = 28'h0FF_F000; // 256 KiB window
+    localparam [27:0] VOXEL_WIN_BASE = 28'h000_0000;
+
+    wire ext_voxel_aw = ((ext_axi_awaddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
+    wire ext_voxel_ar = ((ext_axi_araddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
 
     // DMA master wires
     wire [3:0]  m1_awid;
@@ -203,37 +190,119 @@ module voxel_axil_shell #(
     // Simple fixed-priority mux: DMA master (m1) wins when busy; else external.
     wire use_dma = dma_busy | dma_start_pulse;
 
-    wire [3:0]  s_axi_awid   = use_dma ? m1_awid   : m0_awid;
-    wire [27:0] s_axi_awaddr = use_dma ? m1_awaddr : m0_awaddr;
-    wire [7:0]  s_axi_awlen  = use_dma ? m1_awlen  : m0_awlen;
-    wire [2:0]  s_axi_awsize = use_dma ? m1_awsize : m0_awsize;
-    wire [1:0]  s_axi_awburst= use_dma ? m1_awburst: m0_awburst;
-    wire        s_axi_awvalid= use_dma ? m1_awvalid: m0_awvalid;
-    wire [63:0] s_axi_wdata  = use_dma ? m1_wdata  : m0_wdata;
-    wire [7:0]  s_axi_wstrb  = use_dma ? m1_wstrb  : m0_wstrb;
-    wire        s_axi_wlast  = use_dma ? m1_wlast  : m0_wlast;
-    wire        s_axi_wvalid = use_dma ? m1_wvalid : m0_wvalid;
-    wire        s_axi_bready = use_dma ? m1_bready : m0_bready;
-    wire [3:0]  s_axi_arid   = use_dma ? m1_arid   : m0_arid;
-    wire [27:0] s_axi_araddr = use_dma ? m1_araddr : m0_araddr;
-    wire [7:0]  s_axi_arlen  = use_dma ? m1_arlen  : m0_arlen;
-    wire [2:0]  s_axi_arsize = use_dma ? m1_arsize : m0_arsize;
-    wire [1:0]  s_axi_arburst= use_dma ? m1_arburst: m0_arburst;
-    wire        s_axi_arvalid= use_dma ? m1_arvalid: m0_arvalid;
-    wire        s_axi_rready = use_dma ? m1_rready : m0_rready;
+    wire [3:0]  s_axi_awid   = use_dma               ? m1_awid   :
+                               (ext_voxel_aw ? 4'd0  : ext_axi_awid);
+    wire [27:0] s_axi_awaddr = use_dma               ? m1_awaddr :
+                               ext_axi_awaddr;
+    wire [7:0]  s_axi_awlen  = use_dma               ? m1_awlen  :
+                               ext_axi_awlen;
+    wire [2:0]  s_axi_awsize = use_dma               ? m1_awsize :
+                               ext_axi_awsize;
+    wire [1:0]  s_axi_awburst= use_dma               ? m1_awburst:
+                               ext_axi_awburst;
+    wire        s_axi_awvalid= use_dma               ? m1_awvalid:
+                               (ext_voxel_aw ? 1'b0 : ext_axi_awvalid);
+    wire [63:0] s_axi_wdata  = use_dma               ? m1_wdata  :
+                               ext_axi_wdata;
+    wire [7:0]  s_axi_wstrb  = use_dma               ? m1_wstrb  :
+                               ext_axi_wstrb;
+    wire        s_axi_wlast  = use_dma               ? m1_wlast  :
+                               ext_axi_wlast;
+    wire        s_axi_wvalid = use_dma               ? m1_wvalid :
+                               (ext_voxel_aw ? 1'b0 : ext_axi_wvalid);
+    wire        s_axi_bready = use_dma               ? m1_bready :
+                               (ext_voxel_aw ? 1'b0 : ext_axi_bready);
+    wire [3:0]  s_axi_arid   = use_dma               ? m1_arid   :
+                               (ext_voxel_ar ? 4'd0 : ext_axi_arid);
+    wire [27:0] s_axi_araddr = use_dma               ? m1_araddr :
+                               ext_axi_araddr;
+    wire [7:0]  s_axi_arlen  = use_dma               ? m1_arlen  :
+                               ext_axi_arlen;
+    wire [2:0]  s_axi_arsize = use_dma               ? m1_arsize :
+                               ext_axi_arsize;
+    wire [1:0]  s_axi_arburst= use_dma               ? m1_arburst:
+                               ext_axi_arburst;
+    wire        s_axi_arvalid= use_dma               ? m1_arvalid:
+                               (ext_voxel_ar ? 1'b0 : ext_axi_arvalid);
+    wire        s_axi_rready = use_dma               ? m1_rready :
+                               (ext_voxel_ar ? 1'b0 : ext_axi_rready);
 
-    // Tie-offs for unused ready/resp back to external master when DMA active
-    assign ext_axi_awready = (!use_dma) ? sdram_awready_int : 1'b0;
-    assign ext_axi_wready  = (!use_dma) ? sdram_wready_int  : 1'b0;
-    assign ext_axi_bresp   = (!use_dma) ? sdram_bresp_int   : 2'b00;
-    assign ext_axi_bvalid  = (!use_dma) ? sdram_bvalid_int  : 1'b0;
-    assign ext_axi_bid     = (!use_dma) ? sdram_bid_int     : 4'd0;
-    assign ext_axi_arready = (!use_dma) ? sdram_arready_int : 1'b0;
-    assign ext_axi_rdata   = (!use_dma) ? sdram_rdata_int   : 64'd0;
-    assign ext_axi_rresp   = (!use_dma) ? sdram_rresp_int   : 2'b00;
-    assign ext_axi_rlast   = (!use_dma) ? sdram_rlast_int   : 1'b0;
-    assign ext_axi_rvalid  = (!use_dma) ? sdram_rvalid_int  : 1'b0;
-    assign ext_axi_rid     = (!use_dma) ? sdram_rid_int     : 4'd0;
+    // External handshakes/responses, gated when DMA owns the bus.
+    reg ext_bvalid_voxel;
+    reg [1:0] ext_bresp_voxel;
+    reg ext_rvalid_voxel;
+    reg [1:0] ext_rresp_voxel;
+    reg [63:0] ext_rdata_voxel;
+    reg [3:0] ext_rid_voxel;
+    reg ext_rlast_voxel;
+
+    // Accept voxel-window writes when DMA not active
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            ext_bvalid_voxel <= 1'b0;
+            ext_bresp_voxel  <= 2'b00;
+        end else begin
+            if (!use_dma && ext_voxel_aw &&
+                ext_axi_awvalid && ext_axi_wvalid) begin
+                // Map byte address to voxel word address (ignore low 3 bits)
+                dbg_ext_write_en   <= 1'b1;
+                dbg_ext_write_addr <= ext_axi_awaddr[20:3];
+                dbg_ext_write_data <= ext_axi_wdata;
+                ext_bvalid_voxel   <= 1'b1;
+                ext_bresp_voxel    <= 2'b00;
+            end else begin
+                dbg_ext_write_en <= 1'b0;
+            end
+
+            if (ext_bvalid_voxel && ext_axi_bready)
+                ext_bvalid_voxel <= 1'b0;
+        end
+    end
+
+    // Accept voxel-window reads as zero/OKAY (DMA cannot target voxel window)
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            ext_rvalid_voxel <= 1'b0;
+            ext_rresp_voxel  <= 2'b00;
+            ext_rdata_voxel  <= 64'd0;
+            ext_rid_voxel    <= 4'd0;
+            ext_rlast_voxel  <= 1'b0;
+        end else begin
+            if (!use_dma && ext_voxel_ar && ext_axi_arvalid) begin
+                ext_rvalid_voxel <= 1'b1;
+                ext_rresp_voxel  <= 2'b00;
+                ext_rdata_voxel  <= 64'd0;
+                ext_rid_voxel    <= ext_axi_arid;
+                ext_rlast_voxel  <= 1'b1;
+            end else if (ext_rvalid_voxel && ext_axi_rready) begin
+                ext_rvalid_voxel <= 1'b0;
+            end
+        end
+    end
+
+    assign ext_axi_awready = use_dma ? 1'b0 :
+                             (ext_voxel_aw ? 1'b1 : sdram_awready_int);
+    assign ext_axi_wready  = use_dma ? 1'b0 :
+                             (ext_voxel_aw ? 1'b1 : sdram_wready_int);
+    assign ext_axi_bresp   = use_dma ? 2'b00 :
+                             (ext_voxel_aw ? ext_bresp_voxel : sdram_bresp_int);
+    assign ext_axi_bvalid  = use_dma ? 1'b0 :
+                             (ext_voxel_aw ? ext_bvalid_voxel : sdram_bvalid_int);
+    assign ext_axi_bid     = use_dma ? 4'd0 :
+                             (ext_voxel_aw ? 4'd0 : sdram_bid_int);
+
+    assign ext_axi_arready = use_dma ? 1'b0 :
+                             (ext_voxel_ar ? 1'b1 : sdram_arready_int);
+    assign ext_axi_rdata   = use_dma ? 64'd0 :
+                             (ext_voxel_ar ? ext_rdata_voxel : sdram_rdata_int);
+    assign ext_axi_rresp   = use_dma ? 2'b00 :
+                             (ext_voxel_ar ? ext_rresp_voxel : sdram_rresp_int);
+    assign ext_axi_rlast   = use_dma ? 1'b0 :
+                             (ext_voxel_ar ? ext_rlast_voxel : sdram_rlast_int);
+    assign ext_axi_rvalid  = use_dma ? 1'b0 :
+                             (ext_voxel_ar ? ext_rvalid_voxel : sdram_rvalid_int);
+    assign ext_axi_rid     = use_dma ? 4'd0 :
+                             (ext_voxel_ar ? ext_rid_voxel : sdram_rid_int);
 
     // Internal SDRAM stub signals
     wire sdram_awready_int, sdram_wready_int, sdram_bvalid_int, sdram_arready_int, sdram_rlast_int, sdram_rvalid_int;
