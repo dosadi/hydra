@@ -104,8 +104,8 @@ module voxel_world_gen #(
                             8'd255,    // material_props
                             8'd0,      // emissive
                             8'd160,    // alpha
-                            8'd220,    // light
-                            8'hFF, 8'hB0, 8'h80, // RGB
+                            8'd200,    // light
+                            8'h8B, 8'h5A, 8'h2B, // RGB (brownish ground)
                             4'd3, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;
@@ -136,8 +136,8 @@ module voxel_world_gen #(
                             8'd180,      // material_props
                             8'd0,        // emissive
                             8'd255,      // alpha
-                            8'd200,      // light
-                            8'h40, 8'h80, 8'hFF, // RGB
+                            8'd220,      // light
+                            8'h40, 8'hC0, 8'hFF, // RGB (bright cyan)
                             4'd5, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;
@@ -169,7 +169,7 @@ module voxel_world_gen #(
                             8'd200,      // emissive
                             8'd255,      // alpha
                             8'd220,      // light
-                            8'hFF, 8'hFF, 8'h80, // RGB
+                            8'hFF, 8'h40, 8'hFF, // RGB (magenta-ish)
                             4'd1, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;

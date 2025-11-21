@@ -21,7 +21,7 @@
 
 static const int   SCREEN_WIDTH  = 320;
 static const int   SCREEN_HEIGHT = 240;
-static const int   HUD_HEIGHT    = 112;
+static const int   HUD_HEIGHT    = 132;
 static const float FX            = 256.0f;  // fixed-point scale
 
 vluint64_t main_time = 0;
@@ -515,6 +515,7 @@ int main(int argc, char** argv) {
 
             if (font) {
                 char buf[256];
+                uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
 
                 std::snprintf(buf, sizeof(buf),
                     "FPS %.1f | Pos %.1f %.1f %.1f",
@@ -538,6 +539,10 @@ int main(int argc, char** argv) {
                     mouse_captured ? "ON" : "OFF");
                 draw_text(ren, font, buf, 4, 52);
 
+                std::snprintf(buf, sizeof(buf),
+                    "Hits this frame: %u", hits);
+                draw_text(ren, font, buf, 4, 68);
+
                 if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (%u,%u,%u) mat=0x%02X",
@@ -549,7 +554,7 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (no hit)");
                 }
-                draw_text(ren, font, buf, 4, 68);
+                draw_text(ren, font, buf, 4, 84);
 
                 if (selection_active) {
                     std::snprintf(buf, sizeof(buf),
@@ -561,7 +566,7 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Sel: (none)  (aim + F to select)");
                 }
-                draw_text(ren, font, buf, 4, 84);
+                draw_text(ren, font, buf, 4, 100);
 
                 if (selection_active) {
                     uint64_t w = selection_word;
@@ -578,7 +583,7 @@ int main(int argc, char** argv) {
                         "Probe RGBA %3u/%3u/%3u/%3u L%3u MT%u MP=%02X E%3u",
                         r, g, b, alpha, light,
                         material_type, material_props, emissive);
-                    draw_text(ren, font, buf, 4, 100);
+                    draw_text(ren, font, buf, 4, 116);
                 }
             }
 

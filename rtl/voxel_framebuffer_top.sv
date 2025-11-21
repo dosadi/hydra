@@ -77,6 +77,7 @@ module voxel_framebuffer_top #(
     wire [5:0]  cursor_voxel_z;
     wire [7:0]  cursor_material_id;
     wire [63:0] cursor_voxel_data;
+    wire [31:0] core_dbg_hit_count;
 
     // Expose cursor/regs to Verilator (they are regs/wires in this scope)
     // (No extra ports needed; Verilator can access internal regs/wires.)
@@ -188,7 +189,8 @@ module voxel_framebuffer_top #(
         .cursor_voxel_y     (cursor_voxel_y),
         .cursor_voxel_z     (cursor_voxel_z),
         .cursor_material_id (cursor_material_id),
-        .cursor_voxel_data  (cursor_voxel_data)
+        .cursor_voxel_data  (cursor_voxel_data),
+        .dbg_hit_count      (core_dbg_hit_count)
     );
 
     assign frame_done = done;

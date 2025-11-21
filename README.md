@@ -26,3 +26,18 @@ On Ubuntu/Debian:
 
 ```bash
 sudo apt-get install verilator libsdl2-dev libsdl2-ttf-dev build-essential
+```
+
+Build and run the SDL viewer:
+
+```bash
+cd sim
+make           # builds sim_voxel
+./sim_voxel    # launches the window (320x240 logical)
+```
+
+Logging and debug:
+
+- `LOG_FRAMES=1 ./sim_voxel` – print per-frame stats (pixels written, nonzero pixels, hit count).
+- `LOG_KEYS=1 ./sim_voxel` – print key down/up events (for input debugging).
+- HUD shows FPS, flags, and “Hits this frame” to confirm scene intersections.

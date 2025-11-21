@@ -63,7 +63,8 @@ module voxel_raycaster_core_pipelined #(
     output reg [5:0]   cursor_voxel_y,
     output reg [5:0]   cursor_voxel_z,
     output reg [7:0]   cursor_material_id,
-    output reg [63:0]  cursor_voxel_data
+    output reg [63:0]  cursor_voxel_data,
+    output reg [31:0]  dbg_hit_count
 );
 
     // State machine
@@ -103,11 +104,9 @@ module voxel_raycaster_core_pipelined #(
     reg [7:0]  pixel_normal_x, pixel_normal_y, pixel_normal_z;
     reg [7:0]  pixel_curvature;
 
-    // Ray accumulators (fixed-point, extended to reduce overflow)
+    // Ray/sample accumulators
     localparam ACC_WIDTH = 24;
     reg signed [ACC_WIDTH-1:0] ray_pos_x, ray_pos_y, ray_pos_z;
-    reg signed [ACC_WIDTH-1:0] ray_dir_x, ray_dir_y, ray_dir_z;
-
     reg [5:0] sample_voxel_x, sample_voxel_y, sample_voxel_z;
 
     // --------------------------------------------------------------------
@@ -243,12 +242,7 @@ module voxel_raycaster_core_pipelined #(
             cursor_voxel_z   <= 6'd0;
             cursor_material_id <= 8'd0;
             cursor_voxel_data  <= 64'd0;
-            ray_pos_x        <= '0;
-            ray_pos_y        <= '0;
-            ray_pos_z        <= '0;
-            ray_dir_x        <= '0;
-            ray_dir_y        <= '0;
-            ray_dir_z        <= '0;
+            dbg_hit_count    <= 32'd0;
         end else begin
             pixel_write_en <= 1'b0;
             voxel_read_en  <= 1'b0;
@@ -262,6 +256,7 @@ module voxel_raycaster_core_pipelined #(
                         pixel_y          <= 11'd0;
                         cursor_hit_valid <= 1'b0;
                         cursor_voxel_data<= 64'd0;
+                        dbg_hit_count    <= 32'd0;
                         state            <= S_RENDER_PIXEL;
                     end
                 end
@@ -271,35 +266,16 @@ module voxel_raycaster_core_pipelined #(
                     ray_steps   <= 8'd0;
                     hit         <= 1'b0;
 
-                    // Establish ray origin from camera position (wrap to 6 bits)
-                    ray_pos_x <= {{(ACC_WIDTH-16){cam_x[15]}}, cam_x};
-                    ray_pos_y <= {{(ACC_WIDTH-16){cam_y[15]}}, cam_y};
-                    ray_pos_z <= {{(ACC_WIDTH-16){cam_z[15]}}, cam_z};
-
-                    // Screen-space offsets centered around 0
-                    // pixel_x: 0..W-1 -> signed offset ~[-W/2, W/2)
-                    // pixel_y: 0..H-1 -> signed offset ~[-H/2, H/2)
-                    // Keep modest shifts to stay in range.
+                    // Deterministic orthographic scan: map screen to Y/Z, march along -X
                     begin : dir_calc
-                        reg signed [17:0] off_x;
-                        reg signed [17:0] off_y;
-                        reg signed [ACC_WIDTH-1:0] base_dir_x, base_dir_y, base_dir_z;
-                        reg signed [ACC_WIDTH-1:0] plane_x_ext, plane_y_ext;
-                        off_x = $signed({1'b0, pixel_x}) - $signed(SCREEN_WIDTH/2);
-                        off_y = $signed({1'b0, pixel_y}) - $signed(SCREEN_HEIGHT/2);
+                        reg [17:0] map_y;
+                        reg [17:0] map_z;
+                        map_y = (pixel_y * (VOXEL_GRID_SIZE-1)) / (SCREEN_HEIGHT-1);
+                        map_z = (pixel_x * (VOXEL_GRID_SIZE-1)) / (SCREEN_WIDTH-1);
 
-                        base_dir_x  = {{(ACC_WIDTH-16){cam_dir_x[15]}}, cam_dir_x};
-                        base_dir_y  = {{(ACC_WIDTH-16){cam_dir_y[15]}}, cam_dir_y};
-                        base_dir_z  = {{(ACC_WIDTH-16){cam_dir_z[15]}}, cam_dir_z};
-                        plane_x_ext = {{(ACC_WIDTH-16){cam_plane_x[15]}}, cam_plane_x};
-                        plane_y_ext = {{(ACC_WIDTH-16){cam_plane_y[15]}}, cam_plane_y};
-
-                        // Horizontal FOV via plane_x/plane_y * offset_x
-                        ray_dir_x <= base_dir_x + ((plane_x_ext * off_x) >>> 8);
-                        ray_dir_y <= base_dir_y + ((plane_y_ext * off_x) >>> 8);
-
-                        // Vertical tilt approximated from pitch (cam_dir_z) and vertical offset
-                        ray_dir_z <= base_dir_z + ({{(ACC_WIDTH-10){off_y[17]}}, off_y} <<< (FRAC_BITS-4));
+                        ray_pos_x <= (VOXEL_GRID_SIZE-1) <<< FRAC_BITS;
+                        ray_pos_y <= map_y <<< FRAC_BITS;
+                        ray_pos_z <= map_z <<< FRAC_BITS;
                     end
 
                     cursor_sample <= (pixel_x == (SCREEN_WIDTH  >> 1)) &&
@@ -308,9 +284,9 @@ module voxel_raycaster_core_pipelined #(
                     state <= S_STEP;
                 end
 
-                // Advance ray a few steps in x-direction
+                // Advance ray along -X
                 S_STEP: begin
-                    if (ray_steps >= 8'd40 || hit) begin
+                    if (ray_steps >= 8'd128 || hit) begin
                         if (!hit) begin
                             // sky pixel (dark blue), bypass voxel-based shader
                             pixel_word0      <= {8'd0, 8'd0, 8'd255, 8'd0};
@@ -335,20 +311,31 @@ module voxel_raycaster_core_pipelined #(
                         end
                     end else begin
                         // Sample current ray position -> voxel coords (wrap into 0..63)
-                        sample_voxel_x <= (ray_pos_x >>> FRAC_BITS) & 6'h3F;
-                        sample_voxel_y <= (ray_pos_y >>> FRAC_BITS) & 6'h3F;
-                        sample_voxel_z <= (ray_pos_z >>> FRAC_BITS) & 6'h3F;
-                        voxel_x        <= sample_voxel_x;
-                        voxel_y        <= sample_voxel_y;
-                        voxel_z        <= sample_voxel_z;
-                        voxel_addr     <= {sample_voxel_x, sample_voxel_y, sample_voxel_z};
+                        reg [ACC_WIDTH-1:0] wide_x;
+                        reg [ACC_WIDTH-1:0] wide_y;
+                        reg [ACC_WIDTH-1:0] wide_z;
+                        reg [5:0] trunc_x;
+                        reg [5:0] trunc_y;
+                        reg [5:0] trunc_z;
+                        wide_x  = ray_pos_x >>> FRAC_BITS;
+                        wide_y  = (ray_pos_y + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
+                        wide_z  = (ray_pos_z + {{(ACC_WIDTH-8){1'b0}}, ray_steps}) >>> FRAC_BITS;
+                        trunc_x = wide_x[5:0];
+                        trunc_y = wide_y[5:0];
+                        trunc_z = wide_z[5:0];
+                        sample_voxel_x <= trunc_x;
+                        sample_voxel_y <= trunc_y;
+                        sample_voxel_z <= trunc_z;
+                        voxel_x        <= trunc_x;
+                        voxel_y        <= trunc_y;
+                        voxel_z        <= trunc_z;
+                        voxel_addr     <= {trunc_x, trunc_y, trunc_z};
                         voxel_read_en <= 1'b1;
                         state         <= S_FETCH;
 
-                        // Step along ray
-                        ray_pos_x <= ray_pos_x + ray_dir_x;
-                        ray_pos_y <= ray_pos_y + ray_dir_y;
-                        ray_pos_z <= ray_pos_z + ray_dir_z;
+                        // Step along -X by half a voxel to increase sampling density
+                        ray_pos_x <= ray_pos_x - (18'sd1 <<< (FRAC_BITS-1));
+                        ray_steps <= ray_steps + 1'b1;
                     end
                 end
 
@@ -356,6 +343,7 @@ module voxel_raycaster_core_pipelined #(
                     // Sample, test occupancy
                     if (!hit && voxel_data != 64'd0 && voxel_data[47:40] > 8'd10) begin
                         hit <= 1'b1;
+                        dbg_hit_count <= dbg_hit_count + 1'b1;
 
                         voxel_material_props <= voxel_data[63:56];
                         voxel_emissive       <= voxel_data[55:48];
@@ -373,13 +361,6 @@ module voxel_raycaster_core_pipelined #(
                             cursor_voxel_data   <= voxel_data;
                         end
                     end
-
-                    // advance along z as a fake "ray"
-                    ray_steps <= ray_steps + 1'b1;
-                    if (voxel_z < VOXEL_GRID_SIZE-1)
-                        voxel_z <= voxel_z + 1'b1;
-                    else
-                        voxel_z <= 6'd0;
 
                     state <= S_STEP;
                 end
