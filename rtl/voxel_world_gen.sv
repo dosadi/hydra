@@ -45,10 +45,11 @@ module voxel_world_gen #(
     localparam [5:0] SPH1_CY = 6'd32;
     localparam [5:0] SPH1_CZ = 6'd28;
 
-    localparam [5:0] FLOOR_Y0 = 6'd8;
-    localparam [5:0] FLOOR_Y1 = 6'd16;
-    localparam [5:0] LIGHT_Y0 = 6'd50;
-    localparam [5:0] LIGHT_Y1 = 6'd56;
+    localparam [5:0] FLOOR_Y0  = 6'd8;
+    localparam [5:0] FLOOR_Y1  = 6'd16;
+    localparam [5:0] LIGHT_Y0  = 6'd50;
+    localparam [5:0] LIGHT_Y1  = 6'd56;
+    localparam [5:0] SLAB_MAX_X = 6'd44; // leave front space empty so rays can march before hitting slabs
 
     initial begin
         radius2_0 = 16'd18 * 16'd18;
@@ -101,7 +102,7 @@ module voxel_world_gen #(
 
                 // Floor slab (FLOOR_Y0..FLOOR_Y1) and ceiling light slab (LIGHT_Y0..LIGHT_Y1)
                 S_PLANES: begin
-                    if (y >= FLOOR_Y0 && y <= FLOOR_Y1) begin
+                    if ((y >= FLOOR_Y0 && y <= FLOOR_Y1) && (x <= SLAB_MAX_X)) begin
                         write_addr <= {x, y, z};
                         write_data <= {
                             8'd196,    // material_props
@@ -112,7 +113,7 @@ module voxel_world_gen #(
                             4'd6, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;
-                    end else if (y >= LIGHT_Y0 && y <= LIGHT_Y1) begin
+                    end else if ((y >= LIGHT_Y0 && y <= LIGHT_Y1) && (x <= SLAB_MAX_X)) begin
                         write_addr <= {x, y, z};
                         write_data <= {
                             8'd255,    // material_props
