@@ -97,7 +97,7 @@ module voxel_framebuffer_top #(
         cfg_smooth_surfaces <= 1'b1;
         cfg_curvature       <= 1'b1;
         cfg_extra_light     <= 1'b0;
-        cfg_diag_slice      <= 1'b1;
+        cfg_diag_slice      <= 1'b0;
 
         sel_active   <= 1'b0;
         sel_voxel_x  <= 6'd0;

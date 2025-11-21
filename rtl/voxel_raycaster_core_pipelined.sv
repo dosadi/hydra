@@ -119,6 +119,13 @@ module voxel_raycaster_core_pipelined #(
     reg [7:0] best_emissive;
     wire diag_slice_mode = render_config[1];
 
+    // Simple hard-coded lighting/shadow references for the demo scene.
+    localparam [5:0] FLOOR_PLANE_Y  = 6'd12;
+    localparam [5:0] LIGHT_PLANE_Y  = 6'd52;
+    localparam [5:0] SHADOW_CX      = 6'd32;
+    localparam [5:0] SHADOW_CZ      = 6'd32;
+    localparam [15:0] SHADOW_RADIUS2 = 16'd324; // 18^2 (matches main sphere)
+
     // --------------------------------------------------------------------
     // Advanced lighting helper (simplified).
     // --------------------------------------------------------------------
@@ -141,6 +148,20 @@ module voxel_raycaster_core_pipelined #(
     end
     endtask
 
+    function automatic is_shadowed_floor;
+        input [5:0] px;
+        input [5:0] pz;
+        reg signed [7:0] dx;
+        reg signed [7:0] dz;
+        reg [15:0] dist2;
+    begin
+        dx = $signed({1'b0,px}) - $signed({1'b0,SHADOW_CX});
+        dz = $signed({1'b0,pz}) - $signed({1'b0,SHADOW_CZ});
+        dist2 = dx*dx + dz*dz;
+        is_shadowed_floor = (dist2 <= SHADOW_RADIUS2);
+    end
+    endfunction
+
     // --------------------------------------------------------------------
     // Compute pixel from voxel fields + selection
     // --------------------------------------------------------------------
@@ -150,6 +171,9 @@ module voxel_raycaster_core_pipelined #(
         reg [7:0] out_reflection, out_refraction, out_attenuation, out_emission;
         reg [7:0] out_material_id;
         reg [7:0] out_normal_x, out_normal_y, out_normal_z, out_curvature;
+        reg       shadow_hit;
+        reg [7:0] shadow_scale;
+        reg [15:0] scaled;
     begin
         // Base lighting
         out_r = (voxel_color[23:16] * voxel_light) >> 8;
@@ -197,6 +221,25 @@ module voxel_raycaster_core_pipelined #(
 
         apply_advanced_lighting(render_config, out_curvature,
                                 out_r, out_g, out_b);
+
+        // Simple top-down shadow from the main blob onto the floor plane.
+        shadow_hit   = 1'b0;
+        shadow_scale = 8'd255;
+        if (voxel_y == FLOOR_PLANE_Y) begin
+            shadow_hit   = is_shadowed_floor(voxel_x, voxel_z);
+            shadow_scale = shadow_hit ? 8'd80 : (8'd180 + (LIGHT_PLANE_Y >> 1)); // brighter with overhead light
+
+            scaled = out_r * shadow_scale; out_r = scaled[15:8];
+            scaled = out_g * shadow_scale; out_g = scaled[15:8];
+            scaled = out_b * shadow_scale; out_b = scaled[15:8];
+
+            // Warm bounce from the emissive ceiling when not occluded
+            if (!shadow_hit) begin
+                tmp = out_r + 9'd20; out_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+                tmp = out_g + 9'd12; out_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+                tmp = out_b + 9'd4;  out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
+            end
+        end
 
         // Selection highlight
         if (sel_active &&

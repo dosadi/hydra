@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
     bool smooth_surfaces = true;
     bool curvature       = true;
     bool extra_light     = false;
-    bool diag_slice      = true;
+    bool diag_slice      = false;
 
     bool mouse_captured  = true;
 

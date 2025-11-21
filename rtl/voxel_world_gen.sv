@@ -1,7 +1,7 @@
 // ============================================================================
 // voxel_world_gen.sv
 // - Procedural scene generator for 64^3 volume.
-// - Clears memory, writes a ground plane and two spheres.
+// - Clears memory, writes a lit floor, an emissive ceiling, and two spheres.
 // - Drives a write port into voxel_memory_64.
 // ============================================================================
 
@@ -23,7 +23,7 @@ module voxel_world_gen #(
 
     localparam S_IDLE     = 3'd0;
     localparam S_CLEAR    = 3'd1;
-    localparam S_PLANE    = 3'd2;
+    localparam S_PLANES   = 3'd2;
     localparam S_SPHERE0  = 3'd3;
     localparam S_SPHERE1  = 3'd4;
     localparam S_FINISH   = 3'd5;
@@ -45,7 +45,8 @@ module voxel_world_gen #(
     localparam [5:0] SPH1_CY = 6'd32;
     localparam [5:0] SPH1_CZ = 6'd28;
 
-    localparam [5:0] PLANE_X = 6'd20;
+    localparam [5:0] FLOOR_Y = 6'd12;
+    localparam [5:0] LIGHT_Y = 6'd52;
 
     initial begin
         radius2_0 = 16'd18 * 16'd18;
@@ -90,23 +91,34 @@ module voxel_world_gen #(
                             y <= 0;
                             if (x == GRID_SIZE-1) begin
                                 x <= 0;
-                                state <= S_PLANE;
+                                state <= S_PLANES;
                             end else x <= x + 1'b1;
                         end else y <= y + 1'b1;
                     end else z <= z + 1'b1;
                 end
 
-                // Ground plane at x=PLANE_X
-                S_PLANE: begin
-                    if (x == PLANE_X) begin
+                // Floor (at y=FLOOR_Y) and ceiling light plane (at y=LIGHT_Y)
+                S_PLANES: begin
+                    if (y == FLOOR_Y) begin
+                        write_addr <= {x, y, z};
+                        write_data <= {
+                            8'd196,    // material_props
+                            8'd0,      // emissive
+                            8'd255,    // alpha
+                            8'd150,    // light (base, boosted by shader)
+                            8'h40, 8'h50, 8'h60, // RGB (cool floor)
+                            4'd6, 4'd0           // material_type, reserved
+                        };
+                        write_en <= 1'b1;
+                    end else if (y == LIGHT_Y) begin
                         write_addr <= {x, y, z};
                         write_data <= {
                             8'd255,    // material_props
-                            8'd0,      // emissive
-                            8'd160,    // alpha
-                            8'd200,    // light
-                            8'h8B, 8'h5A, 8'h2B, // RGB (brownish ground)
-                            4'd3, 4'd0           // material_type, reserved
+                            8'd255,    // emissive (acts as light source)
+                            8'd255,    // alpha
+                            8'd255,    // light
+                            8'hFF, 8'hD0, 8'hA0, // RGB (warm ceiling light)
+                            4'd1, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;
                     end
