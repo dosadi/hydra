@@ -21,7 +21,7 @@
 
 static const int   SCREEN_WIDTH  = 480;
 static const int   SCREEN_HEIGHT = 360;
-static const int   HUD_HEIGHT    = 132;
+static const int   HUD_HEIGHT    = 96;
 static const float FX            = 256.0f;  // fixed-point scale
 
 vluint64_t main_time = 0;
@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
     if (!tex) die("Texture creation failed");
 
     TTF_Font* font = TTF_OpenFont(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 11
     );
     if (!font) {
         std::fprintf(stderr, "Warning: could not open font, HUD text disabled\n");
@@ -519,40 +519,47 @@ int main(int argc, char** argv) {
             SDL_RenderCopy(ren, tex, nullptr, nullptr);
 
             SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(ren, 0, 0, 0, 160);
-            SDL_Rect hud_rect{0, 0, SCREEN_WIDTH, HUD_HEIGHT};
+            SDL_SetRenderDrawColor(ren, 0, 0, 0, 120);
+            SDL_Rect hud_rect{0, SCREEN_HEIGHT - HUD_HEIGHT, SCREEN_WIDTH, HUD_HEIGHT};
             SDL_RenderFillRect(ren, &hud_rect);
 
             if (font) {
                 char buf[256];
                 uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
+                const int hud_y = SCREEN_HEIGHT - HUD_HEIGHT + 4;
+                int yoff = hud_y;
 
                 std::snprintf(buf, sizeof(buf),
                     "FPS %.1f | Pos %.1f %.1f %.1f",
                     fps, pos_x, pos_y, pos_z);
-                draw_text(ren, font, buf, 4, 4);
+                draw_text(ren, font, buf, 6, yoff);
+                yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
                     "Yaw %.2f  Pitch %.2f",
                     yaw, pitch);
-                draw_text(ren, font, buf, 4, 20);
+                draw_text(ren, font, buf, 6, yoff);
+                yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
-                    "[1] Smooth %s   [2] Curv %s",
+                    "[1] Smooth %s  [2] Curv %s  [3] Extra %s",
                     smooth_surfaces ? "ON" : "OFF",
-                    curvature       ? "ON" : "OFF");
-                draw_text(ren, font, buf, 4, 36);
+                    curvature       ? "ON" : "OFF",
+                    extra_light     ? "ON" : "OFF");
+                draw_text(ren, font, buf, 6, yoff);
+                yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
-                    "[3] Extra %s  [O] Slice %s  [M] Mouse %s",
-                    extra_light    ? "ON" : "OFF",
+                    "[O] Slice %s  [M] Mouse %s",
                     diag_slice     ? "ON" : "OFF",
                     mouse_captured ? "ON" : "OFF");
-                draw_text(ren, font, buf, 4, 52);
+                draw_text(ren, font, buf, 6, yoff);
+                yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
                     "Hits this frame: %u", hits);
-                draw_text(ren, font, buf, 4, 68);
+                draw_text(ren, font, buf, 6, yoff);
+                yoff += 14;
 
                 if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
                     std::snprintf(buf, sizeof(buf),
@@ -565,7 +572,8 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (no hit)");
                 }
-                draw_text(ren, font, buf, 4, 84);
+                draw_text(ren, font, buf, 6, yoff);
+                yoff += 14;
 
                 if (selection_active) {
                     std::snprintf(buf, sizeof(buf),
@@ -577,7 +585,8 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Sel: (none)  (aim + F to select)");
                 }
-                draw_text(ren, font, buf, 4, 100);
+                draw_text(ren, font, buf, 6, yoff);
+                yoff += 14;
 
                 if (selection_active) {
                     uint64_t w = selection_word;
@@ -594,7 +603,7 @@ int main(int argc, char** argv) {
                         "Probe RGBA %3u/%3u/%3u/%3u L%3u MT%u MP=%02X E%3u",
                         r, g, b, alpha, light,
                         material_type, material_props, emissive);
-                    draw_text(ren, font, buf, 4, 116);
+                    draw_text(ren, font, buf, 6, yoff);
                 }
             }
 

@@ -330,7 +330,7 @@ module voxel_raycaster_core_pipelined #(
                     begin : dir_calc
                         reg [17:0] map_y;
                         reg [17:0] map_z;
-                        map_y = (pixel_y * (VOXEL_GRID_SIZE-1)) / (SCREEN_HEIGHT-1);
+                        map_y = ((SCREEN_HEIGHT-1 - pixel_y) * (VOXEL_GRID_SIZE-1)) / (SCREEN_HEIGHT-1);
                         map_z = (pixel_x * (VOXEL_GRID_SIZE-1)) / (SCREEN_WIDTH-1);
 
                         ray_pos_x <= (VOXEL_GRID_SIZE-1) <<< FRAC_BITS;
