@@ -103,6 +103,13 @@ module voxel_raycaster_core_pipelined #(
     reg [7:0]  pixel_normal_x, pixel_normal_y, pixel_normal_z;
     reg [7:0]  pixel_curvature;
 
+    // Ray accumulators (fixed-point, extended to reduce overflow)
+    localparam ACC_WIDTH = 24;
+    reg signed [ACC_WIDTH-1:0] ray_pos_x, ray_pos_y, ray_pos_z;
+    reg signed [ACC_WIDTH-1:0] ray_dir_x, ray_dir_y, ray_dir_z;
+
+    reg [5:0] sample_voxel_x, sample_voxel_y, sample_voxel_z;
+
     // --------------------------------------------------------------------
     // Advanced lighting helper (simplified).
     // --------------------------------------------------------------------
@@ -139,6 +146,12 @@ module voxel_raycaster_core_pipelined #(
         out_r = (voxel_color[23:16] * voxel_light) >> 8;
         out_g = (voxel_color[15:8]  * voxel_light) >> 8;
         out_b = (voxel_color[7:0]   * voxel_light) >> 8;
+        if (out_r == 0 && out_g == 0 && out_b == 0) begin
+            // Fallback in case light or color was zeroed; keep something visible.
+            out_r = voxel_color[23:16];
+            out_g = voxel_color[15:8];
+            out_b = voxel_color[7:0];
+        end
 
         // Emission
         if (voxel_emissive != 0) begin
@@ -230,6 +243,12 @@ module voxel_raycaster_core_pipelined #(
             cursor_voxel_z   <= 6'd0;
             cursor_material_id <= 8'd0;
             cursor_voxel_data  <= 64'd0;
+            ray_pos_x        <= '0;
+            ray_pos_y        <= '0;
+            ray_pos_z        <= '0;
+            ray_dir_x        <= '0;
+            ray_dir_y        <= '0;
+            ray_dir_z        <= '0;
         end else begin
             pixel_write_en <= 1'b0;
             voxel_read_en  <= 1'b0;
@@ -252,10 +271,36 @@ module voxel_raycaster_core_pipelined #(
                     ray_steps   <= 8'd0;
                     hit         <= 1'b0;
 
-                    // For now, derive a simple voxel coord from camera + pixel Y:
-                    voxel_x <= cam_x[FRAC_BITS+5:FRAC_BITS];
-                    voxel_y <= pixel_y[5:0];
-                    voxel_z <= pixel_x[5:0];
+                    // Establish ray origin from camera position (wrap to 6 bits)
+                    ray_pos_x <= {{(ACC_WIDTH-16){cam_x[15]}}, cam_x};
+                    ray_pos_y <= {{(ACC_WIDTH-16){cam_y[15]}}, cam_y};
+                    ray_pos_z <= {{(ACC_WIDTH-16){cam_z[15]}}, cam_z};
+
+                    // Screen-space offsets centered around 0
+                    // pixel_x: 0..W-1 -> signed offset ~[-W/2, W/2)
+                    // pixel_y: 0..H-1 -> signed offset ~[-H/2, H/2)
+                    // Keep modest shifts to stay in range.
+                    begin : dir_calc
+                        reg signed [17:0] off_x;
+                        reg signed [17:0] off_y;
+                        reg signed [ACC_WIDTH-1:0] base_dir_x, base_dir_y, base_dir_z;
+                        reg signed [ACC_WIDTH-1:0] plane_x_ext, plane_y_ext;
+                        off_x = $signed({1'b0, pixel_x}) - $signed(SCREEN_WIDTH/2);
+                        off_y = $signed({1'b0, pixel_y}) - $signed(SCREEN_HEIGHT/2);
+
+                        base_dir_x  = {{(ACC_WIDTH-16){cam_dir_x[15]}}, cam_dir_x};
+                        base_dir_y  = {{(ACC_WIDTH-16){cam_dir_y[15]}}, cam_dir_y};
+                        base_dir_z  = {{(ACC_WIDTH-16){cam_dir_z[15]}}, cam_dir_z};
+                        plane_x_ext = {{(ACC_WIDTH-16){cam_plane_x[15]}}, cam_plane_x};
+                        plane_y_ext = {{(ACC_WIDTH-16){cam_plane_y[15]}}, cam_plane_y};
+
+                        // Horizontal FOV via plane_x/plane_y * offset_x
+                        ray_dir_x <= base_dir_x + ((plane_x_ext * off_x) >>> 8);
+                        ray_dir_y <= base_dir_y + ((plane_y_ext * off_x) >>> 8);
+
+                        // Vertical tilt approximated from pitch (cam_dir_z) and vertical offset
+                        ray_dir_z <= base_dir_z + ({{(ACC_WIDTH-10){off_y[17]}}, off_y} <<< (FRAC_BITS-4));
+                    end
 
                     cursor_sample <= (pixel_x == (SCREEN_WIDTH  >> 1)) &&
                                      (pixel_y == (SCREEN_HEIGHT >> 1));
@@ -267,29 +312,43 @@ module voxel_raycaster_core_pipelined #(
                 S_STEP: begin
                     if (ray_steps >= 8'd40 || hit) begin
                         if (!hit) begin
-                            // sky pixel (dark blue)
-                            pixel_r <= 8'd30;
-                            pixel_g <= 8'd30;
-                            pixel_b <= 8'd60;
-                            pixel_reflection  <= 8'd0;
-                            pixel_refraction  <= 8'd0;
-                            pixel_attenuation <= 8'd255;
-                            pixel_emission    <= 8'd0;
-                            pixel_material_id <= 8'hFF;
-                            pixel_normal_x    <= 8'd0;
-                            pixel_normal_y    <= 8'd0;
-                            pixel_normal_z    <= 8'd127;
-                            pixel_curvature   <= 8'd0;
-                            compute_pixel_data();
-                            state <= S_WRITE;
+                            // sky pixel (dark blue), bypass voxel-based shader
+                            pixel_word0      <= {8'd0, 8'd0, 8'd255, 8'd0};
+                            pixel_word1      <= {8'd30, 8'd30, 8'd60, 8'hFF};
+                            pixel_word2      <= {8'd0, 8'd0, 8'd127, 8'd0};
+                            pixel_reflection <= 8'd0;
+                            pixel_refraction <= 8'd0;
+                            pixel_attenuation<= 8'd255;
+                            pixel_emission   <= 8'd0;
+                            pixel_r          <= 8'd30;
+                            pixel_g          <= 8'd30;
+                            pixel_b          <= 8'd60;
+                            pixel_material_id<= 8'hFF;
+                            pixel_normal_x   <= 8'd0;
+                            pixel_normal_y   <= 8'd0;
+                            pixel_normal_z   <= 8'd127;
+                            pixel_curvature  <= 8'd0;
+                            state            <= S_WRITE;
                         end else begin
                             compute_pixel_data();
                             state <= S_WRITE;
                         end
                     end else begin
-                        voxel_addr    <= {voxel_x, voxel_y, voxel_z};
+                        // Sample current ray position -> voxel coords (wrap into 0..63)
+                        sample_voxel_x <= (ray_pos_x >>> FRAC_BITS) & 6'h3F;
+                        sample_voxel_y <= (ray_pos_y >>> FRAC_BITS) & 6'h3F;
+                        sample_voxel_z <= (ray_pos_z >>> FRAC_BITS) & 6'h3F;
+                        voxel_x        <= sample_voxel_x;
+                        voxel_y        <= sample_voxel_y;
+                        voxel_z        <= sample_voxel_z;
+                        voxel_addr     <= {sample_voxel_x, sample_voxel_y, sample_voxel_z};
                         voxel_read_en <= 1'b1;
                         state         <= S_FETCH;
+
+                        // Step along ray
+                        ray_pos_x <= ray_pos_x + ray_dir_x;
+                        ray_pos_y <= ray_pos_y + ray_dir_y;
+                        ray_pos_z <= ray_pos_z + ray_dir_z;
                     end
                 end
 

@@ -195,28 +195,35 @@ module voxel_framebuffer_top #(
 
     // Simple control: run world_gen once, then repeatedly start frames
     reg world_started;
+    reg world_ready;
     reg busy_d;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             world_started <= 1'b0;
+            world_ready   <= 1'b0;
             world_start   <= 1'b0;
             start         <= 1'b0;
             busy_d        <= 1'b0;
         end else begin
-            busy_d <= busy;
+            busy_d    <= busy;
+            world_start <= 1'b0;
+            start       <= 1'b0;
 
             if (!world_started) begin
                 world_start   <= 1'b1;
                 world_started <= 1'b1;
-            end else begin
-                world_start <= 1'b0;
             end
 
-            if (world_done && !busy && !busy_d)
+            if (world_done)
+                world_ready <= 1'b1;
+
+            // Kick the first frame when world is ready and core idle,
+            // then start a new frame each time busy falls.
+            if (world_ready && !busy && !busy_d)
                 start <= 1'b1;
-            else
-                start <= 1'b0;
+            else if (world_ready && busy_d && !busy)
+                start <= 1'b1;
         end
     end
 

@@ -16,9 +16,12 @@
 #include <cmath>
 #include <chrono>
 #include <cstring>
+#include <cstdlib>
+#include <cctype>
 
 static const int   SCREEN_WIDTH  = 320;
 static const int   SCREEN_HEIGHT = 240;
+static const int   HUD_HEIGHT    = 112;
 static const float FX            = 256.0f;  // fixed-point scale
 
 vluint64_t main_time = 0;
@@ -38,6 +41,60 @@ static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
 
 static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
     return (uint32_t(x) << 12) | (uint32_t(y) << 6) | uint32_t(z);
+}
+
+struct InputState {
+    bool forward     = false;
+    bool back        = false;
+    bool strafe_left = false;
+    bool strafe_right = false;
+    bool up          = false;
+    bool down        = false;
+    bool yaw_left    = false;
+    bool yaw_right   = false;
+    bool pitch_up    = false;
+    bool pitch_down  = false;
+    bool fast        = false;
+};
+
+static inline void update_key_state(InputState& keys, SDL_Scancode sc,
+                                    SDL_Keycode keycode, bool pressed) {
+    switch (sc) {
+        case SDL_SCANCODE_W: keys.forward      = pressed; break;
+        case SDL_SCANCODE_S: keys.back         = pressed; break;
+        case SDL_SCANCODE_A: keys.strafe_left  = pressed; break;
+        case SDL_SCANCODE_D: keys.strafe_right = pressed; break;
+        case SDL_SCANCODE_Q: keys.down         = pressed; break;
+        case SDL_SCANCODE_E: keys.up           = pressed; break;
+        case SDL_SCANCODE_LEFT:  keys.yaw_left  = pressed; break;
+        case SDL_SCANCODE_RIGHT: keys.yaw_right = pressed; break;
+        case SDL_SCANCODE_UP:    keys.pitch_up  = pressed; break;
+        case SDL_SCANCODE_DOWN:  keys.pitch_down= pressed; break;
+        case SDL_SCANCODE_LSHIFT:
+        case SDL_SCANCODE_RSHIFT: keys.fast     = pressed; break;
+        default: break;
+    }
+
+    // Fallback to keycodes in case scancodes are missing or unusual.
+    SDL_Keycode kc = keycode;
+    if (kc >= 'A' && kc <= 'Z')
+        kc = kc - 'A' + 'a';
+
+    switch (kc) {
+        case SDLK_w: keys.forward      = pressed; break;
+        case SDLK_s: keys.back         = pressed; break;
+        case SDLK_a: keys.strafe_left  = pressed; break;
+        case SDLK_d: keys.strafe_right = pressed; break;
+        case SDLK_q: keys.down         = pressed; break;
+        case SDLK_e: keys.up           = pressed; break;
+        case SDLK_LEFT:  keys.yaw_left  = pressed; break;
+        case SDLK_RIGHT: keys.yaw_right = pressed; break;
+        case SDLK_UP:    keys.pitch_up  = pressed; break;
+        case SDLK_DOWN:  keys.pitch_down= pressed; break;
+        case SDLK_LSHIFT:
+        case SDLK_RSHIFT: keys.fast     = pressed; break;
+        default: break;
+    }
 }
 
 static void die(const std::string& s) {
@@ -71,13 +128,22 @@ int main(int argc, char** argv) {
     top->clk   = 0;
     top->rst_n = 0;
 
+    const bool log_keys = (std::getenv("LOG_KEYS") != nullptr);
+    const bool log_frames = (std::getenv("LOG_FRAMES") != nullptr);
+    int log_keys_count = 0;
+    size_t pixels_this_frame = 0;
+    size_t frame_counter = 0;
+    int log_pixel_samples = 0;
+
+    // Ensure SDL grabs keyboard focus and uses software paths by default.
+    SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
+    SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1");
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
         die(std::string("SDL_Init: ") + SDL_GetError());
     if (TTF_Init() != 0)
         die(std::string("TTF_Init: ") + TTF_GetError());
-
-    // Prefer software renderer in headless/Xvfb environments to avoid GPU access.
-    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
 
     SDL_Window* win = SDL_CreateWindow(
         "Voxel Accelerator — Interactive Raycaster",
@@ -86,6 +152,7 @@ int main(int argc, char** argv) {
         SDL_WINDOW_RESIZABLE
     );
     if (!win) die("Cannot create SDL window");
+    SDL_RaiseWindow(win);
 
     SDL_Renderer* ren = SDL_CreateRenderer(
         win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
@@ -139,11 +206,13 @@ int main(int argc, char** argv) {
     uint8_t selection_y = 0;
     uint8_t selection_z = 0;
     uint64_t selection_word = 0;
+    InputState keys;
 
     auto update_mouse_capture = [&]() {
         if (SDL_SetRelativeMouseMode(mouse_captured ? SDL_TRUE : SDL_FALSE) != 0) {
             std::fprintf(stderr, "Warning: SetRelativeMouseMode failed: %s\n", SDL_GetError());
         }
+        SDL_SetWindowGrab(win, mouse_captured ? SDL_TRUE : SDL_FALSE);
         SDL_ShowCursor(mouse_captured ? SDL_FALSE : SDL_TRUE);
     };
 
@@ -183,6 +252,8 @@ int main(int argc, char** argv) {
     apply_selection_to_dut();
     update_mouse_capture();
 
+    auto reset_key_state = [&]() { keys = InputState{}; };
+
     bool running = true;
     auto last_frame_time = std::chrono::high_resolution_clock::now();
     float fps = 0.0f;
@@ -199,98 +270,132 @@ int main(int argc, char** argv) {
                 if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED ||
                     ev.window.event == SDL_WINDOWEVENT_TAKE_FOCUS) {
                     update_mouse_capture();
+                } else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+                    reset_key_state();
                 }
-            } else if (ev.type == SDL_KEYDOWN) {
+            } else if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {
+                bool key_down = (ev.type == SDL_KEYDOWN);
                 SDL_Scancode sc = ev.key.keysym.scancode;
+                SDL_Keycode keycode = ev.key.keysym.sym;
+                update_key_state(keys, sc, keycode, key_down);
 
-                if (sc == SDL_SCANCODE_ESCAPE) {
-                    running = false;
-                } else if (sc == SDL_SCANCODE_1) {
-                    smooth_surfaces = !smooth_surfaces;
-                    apply_flags_to_dut();
-                } else if (sc == SDL_SCANCODE_2) {
-                    curvature = !curvature;
-                    apply_flags_to_dut();
-                } else if (sc == SDL_SCANCODE_3) {
-                    extra_light = !extra_light;
-                    apply_flags_to_dut();
-                } else if (sc == SDL_SCANCODE_M) {
-                    mouse_captured = !mouse_captured;
-                    update_mouse_capture();
+                if (log_keys && log_keys_count < 200) {
+                    std::fprintf(stderr, "key %s sc=%d kc=%d name=%s mod=0x%x\n",
+                                 key_down ? "down" : "up",
+                                 (int)sc, (int)keycode,
+                                 SDL_GetKeyName(keycode),
+                                 ev.key.keysym.mod);
+                    ++log_keys_count;
                 }
 
-                // Selection
-                else if (sc == SDL_SCANCODE_F) {
-                    if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
-                        selection_active = true;
-                        selection_x = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_x);
-                        selection_y = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_y);
-                        selection_z = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_z);
-                        selection_word = static_cast<uint64_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_data);
-                        apply_selection_to_dut();
-                    }
-                } else if (sc == SDL_SCANCODE_G) {
-                    selection_active = false;
-                    selection_word   = 0;
-                    apply_selection_to_dut();
-                }
-
-                // Edit selected voxel
-                else if (selection_active) {
-                    uint64_t w = selection_word;
-                    uint8_t material_props = (w >> 56) & 0xFF;
-                    uint8_t emissive       = (w >> 48) & 0xFF;
-                    uint8_t alpha          = (w >> 40) & 0xFF;
-                    uint8_t light          = (w >> 32) & 0xFF;
-                    uint8_t r              = (w >> 24) & 0xFF;
-                    uint8_t g              = (w >> 16) & 0xFF;
-                    uint8_t b              = (w >>  8) & 0xFF;
-                    uint8_t material_type  = (w >>  4) & 0x0F;
-
-                    bool do_write = false;
-
-                    if (sc == SDL_SCANCODE_C) {
-                        material_type = (material_type + 1) & 0x0F;
-                        w &= ~((uint64_t)0x0F << 4);
-                        w |= (uint64_t(material_type) << 4);
-                        do_write = true;
-                    } else if (sc == SDL_SCANCODE_X) {
-                        int val = emissive + 16;
-                        if (val > 255) val = 255;
-                        emissive = (uint8_t)val;
-                        w &= ~((uint64_t)0xFF << 48);
-                        w |= (uint64_t)emissive << 48;
-                        do_write = true;
-                    } else if (sc == SDL_SCANCODE_Z) {
-                        int val = emissive - 16;
-                        if (val < 0) val = 0;
-                        emissive = (uint8_t)val;
-                        w &= ~((uint64_t)0xFF << 48);
-                        w |= (uint64_t)emissive << 48;
-                        do_write = true;
-                    } else if (sc == SDL_SCANCODE_B) {
-                        auto saturate_add = [](uint8_t c, int delta) -> uint8_t {
-                            int v = c + delta;
-                            if (v < 0) v = 0;
-                            if (v > 255) v = 255;
-                            return (uint8_t)v;
-                        };
-                        r = saturate_add(r, 16);
-                        g = saturate_add(g, 16);
-                        b = saturate_add(b, 16);
-                        w &= ~(((uint64_t)0xFFFFFF) << 8);
-                        w |= ((uint64_t)r << 24) |
-                             ((uint64_t)g << 16) |
-                             ((uint64_t)b <<  8);
-                        do_write = true;
+                if (key_down) {
+                    switch (keycode) {
+                        case SDLK_ESCAPE:
+                            running = false;
+                            break;
+                        case SDLK_1: case SDLK_KP_1:
+                            smooth_surfaces = !smooth_surfaces;
+                            apply_flags_to_dut();
+                            if (log_keys && log_keys_count < 200) {
+                                std::fprintf(stderr, "toggle smooth -> %d\n", smooth_surfaces ? 1 : 0);
+                                ++log_keys_count;
+                            }
+                            break;
+                        case SDLK_2: case SDLK_KP_2:
+                            curvature = !curvature;
+                            apply_flags_to_dut();
+                            if (log_keys && log_keys_count < 200) {
+                                std::fprintf(stderr, "toggle curvature -> %d\n", curvature ? 1 : 0);
+                                ++log_keys_count;
+                            }
+                            break;
+                        case SDLK_3: case SDLK_KP_3:
+                            extra_light = !extra_light;
+                            apply_flags_to_dut();
+                            if (log_keys && log_keys_count < 200) {
+                                std::fprintf(stderr, "toggle extra_light -> %d\n", extra_light ? 1 : 0);
+                                ++log_keys_count;
+                            }
+                            break;
+                        case SDLK_m:
+                            mouse_captured = !mouse_captured;
+                            update_mouse_capture();
+                            break;
+                        case SDLK_f:
+                            if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
+                                selection_active = true;
+                                selection_x = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_x);
+                                selection_y = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_y);
+                                selection_z = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_z);
+                                selection_word = static_cast<uint64_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_data);
+                                apply_selection_to_dut();
+                            }
+                            break;
+                        case SDLK_g:
+                            selection_active = false;
+                            selection_word   = 0;
+                            apply_selection_to_dut();
+                            break;
+                        default: break;
                     }
 
-                    if (do_write) {
-                        selection_word = w;
-                        uint32_t addr = voxel_addr_from_xyz(selection_x, selection_y, selection_z);
-                        root->voxel_framebuffer_top__DOT__dbg_write_addr = addr;
-                        root->voxel_framebuffer_top__DOT__dbg_write_data = w;
-                        root->voxel_framebuffer_top__DOT__dbg_write_en   = 1;
+                    // Edit selected voxel
+                    if (selection_active) {
+                        uint64_t w = selection_word;
+                        uint8_t material_props = (w >> 56) & 0xFF;
+                        uint8_t emissive       = (w >> 48) & 0xFF;
+                        uint8_t alpha          = (w >> 40) & 0xFF;
+                        uint8_t light          = (w >> 32) & 0xFF;
+                        uint8_t r              = (w >> 24) & 0xFF;
+                        uint8_t g              = (w >> 16) & 0xFF;
+                        uint8_t b              = (w >>  8) & 0xFF;
+                        uint8_t material_type  = (w >>  4) & 0x0F;
+
+                        bool do_write = false;
+
+                        if (keycode == SDLK_c) {
+                            material_type = (material_type + 1) & 0x0F;
+                            w &= ~((uint64_t)0x0F << 4);
+                            w |= (uint64_t(material_type) << 4);
+                            do_write = true;
+                        } else if (keycode == SDLK_x) {
+                            int val = emissive + 16;
+                            if (val > 255) val = 255;
+                            emissive = (uint8_t)val;
+                            w &= ~((uint64_t)0xFF << 48);
+                            w |= (uint64_t)emissive << 48;
+                            do_write = true;
+                        } else if (keycode == SDLK_z) {
+                            int val = emissive - 16;
+                            if (val < 0) val = 0;
+                            emissive = (uint8_t)val;
+                            w &= ~((uint64_t)0xFF << 48);
+                            w |= (uint64_t)emissive << 48;
+                            do_write = true;
+                        } else if (keycode == SDLK_b) {
+                            auto saturate_add = [](uint8_t c, int delta) -> uint8_t {
+                                int v = c + delta;
+                                if (v < 0) v = 0;
+                                if (v > 255) v = 255;
+                                return (uint8_t)v;
+                            };
+                            r = saturate_add(r, 16);
+                            g = saturate_add(g, 16);
+                            b = saturate_add(b, 16);
+                            w &= ~(((uint64_t)0xFFFFFF) << 8);
+                            w |= ((uint64_t)r << 24) |
+                                 ((uint64_t)g << 16) |
+                                 ((uint64_t)b <<  8);
+                            do_write = true;
+                        }
+
+                        if (do_write) {
+                            selection_word = w;
+                            uint32_t addr = voxel_addr_from_xyz(selection_x, selection_y, selection_z);
+                            root->voxel_framebuffer_top__DOT__dbg_write_addr = addr;
+                            root->voxel_framebuffer_top__DOT__dbg_write_data = w;
+                            root->voxel_framebuffer_top__DOT__dbg_write_en   = 1;
+                        }
                     }
                 }
             } else if (ev.type == SDL_MOUSEMOTION && mouse_captured) {
@@ -304,7 +409,6 @@ int main(int argc, char** argv) {
             }
         }
 
-        const Uint8* keys = SDL_GetKeyboardState(nullptr);
         bool cam_changed = false;
 
         float fdx = std::cos(yaw);
@@ -312,27 +416,31 @@ int main(int argc, char** argv) {
         float rdx = -std::sin(yaw);
         float rdy =  std::cos(yaw);
 
-        float cur_speed = (keys[SDL_SCANCODE_LSHIFT] ||
-                           keys[SDL_SCANCODE_RSHIFT]) ?
-                           move_speed_fast : move_speed;
+        float cur_speed = keys.fast ? move_speed_fast : move_speed;
 
-        if (keys[SDL_SCANCODE_W]) { pos_x += fdx * cur_speed; pos_y += fdy * cur_speed; cam_changed = true; }
-        if (keys[SDL_SCANCODE_S]) { pos_x -= fdx * cur_speed; pos_y -= fdy * cur_speed; cam_changed = true; }
-        if (keys[SDL_SCANCODE_A]) { pos_x += rdx * cur_speed; pos_y += rdy * cur_speed; cam_changed = true; }
-        if (keys[SDL_SCANCODE_D]) { pos_x -= rdx * cur_speed; pos_y -= rdy * cur_speed; cam_changed = true; }
-        if (keys[SDL_SCANCODE_Q]) { pos_z -= cur_speed; cam_changed = true; }
-        if (keys[SDL_SCANCODE_E]) { pos_z += cur_speed; cam_changed = true; }
+        if (keys.forward)      { pos_x += fdx * cur_speed; pos_y += fdy * cur_speed; cam_changed = true; }
+        if (keys.back)         { pos_x -= fdx * cur_speed; pos_y -= fdy * cur_speed; cam_changed = true; }
+        if (keys.strafe_left)  { pos_x += rdx * cur_speed; pos_y += rdy * cur_speed; cam_changed = true; }
+        if (keys.strafe_right) { pos_x -= rdx * cur_speed; pos_y -= rdy * cur_speed; cam_changed = true; }
+        if (keys.down)         { pos_z -= cur_speed; cam_changed = true; }
+        if (keys.up)           { pos_z += cur_speed; cam_changed = true; }
 
-        if (keys[SDL_SCANCODE_LEFT])  { yaw   -= turn_speed_keys; cam_changed = true; }
-        if (keys[SDL_SCANCODE_RIGHT]) { yaw   += turn_speed_keys; cam_changed = true; }
-        if (keys[SDL_SCANCODE_UP])    { pitch += turn_speed_keys; cam_changed = true; }
-        if (keys[SDL_SCANCODE_DOWN])  { pitch -= turn_speed_keys; cam_changed = true; }
+        if (keys.yaw_left)   { yaw   -= turn_speed_keys; cam_changed = true; }
+        if (keys.yaw_right)  { yaw   += turn_speed_keys; cam_changed = true; }
+        if (keys.pitch_up)   { pitch += turn_speed_keys; cam_changed = true; }
+        if (keys.pitch_down) { pitch -= turn_speed_keys; cam_changed = true; }
 
         if (pitch >  1.50f) pitch =  1.50f;
         if (pitch < -1.50f) pitch = -1.50f;
 
-        if (cam_changed)
+        if (cam_changed) {
             apply_camera_to_dut();
+            if (log_keys && log_keys_count < 200) {
+                std::fprintf(stderr, "cam pos=(%.2f, %.2f, %.2f) yaw=%.2f pitch=%.2f\n",
+                             pos_x, pos_y, pos_z, yaw, pitch);
+                ++log_keys_count;
+            }
+        }
 
         // Simulate HDL
         const int cycles_per_chunk = 2000;
@@ -348,7 +456,15 @@ int main(int argc, char** argv) {
                     uint32_t w1 = top->pixel_word1;
                     uint32_t w2 = top->pixel_word2;
                     framebuffer[addr] = pixel96_to_argb(w0, w1, w2);
+
+                    if (log_frames && log_pixel_samples < 8) {
+                        std::fprintf(stderr, "pix addr=%u w0=%08x w1=%08x w2=%08x argb=%08x\n",
+                                     addr, w0, w1, w2,
+                                     pixel96_to_argb(w0, w1, w2));
+                        ++log_pixel_samples;
+                    }
                 }
+                ++pixels_this_frame;
             }
 
             if (top->frame_done)
@@ -358,6 +474,19 @@ int main(int argc, char** argv) {
         }
 
         if (frame_done) {
+            if (log_frames) {
+                size_t nonzero = 0;
+                for (uint32_t v : framebuffer) {
+                    if (v != 0) ++nonzero;
+                }
+                uint32_t sample0 = framebuffer.empty() ? 0 : framebuffer[0];
+                uint32_t sample_mid = framebuffer.empty() ? 0 : framebuffer[NPIX/2];
+                std::fprintf(stderr,
+                    "frame %zu done, pixels_written=%zu nonzero=%zu sample0=%08x mid=%08x\n",
+                    frame_counter, pixels_this_frame, nonzero, sample0, sample_mid);
+            }
+            ++frame_counter;
+
             auto now = std::chrono::high_resolution_clock::now();
             float dt = std::chrono::duration<float>(now - last_frame_time).count();
             last_frame_time = now;
@@ -381,28 +510,37 @@ int main(int argc, char** argv) {
 
             SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
             SDL_SetRenderDrawColor(ren, 0, 0, 0, 160);
-            SDL_Rect hud_rect{0, 0, SCREEN_WIDTH, 84};
+            SDL_Rect hud_rect{0, 0, SCREEN_WIDTH, HUD_HEIGHT};
             SDL_RenderFillRect(ren, &hud_rect);
 
             if (font) {
                 char buf[256];
 
                 std::snprintf(buf, sizeof(buf),
-                    "FPS: %.1f  Pos:(%.1f, %.1f, %.1f)  Yaw:%.2f  Pitch:%.2f",
-                    fps, pos_x, pos_y, pos_z, yaw, pitch);
+                    "FPS %.1f | Pos %.1f %.1f %.1f",
+                    fps, pos_x, pos_y, pos_z);
                 draw_text(ren, font, buf, 4, 4);
 
                 std::snprintf(buf, sizeof(buf),
-                    "[1] Smooth:%s  [2] Curv:%s  [3] ExtraLight:%s  [M] Mouse:%s",
-                    smooth_surfaces ? "ON" : "OFF",
-                    curvature       ? "ON" : "OFF",
-                    extra_light     ? "ON" : "OFF",
-                    mouse_captured  ? "ON" : "OFF");
+                    "Yaw %.2f  Pitch %.2f",
+                    yaw, pitch);
                 draw_text(ren, font, buf, 4, 20);
+
+                std::snprintf(buf, sizeof(buf),
+                    "[1] Smooth %s   [2] Curv %s",
+                    smooth_surfaces ? "ON" : "OFF",
+                    curvature       ? "ON" : "OFF");
+                draw_text(ren, font, buf, 4, 36);
+
+                std::snprintf(buf, sizeof(buf),
+                    "[3] Extra %s   [M] Mouse %s",
+                    extra_light    ? "ON" : "OFF",
+                    mouse_captured ? "ON" : "OFF");
+                draw_text(ren, font, buf, 4, 52);
 
                 if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
                     std::snprintf(buf, sizeof(buf),
-                        "Cursor: voxel=(%u,%u,%u) mat=0x%02X",
+                        "Cursor: (%u,%u,%u) mat=0x%02X",
                         (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_x,
                         (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_y,
                         (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_z,
@@ -411,11 +549,11 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (no hit)");
                 }
-                draw_text(ren, font, buf, 4, 36);
+                draw_text(ren, font, buf, 4, 68);
 
                 if (selection_active) {
                     std::snprintf(buf, sizeof(buf),
-                        "Sel: voxel=(%u,%u,%u)  (G=clear, F=select)",
+                        "Sel: (%u,%u,%u)  [G] clear  [F] select",
                         (unsigned)selection_x,
                         (unsigned)selection_y,
                         (unsigned)selection_z);
@@ -423,7 +561,7 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Sel: (none)  (aim + F to select)");
                 }
-                draw_text(ren, font, buf, 4, 52);
+                draw_text(ren, font, buf, 4, 84);
 
                 if (selection_active) {
                     uint64_t w = selection_word;
@@ -437,14 +575,16 @@ int main(int argc, char** argv) {
                     uint8_t material_type  = (w >>  4) & 0x0F;
 
                     std::snprintf(buf, sizeof(buf),
-                        "Probe: RGBA=(%3u,%3u,%3u,%3u) L=%3u MType=%u MProps=0x%02X Emis=%3u",
+                        "Probe RGBA %3u/%3u/%3u/%3u L%3u MT%u MP=%02X E%3u",
                         r, g, b, alpha, light,
                         material_type, material_props, emissive);
-                    draw_text(ren, font, buf, 4, 68);
+                    draw_text(ren, font, buf, 4, 100);
                 }
             }
 
             SDL_RenderPresent(ren);
+
+            pixels_this_frame = 0;
         }
 
         SDL_Delay(1);
