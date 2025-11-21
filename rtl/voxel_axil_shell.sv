@@ -37,36 +37,36 @@ module voxel_axil_shell #(
     output wire        s_axil_rvalid,
     input  wire        s_axil_rready,
 
-    // AXI (placeholder SDRAM port)
-    input  wire [3:0]  s_axi_awid,
-    input  wire [27:0] s_axi_awaddr,
-    input  wire [7:0]  s_axi_awlen,
-    input  wire [2:0]  s_axi_awsize,
-    input  wire [1:0]  s_axi_awburst,
-    input  wire        s_axi_awvalid,
-    output wire        s_axi_awready,
-    input  wire [63:0] s_axi_wdata,
-    input  wire [7:0]  s_axi_wstrb,
-    input  wire        s_axi_wlast,
-    input  wire        s_axi_wvalid,
-    output wire        s_axi_wready,
-    output wire [3:0]  s_axi_bid,
-    output wire [1:0]  s_axi_bresp,
-    output wire        s_axi_bvalid,
-    input  wire        s_axi_bready,
-    input  wire [3:0]  s_axi_arid,
-    input  wire [27:0] s_axi_araddr,
-    input  wire [7:0]  s_axi_arlen,
-    input  wire [2:0]  s_axi_arsize,
-    input  wire [1:0]  s_axi_arburst,
-    input  wire        s_axi_arvalid,
-    output wire        s_axi_arready,
-    output wire [3:0]  s_axi_rid,
-    output wire [63:0] s_axi_rdata,
-    output wire [1:0]  s_axi_rresp,
-    output wire        s_axi_rlast,
-    output wire        s_axi_rvalid,
-    input  wire        s_axi_rready,
+    // AXI (placeholder SDRAM port) exposed externally
+    input  wire [3:0]  ext_axi_awid,
+    input  wire [27:0] ext_axi_awaddr,
+    input  wire [7:0]  ext_axi_awlen,
+    input  wire [2:0]  ext_axi_awsize,
+    input  wire [1:0]  ext_axi_awburst,
+    input  wire        ext_axi_awvalid,
+    output wire        ext_axi_awready,
+    input  wire [63:0] ext_axi_wdata,
+    input  wire [7:0]  ext_axi_wstrb,
+    input  wire        ext_axi_wlast,
+    input  wire        ext_axi_wvalid,
+    output wire        ext_axi_wready,
+    output wire [3:0]  ext_axi_bid,
+    output wire [1:0]  ext_axi_bresp,
+    output wire        ext_axi_bvalid,
+    input  wire        ext_axi_bready,
+    input  wire [3:0]  ext_axi_arid,
+    input  wire [27:0] ext_axi_araddr,
+    input  wire [7:0]  ext_axi_arlen,
+    input  wire [2:0]  ext_axi_arsize,
+    input  wire [1:0]  ext_axi_arburst,
+    input  wire        ext_axi_arvalid,
+    output wire        ext_axi_arready,
+    output wire [3:0]  ext_axi_rid,
+    output wire [63:0] ext_axi_rdata,
+    output wire [1:0]  ext_axi_rresp,
+    output wire        ext_axi_rlast,
+    output wire        ext_axi_rvalid,
+    input  wire        ext_axi_rready,
 
     // AXI-Stream sink (HDMI placeholder)
     output wire [23:0] s_axis_tdata,
@@ -159,8 +159,88 @@ module voxel_axil_shell #(
     );
 
     // --------------------------------------------------------------------
-    // SDRAM stub (AXI memory)
-    // --------------------------------------------------------------------
+    // SDRAM stub (AXI memory) with simple arbitration between external and DMA master
+    // External master wires
+    wire [3:0]  m0_awid    = ext_axi_awid;
+    wire [27:0] m0_awaddr  = ext_axi_awaddr;
+    wire [7:0]  m0_awlen   = ext_axi_awlen;
+    wire [2:0]  m0_awsize  = ext_axi_awsize;
+    wire [1:0]  m0_awburst = ext_axi_awburst;
+    wire        m0_awvalid = ext_axi_awvalid;
+    wire [63:0] m0_wdata   = ext_axi_wdata;
+    wire [7:0]  m0_wstrb   = ext_axi_wstrb;
+    wire        m0_wlast   = ext_axi_wlast;
+    wire        m0_wvalid  = ext_axi_wvalid;
+    wire        m0_bready  = ext_axi_bready;
+    wire [3:0]  m0_arid    = ext_axi_arid;
+    wire [27:0] m0_araddr  = ext_axi_araddr;
+    wire [7:0]  m0_arlen   = ext_axi_arlen;
+    wire [2:0]  m0_arsize  = ext_axi_arsize;
+    wire [1:0]  m0_arburst = ext_axi_arburst;
+    wire        m0_arvalid = ext_axi_arvalid;
+    wire        m0_rready  = ext_axi_rready;
+
+    // DMA master wires
+    wire [3:0]  m1_awid;
+    wire [27:0] m1_awaddr;
+    wire [7:0]  m1_awlen;
+    wire [2:0]  m1_awsize;
+    wire [1:0]  m1_awburst;
+    wire        m1_awvalid;
+    wire [63:0] m1_wdata;
+    wire [7:0]  m1_wstrb;
+    wire        m1_wlast;
+    wire        m1_wvalid;
+    wire        m1_bready;
+    wire [3:0]  m1_arid;
+    wire [27:0] m1_araddr;
+    wire [7:0]  m1_arlen;
+    wire [2:0]  m1_arsize;
+    wire [1:0]  m1_arburst;
+    wire        m1_arvalid;
+    wire        m1_rready;
+
+    // Simple fixed-priority mux: DMA master (m1) wins when busy; else external.
+    wire use_dma = dma_busy | dma_start_pulse;
+
+    wire [3:0]  s_axi_awid   = use_dma ? m1_awid   : m0_awid;
+    wire [27:0] s_axi_awaddr = use_dma ? m1_awaddr : m0_awaddr;
+    wire [7:0]  s_axi_awlen  = use_dma ? m1_awlen  : m0_awlen;
+    wire [2:0]  s_axi_awsize = use_dma ? m1_awsize : m0_awsize;
+    wire [1:0]  s_axi_awburst= use_dma ? m1_awburst: m0_awburst;
+    wire        s_axi_awvalid= use_dma ? m1_awvalid: m0_awvalid;
+    wire [63:0] s_axi_wdata  = use_dma ? m1_wdata  : m0_wdata;
+    wire [7:0]  s_axi_wstrb  = use_dma ? m1_wstrb  : m0_wstrb;
+    wire        s_axi_wlast  = use_dma ? m1_wlast  : m0_wlast;
+    wire        s_axi_wvalid = use_dma ? m1_wvalid : m0_wvalid;
+    wire        s_axi_bready = use_dma ? m1_bready : m0_bready;
+    wire [3:0]  s_axi_arid   = use_dma ? m1_arid   : m0_arid;
+    wire [27:0] s_axi_araddr = use_dma ? m1_araddr : m0_araddr;
+    wire [7:0]  s_axi_arlen  = use_dma ? m1_arlen  : m0_arlen;
+    wire [2:0]  s_axi_arsize = use_dma ? m1_arsize : m0_arsize;
+    wire [1:0]  s_axi_arburst= use_dma ? m1_arburst: m0_arburst;
+    wire        s_axi_arvalid= use_dma ? m1_arvalid: m0_arvalid;
+    wire        s_axi_rready = use_dma ? m1_rready : m0_rready;
+
+    // Tie-offs for unused ready/resp back to external master when DMA active
+    assign ext_axi_awready = (!use_dma) ? sdram_awready_int : 1'b0;
+    assign ext_axi_wready  = (!use_dma) ? sdram_wready_int  : 1'b0;
+    assign ext_axi_bresp   = (!use_dma) ? sdram_bresp_int   : 2'b00;
+    assign ext_axi_bvalid  = (!use_dma) ? sdram_bvalid_int  : 1'b0;
+    assign ext_axi_bid     = (!use_dma) ? sdram_bid_int     : 4'd0;
+    assign ext_axi_arready = (!use_dma) ? sdram_arready_int : 1'b0;
+    assign ext_axi_rdata   = (!use_dma) ? sdram_rdata_int   : 64'd0;
+    assign ext_axi_rresp   = (!use_dma) ? sdram_rresp_int   : 2'b00;
+    assign ext_axi_rlast   = (!use_dma) ? sdram_rlast_int   : 1'b0;
+    assign ext_axi_rvalid  = (!use_dma) ? sdram_rvalid_int  : 1'b0;
+    assign ext_axi_rid     = (!use_dma) ? sdram_rid_int     : 4'd0;
+
+    // Internal SDRAM stub signals
+    wire sdram_awready_int, sdram_wready_int, sdram_bvalid_int, sdram_arready_int, sdram_rlast_int, sdram_rvalid_int;
+    wire [3:0] sdram_bid_int, sdram_rid_int;
+    wire [1:0] sdram_bresp_int, sdram_rresp_int;
+    wire [63:0] sdram_rdata_int;
+
     axi_sdram_stub #(
         .ADDR_WIDTH(28),
         .DATA_WIDTH(64),
@@ -175,15 +255,15 @@ module voxel_axil_shell #(
         .s_axi_awsize (s_axi_awsize),
         .s_axi_awburst(s_axi_awburst),
         .s_axi_awvalid(s_axi_awvalid),
-        .s_axi_awready(s_axi_awready),
+        .s_axi_awready(sdram_awready_int),
         .s_axi_wdata  (s_axi_wdata),
         .s_axi_wstrb  (s_axi_wstrb),
         .s_axi_wlast  (s_axi_wlast),
         .s_axi_wvalid (s_axi_wvalid),
-        .s_axi_wready (s_axi_wready),
-        .s_axi_bid    (s_axi_bid),
-        .s_axi_bresp  (s_axi_bresp),
-        .s_axi_bvalid (s_axi_bvalid),
+        .s_axi_wready (sdram_wready_int),
+        .s_axi_bid    (sdram_bid_int),
+        .s_axi_bresp  (sdram_bresp_int),
+        .s_axi_bvalid (sdram_bvalid_int),
         .s_axi_bready (s_axi_bready),
         .s_axi_arid   (s_axi_arid),
         .s_axi_araddr (s_axi_araddr),
@@ -191,16 +271,66 @@ module voxel_axil_shell #(
         .s_axi_arsize (s_axi_arsize),
         .s_axi_arburst(s_axi_arburst),
         .s_axi_arvalid(s_axi_arvalid),
-        .s_axi_arready(s_axi_arready),
-        .s_axi_rid    (s_axi_rid),
-        .s_axi_rdata  (s_axi_rdata),
-        .s_axi_rresp  (s_axi_rresp),
-        .s_axi_rlast  (s_axi_rlast),
-        .s_axi_rvalid (s_axi_rvalid),
+        .s_axi_arready(sdram_arready_int),
+        .s_axi_rid    (sdram_rid_int),
+        .s_axi_rdata  (sdram_rdata_int),
+        .s_axi_rresp  (sdram_rresp_int),
+        .s_axi_rlast  (sdram_rlast_int),
+        .s_axi_rvalid (sdram_rvalid_int),
         .s_axi_rready (s_axi_rready)
     );
 
     // --------------------------------------------------------------------
+    // DMA master stub (AXI master on same memory bus)
+    axi_dma_stub #(
+        .ADDR_WIDTH(28),
+        .DATA_WIDTH(64),
+        .ID_WIDTH  (4)
+    ) u_dma (
+        .clk           (clk),
+        .rst_n         (rst_n),
+        .start         (dma_start_pulse),
+        .src_addr      ({4'd0, dma_src[27:0]}),
+        .dst_addr      ({4'd0, dma_dst[27:0]}),
+        .len_bytes     (dma_len),
+        .busy          (dma_busy),
+        .done          (dma_status[0]),
+
+        .m_axi_awid    (m1_awid),
+        .m_axi_awaddr  (m1_awaddr),
+        .m_axi_awlen   (m1_awlen),
+        .m_axi_awsize  (m1_awsize),
+        .m_axi_awburst (m1_awburst),
+        .m_axi_awvalid (m1_awvalid),
+        .m_axi_awready (sdram_awready_int),
+
+        .m_axi_wdata   (m1_wdata),
+        .m_axi_wstrb   (m1_wstrb),
+        .m_axi_wlast   (m1_wlast),
+        .m_axi_wvalid  (m1_wvalid),
+        .m_axi_wready  (sdram_wready_int),
+
+        .m_axi_bid     (sdram_bid_int),
+        .m_axi_bresp   (sdram_bresp_int),
+        .m_axi_bvalid  (sdram_bvalid_int),
+        .m_axi_bready  (m1_bready),
+
+        .m_axi_arid    (m1_arid),
+        .m_axi_araddr  (m1_araddr),
+        .m_axi_arlen   (m1_arlen),
+        .m_axi_arsize  (m1_arsize),
+        .m_axi_arburst (m1_arburst),
+        .m_axi_arvalid (m1_arvalid),
+        .m_axi_arready (sdram_arready_int),
+
+        .m_axi_rid     (sdram_rid_int),
+        .m_axi_rdata   (sdram_rdata_int),
+        .m_axi_rresp   (sdram_rresp_int),
+        .m_axi_rlast   (sdram_rlast_int),
+        .m_axi_rvalid  (sdram_rvalid_int),
+        .m_axi_rready  (m1_rready)
+    );
+
     // Voxel framebuffer + AXI-Stream bridge (HDMI placeholder)
     // --------------------------------------------------------------------
     wire         pixel_write_en;
