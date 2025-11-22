@@ -5,12 +5,16 @@
 #include <linux/interrupt.h>
 #include <linux/debugfs.h>
 #include <linux/seq_file.h>
+#include <linux/miscdevice.h>
+#include <linux/uaccess.h>
 
 #define DRV_NAME "hydra_pcie"
 
 // Placeholder IDs; update when assigned officially.
 #define HYDRA_VENDOR_ID 0x1BAD
 #define HYDRA_DEVICE_ID 0x2024
+
+#include "uapi/hydra_ioctl.h"
 
 struct hydra_dev {
     struct pci_dev *pdev;
@@ -19,6 +23,7 @@ struct hydra_dev {
     resource_size_t bar0_len;
     int irq;
     struct dentry *dbg_dir;
+    struct miscdevice miscdev;
 };
 
 static const struct pci_device_id hydra_pci_ids[] = {
@@ -55,6 +60,46 @@ static const struct file_operations hydra_dbg_fops = {
     .read    = seq_read,
     .llseek  = seq_lseek,
     .release = single_release,
+};
+
+static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+    struct hydra_dev *hdev = container_of(file->private_data, struct hydra_dev, miscdev);
+    struct hydra_reg_rw reg;
+
+    if (!hdev->bar0)
+        return -ENODEV;
+
+    if (_IOC_TYPE(cmd) != HYDRA_IOCTL_MAGIC)
+        return -ENOTTY;
+
+    switch (cmd) {
+    case HYDRA_IOCTL_RD32:
+        if (copy_from_user(&reg, (void __user *)arg, sizeof(reg)))
+            return -EFAULT;
+        if (reg.offset + sizeof(u32) > hdev->bar0_len || reg.offset & 0x3)
+            return -EINVAL;
+        reg.value = readl(hdev->bar0 + reg.offset);
+        if (copy_to_user((void __user *)arg, &reg, sizeof(reg)))
+            return -EFAULT;
+        return 0;
+    case HYDRA_IOCTL_WR32:
+        if (copy_from_user(&reg, (void __user *)arg, sizeof(reg)))
+            return -EFAULT;
+        if (reg.offset + sizeof(u32) > hdev->bar0_len || reg.offset & 0x3)
+            return -EINVAL;
+        writel(reg.value, hdev->bar0 + reg.offset);
+        return 0;
+    default:
+        return -ENOTTY;
+    }
+}
+
+static const struct file_operations hydra_misc_fops = {
+    .owner          = THIS_MODULE,
+    .unlocked_ioctl = hydra_ioctl,
+    .compat_ioctl   = hydra_ioctl,
+    .llseek         = no_llseek,
 };
 
 static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
@@ -146,8 +191,16 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
     // TODO: BAR mapping, DMA mask, MSI/MSI-X setup, register map.
 
-    // For now, unmap immediately (no persistent state)
-    pci_iounmap(pdev, bar0);
+    hdev->miscdev.minor = MISC_DYNAMIC_MINOR;
+    hdev->miscdev.name  = DRV_NAME;
+    hdev->miscdev.fops  = &hydra_misc_fops;
+    err = misc_register(&hdev->miscdev);
+    if (err) {
+        dev_warn(&pdev->dev, "misc_register failed: %d\n", err);
+        hdev->miscdev.minor = MISC_DYNAMIC_MINOR;
+    }
+
+    return 0;
 err_release:
     if (hdev->irq >= 0) {
         free_irq(hdev->irq, hdev);
@@ -155,10 +208,12 @@ err_release:
     }
     debugfs_remove_recursive(hdev->dbg_dir);
     hdev->dbg_dir = NULL;
+    if (bar0)
+        pci_iounmap(pdev, bar0);
     pci_release_mem_regions(pdev);
 err_disable:
     pci_disable_device(pdev);
-    return 0;
+    return err;
 }
 
 static void hydra_remove(struct pci_dev *pdev)
@@ -167,6 +222,8 @@ static void hydra_remove(struct pci_dev *pdev)
 
     dev_info(&pdev->dev, DRV_NAME ": remove\n");
     if (hdev) {
+        if (hdev->miscdev.minor != MISC_DYNAMIC_MINOR)
+            misc_deregister(&hdev->miscdev);
         if (hdev->irq >= 0) {
             free_irq(hdev->irq, hdev);
             pci_free_irq_vectors(pdev);
