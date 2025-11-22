@@ -30,6 +30,25 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
         return err;
     }
 
+    err = pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
+    if (err) {
+        dev_warn(&pdev->dev, "64-bit DMA not supported (%d), falling back to 32-bit\n", err);
+        err = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+        if (err) {
+            dev_err(&pdev->dev, "32-bit DMA mask setup failed: %d\n", err);
+            goto err_disable;
+        }
+    }
+    err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64));
+    if (err) {
+        dev_warn(&pdev->dev, "consistent 64-bit DMA not supported (%d), falling back to 32-bit\n", err);
+        err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
+        if (err) {
+            dev_err(&pdev->dev, "consistent 32-bit DMA mask failed: %d\n", err);
+            goto err_disable;
+        }
+    }
+
     err = pci_request_mem_regions(pdev, DRV_NAME);
     if (err) {
         dev_err(&pdev->dev, "pci_request_mem_regions failed: %d\n", err);
