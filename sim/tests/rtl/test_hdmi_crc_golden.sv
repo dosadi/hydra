@@ -60,6 +60,7 @@ module test_hdmi_crc_golden;
     wire        s_axis_tlast;
     wire        s_axis_tuser;
     wire        s_axis_tready;
+    assign s_axis_tready = 1'b1;
     wire [31:0] hdmi_beat_count;
     wire [31:0] hdmi_frame_count;
     wire [31:0] hdmi_crc_last;
