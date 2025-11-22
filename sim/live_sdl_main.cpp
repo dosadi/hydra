@@ -21,7 +21,7 @@
 
 static const int   SCREEN_WIDTH  = 480;
 static const int   SCREEN_HEIGHT = 360;
-static const int   HUD_HEIGHT    = 96;
+static const int   HUD_HEIGHT    = 80;
 static const float FX            = 256.0f;  // fixed-point scale
 
 vluint64_t main_time = 0;
