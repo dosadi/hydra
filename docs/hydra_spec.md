@@ -10,10 +10,10 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - HDMI/DVI output pipeline (LiteICLink/LiteVideo planned), AXI-Stream sink stub in sim.
 - DMA engine (host↔SDRAM/BRAM) for voxel/frame uploads (LitePCIe/LiteDMA planned).
 
-## Device IDs (placeholder)
+## Device IDs (current for 0.0.3)
 - Vendor ID: `0x1BAD`
 - Device ID: `0x2024`
-(Update when assigned; keep in sync with Linux driver.)
+(Update when assigned; keep in sync with Linux driver and UAPI headers.)
 
 ## BARs (proposed)
 - BAR0: CSR space (64 KiB window) – control, status, DMA, camera, selection, interrupts.
@@ -21,7 +21,8 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 
 ## BAR0 register sketch (byte offsets, little-endian)
 - `0x0000` `ID`          (RO): [31:16] vendor, [15:0] device.
-- `0x0004` `REV`         (RO): [7:0] rev, [15:8] build, [31:16] reserved.
+- `0x0004` `REV`         (RO): [7:0] rev, [15:8] build, [31:16] reserved.  
+  Current: rev `0x02`, build `0x01` for release 0.0.3; bump on any register map change.
 - `0x0010` `CTRL`        (RW): [0]=soft_reset, [1]=start_frame, [2]=diag_slice_en, [3]=extra_light_en.
 - `0x0014` `STATUS`      (RO): [0]=busy, [1]=frame_done, [2]=dma_busy, [3]=dma_done, [4]=blit_busy, [5]=blit_done, [31:6]=resvd.
 - `0x0020..0x003C` Camera (RW): cam_x/y/z, cam_dir_x/y/z, cam_plane_x/y (signed 16-bit each, packed 32-bit).
@@ -43,13 +44,11 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 
 ## Frame formats (planned)
 - RGBA32: 8 bits per channel, premultiplied alpha optional.
-- Reemissure32 (sidecar): 32-bit field for emission/extra data per pixel (definition TBD).
+- Reemissure32 (sidecar): reserved for future emission/extra data; 0.0.3 leaves this field zeroed in the stub.
 - AXI-Stream video: 24-bit RGB, tuser=start-of-frame, tlast=end-of-frame per line/frame depending on encoder.
 
 ## Interrupts (proposed)
-- Frame done (raycaster completed a frame).
-- DMA done/error.
-- Optional: hotplug/test IRQ.
+- Bits: [0]=frame_done, [1]=dma_done, [2]=dma_err (stub: not driven, reads 0), [3]=irq_test pulse, [4]=blit_done.
 - `INT_STATUS` is RW1C; `irq_out` is level-sensitive on `INT_STATUS & INT_MASK`. `STATUS.frame_done` latches until read or the next CTRL start/reset. `blit_done` asserts `INT_STATUS[4]` in the stub; `IRQ_TEST` pulses `INT_STATUS[3]`.
 
 ## 3D blitter stub (bring-up shell)
@@ -67,7 +66,6 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - Debugfs: `hydra_pcie/status` dumps BAR0/IRQ info.
 
 ## Open items
-- Finalize vendor/device IDs.
-- Lock BAR0 map and bitfields; align RTL CSRs to this map.
-- Define reemissure32 semantics and the blitter/surface extractor control space.
-- Add MSI/INT wiring in RTL once the interrupt controller is specified.
+- Update vendor/device IDs if silicon IDs are reassigned (keep RTL/UAPI/spec in sync).
+- Extend reemissure32 definition and surface extractor control space post-0.0.3.
+- Add full MSI/INT wiring in the real PCIe endpoint when integrated.

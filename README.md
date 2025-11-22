@@ -21,6 +21,7 @@ Requirements:
 - `verilator` (5.x recommended)
 - `libsdl2-dev`, `libsdl2-ttf-dev`
 - `g++`, `make`
+- (Optional) FreeBSD kmod stub build requires FreeBSD kernel headers/sources (see `drivers/bsd/`).
 
 On Ubuntu/Debian:
 
@@ -35,6 +36,36 @@ cd sim
 make           # builds sim_voxel
 ./sim_voxel    # launches the window (480x360 logical)
 ```
+
+### Windows / Visual Studio (libhydra and tools)
+
+This repo ships a minimal CMake build for host-side components (libhydra and optional POSIX tools).
+
+```
+cmake --preset windows-msvc
+cmake --build build/windows
+```
+
+On Linux, you can also use CMake:
+
+```
+cmake --preset linux-default
+cmake --build build/linux
+```
+
+The cocotb/Verilator/SDL sim flow remains Makefile-driven; the CMake path is for host-side libs/tools only.
+
+#### MSYS2/MinGW
+- Install SDL2/SDL2_ttf via pacman (e.g., `pacman -S mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-SDL2_ttf`).
+- Use `cmake --preset windows-msvc` for MSVC or `cmake -G Ninja` with the MinGW toolchain for host-side builds; the Verilator/SDL sim still expects a POSIX-like environment.
+- For the SDL sim on MinGW/Windows: ensure `sdl2-config` is available or set `SDL_CFLAGS`/`SDL_LIBS` manually in `sim/Makefile`; Verilator on Windows is community-supported—use a Linux build for the sim if that’s easier.
+- The cocotb/icarus smoke test (`sim/tests/cocotb_hydra`) is Linux-friendly; on Windows you’ll need a compatible simulator and Python env or run it inside WSL/MSYS2.
+
+#### Windows sim notes
+- To attempt the SDL sim on Windows/MinGW: build Verilator or use a prebuilt package, set `VERILATOR`/`CXX` in `sim/Makefile`, and export `SDL_CFLAGS`/`SDL_LIBS` if `sdl2-config` is absent.
+- If the Windows toolchain is cumbersome, run the sim under WSL2 with the Linux instructions above; CMake/MSVC remains available for host-only libs/tools.
+- Prereqs for a native Windows sim attempt: Verilator (5.x), SDL2/SDL2_ttf dev libs, a MinGW/MSYS2 toolchain, and a POSIX-like shell for the Make-based flow. Cocotb is easiest under WSL/MSYS2.
+- More: `docs/windows_sim.md` for Windows build/sim details, `docs/freebsd_qemu.md` for FreeBSD kmod testing, `docs/component_status.md` for a maturity snapshot.
 
 Logging and debug:
 

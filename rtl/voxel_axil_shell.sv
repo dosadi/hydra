@@ -113,6 +113,9 @@ module voxel_axil_shell #(
     wire         dbg_we_pulse;
     wire [17:0]  dbg_addr;
     wire [63:0]  dbg_wdata;
+    reg          ext_dbg_we;
+    reg  [17:0]  ext_dbg_addr;
+    reg  [63:0]  ext_dbg_data;
     wire         soft_reset_pulse;
     wire         start_frame_pulse;
     wire         dma_start_pulse;
@@ -213,6 +216,9 @@ module voxel_axil_shell #(
     localparam [27:0] VOXEL_WIN_MASK = 28'h0FF_F000; // 256 KiB window
     localparam [27:0] VOXEL_WIN_BASE = 28'h000_0000;
     localparam [27:0] BAR1_BASE      = 28'h100_0000;
+    // Decode voxel window on external AXI port (maps to debug write path, not SDRAM)
+    wire ext_voxel_aw = ((ext_axi_awaddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
+    wire ext_voxel_ar = ((ext_axi_araddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
 
     // DMA master wires
     wire [3:0]  m1_awid;
@@ -287,17 +293,20 @@ module voxel_axil_shell #(
         if (!rst_n) begin
             ext_bvalid_voxel <= 1'b0;
             ext_bresp_voxel  <= 2'b00;
+            ext_dbg_we       <= 1'b0;
+            ext_dbg_addr     <= 18'd0;
+            ext_dbg_data     <= 64'd0;
         end else begin
             if (!use_dma && ext_voxel_aw &&
                 ext_axi_awvalid && ext_axi_wvalid) begin
                 // Map byte address to voxel word address (ignore low 3 bits)
-                dbg_ext_write_en   <= 1'b1;
-                dbg_ext_write_addr <= ext_axi_awaddr[20:3];
-                dbg_ext_write_data <= ext_axi_wdata;
+                ext_dbg_we       <= 1'b1;
+                ext_dbg_addr     <= ext_axi_awaddr[20:3];
+                ext_dbg_data     <= ext_axi_wdata;
                 ext_bvalid_voxel   <= 1'b1;
                 ext_bresp_voxel    <= 2'b00;
             end else begin
-                dbg_ext_write_en <= 1'b0;
+                ext_dbg_we <= 1'b0;
             end
 
             if (ext_bvalid_voxel && ext_axi_bready)
@@ -354,6 +363,9 @@ module voxel_axil_shell #(
     assign sdram_dbg_re    = blit_mem_re;
     assign sdram_dbg_addr  = blit_mem_addr;
     assign sdram_dbg_wdata = blit_mem_wdata;
+    // Simple BAR1 range guard: limit external accesses to stub depth.
+    wire bar1_out_of_range = target_bar1 && (ext_axi_awaddr[27:0] >= (1 << 16));
+    wire bar1_r_out_of_range = target_bar1_r && (ext_axi_araddr[27:0] >= (1 << 16));
 
     axi_sdram_stub #(
         .ADDR_WIDTH(28),
@@ -368,12 +380,12 @@ module voxel_axil_shell #(
         .s_axi_awlen  (s_axi_awlen),
         .s_axi_awsize (s_axi_awsize),
         .s_axi_awburst(s_axi_awburst),
-        .s_axi_awvalid(s_axi_awvalid),
+        .s_axi_awvalid(s_axi_awvalid && !bar1_out_of_range),
         .s_axi_awready(sdram_awready_int),
         .s_axi_wdata  (s_axi_wdata),
         .s_axi_wstrb  (s_axi_wstrb),
         .s_axi_wlast  (s_axi_wlast),
-        .s_axi_wvalid (s_axi_wvalid),
+        .s_axi_wvalid (s_axi_wvalid && !bar1_out_of_range),
         .s_axi_wready (sdram_wready_int),
         .s_axi_bid    (sdram_bid_int),
         .s_axi_bresp  (sdram_bresp_int),
@@ -384,7 +396,7 @@ module voxel_axil_shell #(
         .s_axi_arlen  (s_axi_arlen),
         .s_axi_arsize (s_axi_arsize),
         .s_axi_arburst(s_axi_arburst),
-        .s_axi_arvalid(s_axi_arvalid),
+        .s_axi_arvalid(s_axi_arvalid && !bar1_r_out_of_range),
         .s_axi_arready(sdram_arready_int),
         .s_axi_rid    (sdram_rid_int),
         .s_axi_rdata  (sdram_rdata_int),
@@ -491,9 +503,9 @@ module voxel_axil_shell #(
         .sel_voxel_x_in (sel_x),
         .sel_voxel_y_in (sel_y),
         .sel_voxel_z_in (sel_z),
-        .dbg_ext_write_en  (dbg_we_pulse),
-        .dbg_ext_write_addr(dbg_addr),
-        .dbg_ext_write_data(dbg_wdata),
+        .dbg_ext_write_en  (dbg_we_pulse | ext_dbg_we),
+        .dbg_ext_write_addr(ext_dbg_we ? ext_dbg_addr : dbg_addr),
+        .dbg_ext_write_data(ext_dbg_we ? ext_dbg_data : dbg_wdata),
         .start_frame_ext (start_frame_pulse),
         .soft_reset_ext  (soft_reset_pulse)
     );

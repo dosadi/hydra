@@ -12,8 +12,8 @@ module voxel_memory_64 #(
     parameter integer GRID_SIZE  = 64,
     parameter integer ADDR_WIDTH = 18,
     // Simulation-only zero/init helper; synthesis will ignore the for loop.
-    parameter bit     INIT_ZERO  = 1'b0,
-    parameter string  INIT_FILE  = ""
+    parameter integer INIT_ZERO  = 1'b0,
+    parameter INIT_FILE          = ""
 )(
     input  wire                   clk,
 

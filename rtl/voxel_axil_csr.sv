@@ -11,8 +11,8 @@ module voxel_axil_csr #(
     parameter integer DATA_WIDTH = 32,
     parameter [15:0]  VENDOR_ID  = 16'h1BAD,
     parameter [15:0]  DEVICE_ID  = 16'h2024,
-    parameter [7:0]   REV_ID     = 8'h01,
-    parameter [7:0]   BUILD_ID   = 8'h00
+    parameter [7:0]   REV_ID     = 8'h02,
+    parameter [7:0]   BUILD_ID   = 8'h01
 )(
     input  wire                     clk,
     input  wire                     rst_n,

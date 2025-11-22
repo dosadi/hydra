@@ -20,8 +20,10 @@ CXX_EXE      := sim_voxel
 VERILATOR    ?= verilator
 CXX          ?= g++
 
-SDL_CFLAGS   ?= $(shell sdl2-config --cflags)
-SDL_LIBS     ?= $(shell sdl2-config --libs) -LDFLAGS -lSDL2_ttf
+SDL_CONFIG   ?= sdl2-config
+# If sdl2-config is unavailable (e.g., MSYS2/MinGW), allow overriding SDL_CFLAGS/SDL_LIBS via env.
+SDL_CFLAGS   ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --cflags)
+SDL_LIBS     ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --libs) -LDFLAGS -lSDL2_ttf
 
 
 VERILATOR_FLAGS := \

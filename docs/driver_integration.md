@@ -6,6 +6,7 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 - Linux: out-of-tree kernel module stub (PCIe); future path: DRM/KMS + VFIO; userspace GL/Vulkan can talk to a DRM node.
 - Windows: KMDF/WDF PCIe driver stub; future path: WDDM miniport if presenting as a GPU.
 - macOS: DriverKit/SystemExtensions PCIe driver stub; future path: IOUserClient-style interface.
+- FreeBSD: PCI driver stub mirroring the Linux UAPI for BAR mapping and IOCTLs (DMA stubbed).
 - Mesa: Gallium stub (placeholder) to be dropped into Mesa tree when IOCTLs settle.
 
 ## Current Stubs (in-tree)
@@ -16,6 +17,9 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 - `drivers/linux/hydra_drm_stub.c`: DRM render-only stub using GEM shmem helpers; binds to PCI ID, maps BAR0, registers a DRM device (no planes/modes yet).
 - `drivers/mesa/`: placeholder Gallium skeleton (`meson.build`, stub C) to guide Mesa integration later.
 - `drivers/libhydra/`: tiny userspace helper library wrapping IOCTLs (info/rd/wr/dma/blit).
+- `drivers/bsd/`: FreeBSD stub (`hydra_pci_stub.c`, `Makefile.kmod`) with BAR0/1 mapping and IOCTLs for INFO/RD32/WR32/DMA (DMA stubbed, sets DMA_STATUS/INT_STATUS). Build with `make -C drivers/bsd -f Makefile.kmod` on a FreeBSD host with kernel sources/headers.
+- See `docs/freebsd_qemu.md` for a quick QEMU-based FreeBSD setup to build/load the stub.
+- For a quick maturity snapshot, see `docs/component_status.md`. Windows sim/build notes live in `docs/windows_sim.md`.
 
 ## Linux IOCTLs (misc device)
 - `HYDRA_IOCTL_INFO`: vendor/device, IRQ, BAR0/1 info, IRQ count.

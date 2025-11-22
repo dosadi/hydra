@@ -52,7 +52,7 @@
 #define HYDRA_REG_INT_MASK      0x0084
 #define  HYDRA_INT_FRAME_DONE   BIT(0)
 #define  HYDRA_INT_DMA_DONE     BIT(1)
-#define  HYDRA_INT_DMA_ERR      BIT(2)
+#define  HYDRA_INT_DMA_ERR      BIT(2)  /* stub: not driven in 0.0.3 */
 #define  HYDRA_INT_TEST         BIT(3)
 #define  HYDRA_INT_BLIT_DONE    BIT(4)
 #define HYDRA_REG_IRQ_TEST      0x0088  /* WO: [0]=pulse INT_TEST */
@@ -63,6 +63,8 @@
 #define HYDRA_REG_DBG_CTRL      0x00AC  /* [0]=write_pulse */
 #define HYDRA_REG_HDMI_CRC      0x00B0  /* RO: last frame CRC (sim) */
 #define HYDRA_REG_HDMI_FRAMES   0x00B4  /* RO: frame counter (sim) */
+#define HYDRA_REG_HDMI_LINE     0x00B8  /* RO: last line count (sim) */
+#define HYDRA_REG_HDMI_PIX      0x00BC  /* RO: last pixel-in-line (sim) */
 
 /* 3D blitter stub (0x0100 region) */
 #define HYDRA_REG_BLIT_CTRL       0x0100  /* [0]=start, [1]=dir(readback), [2]=use_fifo */

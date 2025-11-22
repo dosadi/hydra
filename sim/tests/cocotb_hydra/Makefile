@@ -2,7 +2,9 @@ TOPLEVEL_LANG = verilog
 TOPLEVEL = voxel_axil_shell
 MODULE = test_hydra_smoke
 
-export RTL_DIR=../../rtl
+export RTL_DIR=$(abspath ../../../rtl)
+export SIM_BUILD ?= $(abspath ./sim_build)
+export IVERILOG_ARGS += -I$(RTL_DIR)
 VERILOG_SOURCES = $(RTL_DIR)/voxel_axil_shell.sv \
                   $(RTL_DIR)/voxel_axil_csr.sv \
                   $(RTL_DIR)/voxel_framebuffer_top.sv \
