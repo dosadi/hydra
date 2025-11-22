@@ -13,3 +13,4 @@ Notes:
 - Keep UAPI in `drivers/linux/uapi/`; mirror any new IOCTLs in Mesa side.
 - When ready, add CI jobs in Mesa to build `gallium-drivers=hudra` (optional, off by default).
 - See `meson.build` in this directory for a starter template; wire `with_gallium_hydra` in Mesa’s options and add the driver to `gallium-drivers`.
+- UAPI dependency: include `hydra_drm.h` for the `DRM_IOCTL_HYDRA_INFO/CSROUT` definitions when plumbing CSR reads from the DRM render node.
