@@ -65,11 +65,11 @@ static irqreturn_t hydra_irq(int irq, void *dev_id)
     struct hydra_dev *hdev = dev_id;
     u32 status = 0;
 
-    if (hdev->bar0)
+    if (hdev->bar0) {
         status = hydra_bar0_rd32(hdev, HYDRA_REG_INT_STATUS);
-
-    if (status)
-        hydra_bar0_wr32(hdev, HYDRA_REG_INT_STATUS, status); // RW1C
+        if (status)
+            hydra_bar0_wr32(hdev, HYDRA_REG_INT_STATUS, status); // RW1C
+    }
 
     if (status & HYDRA_INT_FRAME_DONE)
         hdev->frame_irq++;
@@ -205,7 +205,7 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             int i;
             for (i = 0; i < 1000; i++) {
                 u32 st = hydra_bar0_rd32(hdev, HYDRA_REG_DMA_STATUS);
-                if (st & HYDRA_INT_DMA_DONE)
+                if (st & HYDRA_STATUS_DMA_DONE)
                     break;
                 udelay(10);
             }
