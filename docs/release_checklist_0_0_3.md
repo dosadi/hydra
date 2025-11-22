@@ -26,6 +26,7 @@ Actionable tasks to close out the 0.0.3 release. Keep items checked off as they 
 - [ ] Implement QEMU PCIe stub device (sim/tests/qemu_stub) to exercise libhydra/drivers; add optional CI job when stable.
 - [ ] Add SDRAM DMA loopback and HDMI CRC golden checks into CI once deterministic.
 - [ ] Verify render-node smoke via `scripts/hydra_drm_info` after DRM stub loads.
+- [ ] HDMI CRC golden pending deterministic frame path (currently logs CRC/frame counts only).
 
 ## IP and board bring-up
 - [ ] Pin LitePCIe/LiteDRAM/LiteICLink/LiteDMA commits in `scripts/fetch_ip.sh` and `third_party/README.md` once fetched.
