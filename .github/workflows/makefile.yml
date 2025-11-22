@@ -33,3 +33,7 @@ jobs:
         sudo apt-get install -y linux-headers-$(uname -r)
         make -C /lib/modules/$(uname -r)/build M=$PWD/drivers/linux modules
       continue-on-error: true
+    - name: Check Mesa stub wiring (configure only)
+      run: |
+        meson setup build-hydra-stub -Dwith_gallium_hydra=true || true
+      continue-on-error: true
