@@ -20,3 +20,8 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 4) Windows: create a KMDF skeleton (EvtDeviceAdd, BAR mapping, basic IOCTL).
 5) macOS: create a DriverKit project with PCI matching and BAR mapping.
 6) Toolchain/CI: add optional builds behind `make -C drivers/linux` and keep them off by default to avoid kernel header requirements in CI.
+
+## Toolchain install notes (manual)
+- Linux driver build deps: `sudo apt-get install build-essential linux-headers-$(uname -r) pkg-config` then `make driver-linux`.
+- Windows KMDF (when code exists): install Visual Studio Build Tools (Desktop C++), Windows SDK, and WDK (matching SDK); build with `msbuild` on the KMDF project.
+- macOS DriverKit (when code exists): install Xcode + Command Line Tools; build with `xcodebuild` on the DriverKit target (signing/provisioning required for deploy).
