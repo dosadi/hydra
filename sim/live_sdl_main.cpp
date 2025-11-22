@@ -8,6 +8,7 @@
 #include <verilated.h>
 #include "Vvoxel_framebuffer_top.h"
 #include "Vvoxel_framebuffer_top___024root.h"
+#include "platform/backend_selector.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -41,6 +42,20 @@ static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
 
 static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
     return (uint32_t(x) << 12) | (uint32_t(y) << 6) | uint32_t(z);
+}
+
+static const char* backend_name(PlatformBackend b) {
+    switch (b) {
+        case PlatformBackend::SDL:    return "SDL";
+        case PlatformBackend::GL:     return "GL";
+        case PlatformBackend::Vulkan: return "Vulkan";
+        case PlatformBackend::Wayland:return "Wayland";
+        case PlatformBackend::X11:    return "X11";
+        case PlatformBackend::Fbdev:  return "fbdev";
+        case PlatformBackend::Win32:  return "Win32";
+        case PlatformBackend::MacOS:  return "macOS";
+        default: return "Unknown";
+    }
 }
 
 struct InputState {
@@ -169,6 +184,29 @@ int main(int argc, char** argv) {
         die(std::string("SDL_Init: ") + SDL_GetError());
     if (TTF_Init() != 0)
         die(std::string("TTF_Init: ") + TTF_GetError());
+
+    // Platform backend selection (HYDRA_BACKEND env respected inside select_default_backend).
+    PlatformBackend requested_backend = select_default_backend();
+    PlatformBackend backend = PlatformBackend::SDL;
+    PlatformContext plat_ctx;
+    bool use_platform_present = false;
+    if (requested_backend != PlatformBackend::SDL &&
+        platform_backend_supported(requested_backend)) {
+        PlatformConfig plat_cfg;
+        plat_cfg.width  = SCREEN_WIDTH;
+        plat_cfg.height = SCREEN_HEIGHT;
+        plat_cfg.vsync  = true;
+        if (init_backend(requested_backend, plat_cfg, plat_ctx)) {
+            backend = requested_backend;
+            use_platform_present = true;
+            std::fprintf(stdout, "Using backend: %s\n", backend_name(backend));
+        } else {
+            std::fprintf(stderr, "Warning: backend %s init failed, falling back to SDL\n",
+                         backend_name(requested_backend));
+        }
+    } else {
+        std::fprintf(stdout, "Using backend: SDL\n");
+    }
 
     SDL_Window* win = SDL_CreateWindow(
         "Voxel Accelerator — Interactive Raycaster",
@@ -527,6 +565,11 @@ int main(int argc, char** argv) {
             last_frame_time = now;
             if (dt > 0.0f) fps = 1.0f / dt;
 
+            if (use_platform_present) {
+                present_backend(backend, plat_ctx, framebuffer.data(),
+                                SCREEN_WIDTH, SCREEN_HEIGHT);
+            }
+
             void* pixels = nullptr;
             int pitch_bytes = 0;
             if (SDL_LockTexture(tex, nullptr, &pixels, &pitch_bytes) != 0)
@@ -642,6 +685,9 @@ int main(int argc, char** argv) {
 
     top->final();
     delete top;
+
+    if (use_platform_present)
+        shutdown_backend(backend, plat_ctx);
 
     if (font) TTF_CloseFont(font);
     TTF_Quit();

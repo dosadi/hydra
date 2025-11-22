@@ -74,7 +74,8 @@ module test_hdmi_crc_golden;
     voxel_axil_shell #(
         .SCREEN_WIDTH(32),
         .SCREEN_HEIGHT(24),
-        .TEST_FORCE_WORLD_READY(1)
+        .TEST_FORCE_WORLD_READY(1),
+        .AUTO_START_FRAMES(1)
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
@@ -140,16 +141,22 @@ module test_hdmi_crc_golden;
 
     always #5 clk = ~clk;
 
+    integer to;
+
     initial begin
         $display("Starting HDMI CRC golden test...");
         #20 rst_n = 1;
-        // Soft reset then start a frame
+        // Soft reset then start a frame (manual start required in this bench)
         axil_write(16'h04, 32'h0000_0001); // soft_reset
         axil_write(16'h04, 32'h0000_0000); // clear ctrl
-        // Start a frame
         axil_write(16'h04, 32'h0000_0002); // CTRL start_frame
-        // Wait for at least one frame
-        repeat (200000) @(posedge clk);
+
+        // Wait until a frame appears or timeout
+        to = 2_000_000;
+        while (hdmi_frame_count == 0 && to > 0) begin
+            @(posedge clk);
+            to = to - 1;
+        end
         $display("Frames: %0d, CRC: %h", hdmi_frame_count, hdmi_crc_last);
         if (hdmi_frame_count == 0)
             $error("No frames observed (crc=%h)", hdmi_crc_last);

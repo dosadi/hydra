@@ -25,6 +25,42 @@ SDL_CONFIG   ?= sdl2-config
 SDL_CFLAGS   ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --cflags)
 SDL_LIBS     ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --libs) -LDFLAGS -lSDL2_ttf
 
+WAYLAND      ?= 0
+WAYLAND_CFLAGS ?=
+WAYLAND_LIBS   ?= -lwayland-client
+
+X11          ?= 0
+X11_CFLAGS   ?=
+X11_LIBS     ?= -lX11
+
+GL           ?= 0
+GL_CFLAGS    ?=
+GL_LIBS      ?= -lGL
+
+VULKAN       ?= 0
+VULKAN_CFLAGS ?=
+VULKAN_LIBS   ?= -lvulkan
+
+ifeq ($(WAYLAND),1)
+  EXTRA_CFLAGS += -DHYDRA_ENABLE_WAYLAND $(WAYLAND_CFLAGS)
+  EXTRA_LIBS   += $(WAYLAND_LIBS)
+endif
+
+ifeq ($(X11),1)
+  EXTRA_CFLAGS += -DHYDRA_ENABLE_X11 $(X11_CFLAGS)
+  EXTRA_LIBS   += $(X11_LIBS)
+endif
+
+ifeq ($(GL),1)
+  EXTRA_CFLAGS += -DHYDRA_ENABLE_GL $(GL_CFLAGS)
+  EXTRA_LIBS   += $(GL_LIBS)
+endif
+
+ifeq ($(VULKAN),1)
+  EXTRA_CFLAGS += -DHYDRA_ENABLE_VULKAN $(VULKAN_CFLAGS)
+  EXTRA_LIBS   += $(VULKAN_LIBS)
+endif
+
 
 VERILATOR_FLAGS := \
     -Wall --Wno-fatal --trace \
@@ -41,7 +77,7 @@ $(CXX_EXE): V$(TOP_MODULE)___024root.h
 	cp obj_dir/V$(TOP_MODULE) $(CXX_EXE)
 
 V$(TOP_MODULE)___024root.h: $(RTL_DIR)/*.sv $(SIM_DIR)/$(CXX_SRCS)
-	cd $(SIM_DIR) && $(VERILATOR) $(VERILATOR_FLAGS) $(SDL_CFLAGS) -LDFLAGS $(SDL_LIBS)
+	cd $(SIM_DIR) && $(VERILATOR) $(VERILATOR_FLAGS) $(SDL_CFLAGS) $(EXTRA_CFLAGS) -LDFLAGS $(SDL_LIBS) $(EXTRA_LIBS)
 
 clean:
 	rm -rf obj_dir $(CXX_EXE)

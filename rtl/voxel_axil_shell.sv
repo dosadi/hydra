@@ -14,7 +14,8 @@ module voxel_axil_shell #(
     parameter integer SCREEN_WIDTH    = 480,
     parameter integer SCREEN_HEIGHT   = 360,
     parameter integer VOXEL_GRID_SIZE = 64,
-    parameter        TEST_FORCE_WORLD_READY = 0
+    parameter        TEST_FORCE_WORLD_READY = 0,
+    parameter        AUTO_START_FRAMES = 1
 )(
     input  wire clk,
     input  wire rst_n,
@@ -475,7 +476,8 @@ module voxel_axil_shell #(
         .SCREEN_WIDTH   (SCREEN_WIDTH),
         .SCREEN_HEIGHT  (SCREEN_HEIGHT),
         .VOXEL_GRID_SIZE(VOXEL_GRID_SIZE),
-        .TEST_FORCE_WORLD_READY(TEST_FORCE_WORLD_READY)
+        .TEST_FORCE_WORLD_READY(TEST_FORCE_WORLD_READY),
+        .AUTO_START_FRAMES(AUTO_START_FRAMES)
     ) u_voxel (
         .clk            (clk),
         .rst_n          (rst_n),

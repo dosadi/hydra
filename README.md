@@ -37,6 +37,14 @@ make           # builds sim_voxel
 ./sim_voxel    # launches the window (480x360 logical)
 ```
 
+Optional backends (opt-in at build time):
+
+- `make GL=1` – enable OpenGL backend (needs SDL2 OpenGL headers and GL libs).
+- `make X11=1` – enable X11 backend (needs Xlib headers/libs).
+- `make WAYLAND=1` – enable Wayland backend (needs wayland-client headers/libs).
+- `make VULKAN=1` – enable Vulkan backend (needs Vulkan SDK headers/libs + SDL2 Vulkan helpers).
+- Use `HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN|FBDEV|WIN32|MACOS>` at runtime to request a compiled backend; falls back to SDL if unavailable and still uses the SDL window/HUD for input.
+
 ### Windows / Visual Studio (libhydra and tools)
 
 This repo ships a minimal CMake build for host-side components (libhydra and optional POSIX tools).

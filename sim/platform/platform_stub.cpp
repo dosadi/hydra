@@ -29,11 +29,31 @@ static bool is_macos() {
 bool platform_backend_supported(PlatformBackend backend) {
     switch (backend) {
         case PlatformBackend::SDL:    return true;
-        case PlatformBackend::Wayland:return is_linux();
-        case PlatformBackend::X11:    return is_linux();
+        case PlatformBackend::Wayland:
+#if defined(HYDRA_ENABLE_WAYLAND)
+            return is_linux();
+#else
+            return false;
+#endif
+        case PlatformBackend::X11:
+#if defined(HYDRA_ENABLE_X11)
+            return is_linux();
+#else
+            return false;
+#endif
         case PlatformBackend::Fbdev:  return is_linux();
-        case PlatformBackend::GL:     return is_linux() || is_windows() || is_macos();
-        case PlatformBackend::Vulkan: return is_linux() || is_windows() || is_macos();
+        case PlatformBackend::GL:
+#if defined(HYDRA_ENABLE_GL)
+            return is_linux() || is_windows() || is_macos();
+#else
+            return false;
+#endif
+        case PlatformBackend::Vulkan:
+#if defined(HYDRA_ENABLE_VULKAN)
+            return is_linux() || is_windows() || is_macos();
+#else
+            return false;
+#endif
         case PlatformBackend::Win32:  return is_windows();
         case PlatformBackend::MacOS:  return is_macos();
         default: return false;
@@ -52,15 +72,6 @@ BackendOps make_stub_ops() {
 }
 
 // Backend-specific ops (strong definitions can override these stubs in other files)
-BackendOps get_ops_sdl();
-BackendOps get_ops_gl();
-BackendOps get_ops_vulkan();
-BackendOps get_ops_wayland();
-BackendOps get_ops_x11();
-BackendOps get_ops_fbdev();
-BackendOps get_ops_win32();
-BackendOps get_ops_macos();
-
 static BackendOps get_ops(PlatformBackend backend) {
     switch (backend) {
         case PlatformBackend::SDL:    return get_ops_sdl();

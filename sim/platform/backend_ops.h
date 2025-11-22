@@ -14,3 +14,11 @@ struct BackendOps {
 };
 
 BackendOps make_stub_ops();
+BackendOps get_ops_sdl();
+BackendOps get_ops_gl();
+BackendOps get_ops_vulkan();
+BackendOps get_ops_wayland();
+BackendOps get_ops_x11();
+BackendOps get_ops_fbdev();
+BackendOps get_ops_win32();
+BackendOps get_ops_macos();

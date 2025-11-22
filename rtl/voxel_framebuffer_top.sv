@@ -13,7 +13,9 @@ module voxel_framebuffer_top #(
     parameter COORD_WIDTH     = 16,
     parameter FRAC_BITS       = 8,
     // Test-only: force world_ready to 1 after reset for benches
-    parameter TEST_FORCE_WORLD_READY = 0
+    parameter TEST_FORCE_WORLD_READY = 0,
+    // Allow benches to disable auto-run and require host start pulses.
+    parameter AUTO_START_FRAMES = 1
 )(
     input  wire         clk,
     input  wire         rst_n,
@@ -256,7 +258,7 @@ module voxel_framebuffer_top #(
 
             if (soft_reset_ext) begin
                 world_started <= 1'b0;
-                world_ready   <= 1'b0;
+                world_ready   <= TEST_FORCE_WORLD_READY ? 1'b1 : 1'b0;
                 pending_start <= 1'b0;
             end else begin
                 if (!world_started) begin
@@ -270,16 +272,15 @@ module voxel_framebuffer_top #(
                 if (start_frame_ext)
                     pending_start <= 1'b1;
 
-                // Kick the first frame when world is ready and core idle,
-                // then start a new frame each time busy falls. If a host start
-                // was requested, consume it on the next idle edge.
-                if (world_ready && !busy && !busy_d) begin
-                    start         <= 1'b1;
-                    pending_start <= 1'b0;
-                end else if (world_ready && busy_d && !busy) begin
-                    start         <= 1'b1;
-                    pending_start <= 1'b0;
-                end else if (world_ready && pending_start && !busy) begin
+                // Kick frames when idle:
+                // - If AUTO_START_FRAMES, free-run once world is ready.
+                // - Otherwise require a pending_start from host.
+                if (world_ready && AUTO_START_FRAMES && !busy)
+                    start <= 1'b1;
+                else if (world_ready && AUTO_START_FRAMES && busy_d && !busy)
+                    start <= 1'b1;
+
+                if (world_ready && pending_start) begin
                     start         <= 1'b1;
                     pending_start <= 1'b0;
                 end
