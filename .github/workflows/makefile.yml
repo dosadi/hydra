@@ -50,3 +50,8 @@ jobs:
         iverilog -g2012 -Irtl -o sim/tests/rtl/dma_loopback.vvp sim/tests/rtl/test_dma_loopback.sv rtl/*.sv
         vvp sim/tests/rtl/dma_loopback.vvp || true
       continue-on-error: true
+    - name: RTL HDMI CRC golden (icarus, optional)
+      run: |
+        iverilog -g2012 -Irtl -o sim/tests/rtl/hdmi_crc.vvp sim/tests/rtl/test_hdmi_crc_golden.sv rtl/*.sv
+        vvp sim/tests/rtl/hdmi_crc.vvp || true
+      continue-on-error: true
