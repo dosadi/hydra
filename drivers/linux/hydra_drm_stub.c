@@ -75,6 +75,25 @@ static int hydra_drm_ioctl_csraut(struct drm_device *drm, void *data, struct drm
 	return 0;
 }
 
+static int hydra_drm_ioctl_csrin(struct drm_device *drm, void *data, struct drm_file *file)
+{
+	struct hydra_drm *h = drm_get_drvdata(drm);
+	struct drm_hydra_csrin *csr = data;
+	u32 count = min(csr->count, (u32)HYDRA_DRM_CSROUT_MAX);
+	u32 i;
+
+	if (!h->bar0 || count == 0)
+		return -EINVAL;
+
+	for (i = 0; i < count; i++) {
+		u32 off = csr->offsets[i];
+		if (off + sizeof(u32) > h->bar0_len || off & 0x3)
+			continue;
+		writel(csr->values[i], h->bar0 + off);
+	}
+	return 0;
+}
+
 static int hydra_drm_dumb_create(struct drm_file *file, struct drm_device *drm,
 				 struct drm_mode_create_dumb *args)
 {
@@ -103,6 +122,7 @@ static const struct file_operations hydra_drm_fops = {
 static const struct drm_ioctl_desc hydra_ioctls[] = {
 	DRM_IOCTL_DEF_DRV(HYDRA_INFO, hydra_drm_ioctl_info, DRM_RENDER_ALLOW),
 	DRM_IOCTL_DEF_DRV(HYDRA_CSROUT, hydra_drm_ioctl_csraut, DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(HYDRA_CSRIN, hydra_drm_ioctl_csrin, DRM_RENDER_ALLOW),
 };
 
 static const struct drm_driver hydra_drm_driver = {
