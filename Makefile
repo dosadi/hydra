@@ -18,5 +18,9 @@ blit-smoketest:
 libhydra:
 	@$(MAKE) -C drivers/libhydra
 
+drm-info:
+	@echo "Building Hydra DRM info tool"
+	@gcc -I drivers/linux/uapi -o scripts/hydra_drm_info scripts/hydra_drm_info.c -ldrm
+
 clean:
 	@$(MAKE) -C sim clean || true

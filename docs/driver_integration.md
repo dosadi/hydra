@@ -40,6 +40,7 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 - Run (requires loaded driver + device present): `sudo ./hydra_blit_smoketest /dev/hydra_pcie`
 - It clears/enables INTs, pushes a few words into the blitter FIFO, kicks a FIFO-driven blit, and reads back the destination pixels and INT/STATUS latches.
 - Userspace helper lib: `make libhydra` builds `drivers/libhydra/libhydra.a` for simple IOCTL wrappers (info/rd/wr/blit).
+- DRM info tool: `make drm-info` builds `scripts/hydra_drm_info` (requires libdrm); queries DRM ioctl info and reads STATUS/INT_STATUS via CSROUT.
 - CI:
   - Builds: sim, blitter smoke test, libhydra. Attempts Linux driver build (non-blocking).
   - Mesa stub configure step (non-blocking) to catch wiring mistakes.

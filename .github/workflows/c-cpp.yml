@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y verilator libsdl2-dev libsdl2-ttf-dev build-essential
+        sudo apt-get install -y verilator libsdl2-dev libsdl2-ttf-dev build-essential libdrm-dev
     - name: Build simulator
       run: make
       working-directory: sim
@@ -24,6 +24,8 @@ jobs:
       run: make blit-smoketest
     - name: Build libhydra helper
       run: make libhydra
+    - name: Build DRM info tool
+      run: make drm-info
     - name: Try building Linux drivers (optional)
       run: |
         sudo apt-get install -y linux-headers-$(uname -r)
