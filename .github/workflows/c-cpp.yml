@@ -35,3 +35,8 @@ jobs:
       run: |
         meson setup build-hydra-stub -Dwith_gallium_hydra=true || true
       continue-on-error: true
+    - name: Cocotb smoke (optional)
+      run: |
+        pip install cocotb
+        make -C sim/tests/cocotb_hydra SIM=icarus || true
+      continue-on-error: true
