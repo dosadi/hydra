@@ -150,6 +150,8 @@ int main(int argc, char** argv) {
     top->dbg_ext_write_en   = 0;
     top->dbg_ext_write_addr = 0;
     top->dbg_ext_write_data = 0;
+    top->start_frame_ext   = 0;
+    top->soft_reset_ext    = 0;
 
     const bool log_keys = (std::getenv("LOG_KEYS") != nullptr);
     const bool log_frames = (std::getenv("LOG_FRAMES") != nullptr);

@@ -75,7 +75,10 @@ module voxel_axil_shell #(
     output wire        s_axis_tuser,
     input  wire        s_axis_tready,
     output wire [31:0] hdmi_beat_count,
-    output wire [31:0] hdmi_frame_count
+    output wire [31:0] hdmi_frame_count,
+
+    // Interrupt output
+    output wire        irq_out
 );
 
     // --------------------------------------------------------------------
@@ -106,6 +109,20 @@ module voxel_axil_shell #(
     wire         dbg_we_pulse;
     wire [17:0]  dbg_addr;
     wire [63:0]  dbg_wdata;
+    wire         soft_reset_pulse;
+    wire         start_frame_pulse;
+    wire         dma_start_pulse;
+    wire         dma_busy;
+    wire         dma_done;
+    wire [31:0]  dma_src;
+    wire [31:0]  dma_dst;
+    wire [31:0]  dma_len;
+    wire [31:0]  dma_status;
+    wire         use_dma = dma_busy;
+    wire         blit_mem_we;
+    wire         blit_mem_re;
+    wire [27:0]  blit_mem_addr;
+    wire [63:0]  blit_mem_wdata;
 
     voxel_axil_csr #(
         .ADDR_WIDTH(16),
@@ -155,7 +172,29 @@ module voxel_axil_shell #(
 
         .dbg_we_pulse   (dbg_we_pulse),
         .dbg_addr       (dbg_addr),
-        .dbg_wdata      (dbg_wdata)
+        .dbg_wdata      (dbg_wdata),
+
+        .frame_done_pulse(frame_done),
+        .core_busy      (core_busy),
+
+        .soft_reset_pulse(soft_reset_pulse),
+        .start_frame_pulse(start_frame_pulse),
+
+        .dma_start_pulse(dma_start_pulse),
+        .dma_busy_in    (dma_busy),
+        .dma_done_in    (dma_done),
+        .dma_src        (dma_src),
+        .dma_dst        (dma_dst),
+        .dma_len        (dma_len),
+        .dma_status     (dma_status),
+
+        .blit_mem_we    (blit_mem_we),
+        .blit_mem_re    (blit_mem_re),
+        .blit_mem_addr  (blit_mem_addr),
+        .blit_mem_wdata (blit_mem_wdata),
+        .blit_mem_rdata (sdram_dbg_rdata),
+
+        .irq_out        (irq_out)
     );
 
     // --------------------------------------------------------------------
@@ -292,6 +331,15 @@ module voxel_axil_shell #(
     wire [3:0] sdram_bid_int, sdram_rid_int;
     wire [1:0] sdram_bresp_int, sdram_rresp_int;
     wire [63:0] sdram_rdata_int;
+    wire [63:0] sdram_dbg_rdata;
+    wire        sdram_dbg_we;
+    wire        sdram_dbg_re;
+    wire [27:0] sdram_dbg_addr;
+    wire [63:0] sdram_dbg_wdata;
+    assign sdram_dbg_we    = blit_mem_we;
+    assign sdram_dbg_re    = blit_mem_re;
+    assign sdram_dbg_addr  = blit_mem_addr;
+    assign sdram_dbg_wdata = blit_mem_wdata;
 
     axi_sdram_stub #(
         .ADDR_WIDTH(28),
@@ -329,7 +377,12 @@ module voxel_axil_shell #(
         .s_axi_rresp  (sdram_rresp_int),
         .s_axi_rlast  (sdram_rlast_int),
         .s_axi_rvalid (sdram_rvalid_int),
-        .s_axi_rready (s_axi_rready)
+        .s_axi_rready (s_axi_rready),
+        .dbg_we       (sdram_dbg_we),
+        .dbg_addr     (sdram_dbg_addr),
+        .dbg_wdata    (sdram_dbg_wdata),
+        .dbg_re       (sdram_dbg_re),
+        .dbg_rdata    (sdram_dbg_rdata)
     );
 
     // --------------------------------------------------------------------
@@ -346,7 +399,7 @@ module voxel_axil_shell #(
         .dst_addr      ({4'd0, dma_dst[27:0]}),
         .len_bytes     (dma_len),
         .busy          (dma_busy),
-        .done          (dma_status[0]),
+        .done          (dma_done),
 
         .m_axi_awid    (m1_awid),
         .m_axi_awaddr  (m1_awaddr),
@@ -389,6 +442,7 @@ module voxel_axil_shell #(
     wire [31:0]  pixel_addr;
     wire [31:0]  pixel_word0, pixel_word1, pixel_word2;
     wire         frame_done;
+    wire         core_busy;
 
     voxel_framebuffer_top #(
         .SCREEN_WIDTH   (SCREEN_WIDTH),
@@ -403,6 +457,7 @@ module voxel_axil_shell #(
         .pixel_word1    (pixel_word1),
         .pixel_word2    (pixel_word2),
         .frame_done     (frame_done),
+        .core_busy      (core_busy),
         .cam_load       (cam_load_pulse),
         .cam_x_in       (cam_x),
         .cam_y_in       (cam_y),
@@ -424,7 +479,9 @@ module voxel_axil_shell #(
         .sel_voxel_z_in (sel_z),
         .dbg_ext_write_en  (dbg_we_pulse),
         .dbg_ext_write_addr(dbg_addr),
-        .dbg_ext_write_data(dbg_wdata)
+        .dbg_ext_write_data(dbg_wdata),
+        .start_frame_ext (start_frame_pulse),
+        .soft_reset_ext  (soft_reset_pulse)
     );
 
     localparam integer TOTAL_PIXELS = SCREEN_WIDTH * SCREEN_HEIGHT;

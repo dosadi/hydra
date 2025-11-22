@@ -25,6 +25,7 @@ module voxel_framebuffer_top #(
 
     // Frame done pulse
     output wire         frame_done,
+    output wire         core_busy,
 
     // Optional external control (AXI-Lite shell / host)
     input  wire         cam_load,
@@ -51,7 +52,10 @@ module voxel_framebuffer_top #(
 
     input  wire         dbg_ext_write_en,
     input  wire [17:0]  dbg_ext_write_addr,
-    input  wire [63:0]  dbg_ext_write_data
+    input  wire [63:0]  dbg_ext_write_data,
+
+    input  wire         start_frame_ext,
+    input  wire         soft_reset_ext
 );
 
     // Camera registers (host-writeable)
@@ -227,11 +231,13 @@ module voxel_framebuffer_top #(
     );
 
     assign frame_done = done;
+    assign core_busy  = busy;
 
     // Simple control: run world_gen once, then repeatedly start frames
     reg world_started;
     reg world_ready;
     reg busy_d;
+    reg pending_start;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -240,31 +246,48 @@ module voxel_framebuffer_top #(
             world_start   <= 1'b0;
             start         <= 1'b0;
             busy_d        <= 1'b0;
+            pending_start <= 1'b0;
         end else begin
-            busy_d    <= busy;
+            busy_d      <= busy;
             world_start <= 1'b0;
             start       <= 1'b0;
 
-            if (!world_started) begin
-                world_start   <= 1'b1;
-                world_started <= 1'b1;
+            if (soft_reset_ext) begin
+                world_started <= 1'b0;
+                world_ready   <= 1'b0;
+                pending_start <= 1'b0;
+            end else begin
+                if (!world_started) begin
+                    world_start   <= 1'b1;
+                    world_started <= 1'b1;
+                end
+
+                if (world_done)
+                    world_ready <= 1'b1;
+
+                if (start_frame_ext)
+                    pending_start <= 1'b1;
+
+                // Kick the first frame when world is ready and core idle,
+                // then start a new frame each time busy falls. If a host start
+                // was requested, consume it on the next idle edge.
+                if (world_ready && !busy && !busy_d) begin
+                    start         <= 1'b1;
+                    pending_start <= 1'b0;
+                end else if (world_ready && busy_d && !busy) begin
+                    start         <= 1'b1;
+                    pending_start <= 1'b0;
+                end else if (world_ready && pending_start && !busy) begin
+                    start         <= 1'b1;
+                    pending_start <= 1'b0;
+                end
             end
-
-            if (world_done)
-                world_ready <= 1'b1;
-
-            // Kick the first frame when world is ready and core idle,
-            // then start a new frame each time busy falls.
-            if (world_ready && !busy && !busy_d)
-                start <= 1'b1;
-            else if (world_ready && busy_d && !busy)
-                start <= 1'b1;
         end
     end
 
     // External control updates (camera/flags/selection/debug write)
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
+        if (!rst_n || soft_reset_ext) begin
             cam_x  <= 16'sd10 <<< FRAC_BITS;
             cam_y  <= 16'sd10 <<< FRAC_BITS;
             cam_z  <= 16'sd10 <<< FRAC_BITS;

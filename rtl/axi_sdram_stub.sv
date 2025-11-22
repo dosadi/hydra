@@ -51,7 +51,14 @@ module axi_sdram_stub #(
     output reg  [1:0]               s_axi_rresp,
     output reg                      s_axi_rlast,
     output reg                      s_axi_rvalid,
-    input  wire                     s_axi_rready
+    input  wire                     s_axi_rready,
+
+    // Optional debug port for single-beat read/write (synchronous)
+    input  wire                     dbg_we,
+    input  wire [ADDR_WIDTH-1:0]    dbg_addr,
+    input  wire [DATA_WIDTH-1:0]    dbg_wdata,
+    input  wire                     dbg_re,
+    output reg  [DATA_WIDTH-1:0]    dbg_rdata
 );
 
     localparam [1:0] RESP_OKAY = 2'b00;
@@ -175,7 +182,15 @@ module axi_sdram_stub #(
             s_axi_rresp  <= RESP_OKAY;
             s_axi_rdata  <= {DATA_WIDTH{1'b0}};
             s_axi_rid    <= {ID_WIDTH{1'b0}};
+            dbg_rdata    <= {DATA_WIDTH{1'b0}};
         end else begin
+            if (dbg_we) begin
+                mem[dbg_addr[ADDR_WIDTH-1:ADDR_WIDTH-$clog2(MEM_WORDS)]] <= dbg_wdata;
+            end
+            if (dbg_re) begin
+                dbg_rdata <= mem[dbg_addr[ADDR_WIDTH-1:ADDR_WIDTH-$clog2(MEM_WORDS)]];
+            end
+
             if (r_active && (!s_axi_rvalid || (s_axi_rvalid && s_axi_rready))) begin
                 s_axi_rid   <= r_id;
                 s_axi_rdata <= mem[r_addr[ADDR_WIDTH-1:ADDR_WIDTH-$clog2(MEM_WORDS)]];

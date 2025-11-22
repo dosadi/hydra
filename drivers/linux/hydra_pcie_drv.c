@@ -24,9 +24,26 @@ struct hydra_dev {
     resource_size_t bar0_len;
     int irq;
     u64 irq_count;
+    u64 frame_irq;
+    u64 dma_irq;
+    u64 blit_irq;
     struct dentry *dbg_dir;
     struct miscdevice miscdev;
 };
+
+static inline u32 hydra_bar0_rd32(struct hydra_dev *hdev, u32 off)
+{
+    if (!hdev->bar0 || off + sizeof(u32) > hdev->bar0_len)
+        return 0;
+    return readl(hdev->bar0 + off);
+}
+
+static inline void hydra_bar0_wr32(struct hydra_dev *hdev, u32 off, u32 v)
+{
+    if (!hdev->bar0 || off + sizeof(u32) > hdev->bar0_len)
+        return;
+    writel(v, hdev->bar0 + off);
+}
 
 static const struct pci_device_id hydra_pci_ids[] = {
     { PCI_DEVICE(HYDRA_VENDOR_ID_DEFAULT, HYDRA_DEVICE_ID_DEFAULT) },
@@ -37,20 +54,42 @@ MODULE_DEVICE_TABLE(pci, hydra_pci_ids);
 static irqreturn_t hydra_irq(int irq, void *dev_id)
 {
     struct hydra_dev *hdev = dev_id;
+    u32 status = 0;
+
+    if (hdev->bar0)
+        status = hydra_bar0_rd32(hdev, HYDRA_REG_INT_STATUS);
+
+    if (status)
+        hydra_bar0_wr32(hdev, HYDRA_REG_INT_STATUS, status); // RW1C
+
+    if (status & HYDRA_INT_FRAME_DONE)
+        hdev->frame_irq++;
+    if (status & HYDRA_INT_DMA_DONE)
+        hdev->dma_irq++;
+    if (status & HYDRA_INT_BLIT_DONE)
+        hdev->blit_irq++;
     hdev->irq_count++;
-    dev_dbg(&hdev->pdev->dev, DRV_NAME ": IRQ %d count=%llu\n", irq,
-            (unsigned long long)hdev->irq_count);
-    // TODO: read/clear interrupt status from BARs when defined.
-    return IRQ_HANDLED;
+    dev_dbg(&hdev->pdev->dev, DRV_NAME ": IRQ %d count=%llu status=0x%x\n", irq,
+            (unsigned long long)hdev->irq_count, status);
+    return status ? IRQ_HANDLED : IRQ_NONE;
 }
 
 static int hydra_dbg_show(struct seq_file *s, void *unused)
 {
     struct hydra_dev *hdev = s->private;
+    u32 status = hydra_bar0_rd32(hdev, HYDRA_REG_STATUS);
+    u32 int_status = hydra_bar0_rd32(hdev, HYDRA_REG_INT_STATUS);
+    u32 int_mask = hydra_bar0_rd32(hdev, HYDRA_REG_INT_MASK);
     seq_printf(s, "BAR0 start=0x%pa len=0x%llx\n",
                &hdev->bar0_start, (unsigned long long)hdev->bar0_len);
     seq_printf(s, "IRQ=%d\n", hdev->irq);
-    seq_printf(s, "IRQ count=%llu\n", (unsigned long long)hdev->irq_count);
+    seq_printf(s, "IRQ count=%llu frame=%llu dma=%llu blit=%llu\n",
+               (unsigned long long)hdev->irq_count,
+               (unsigned long long)hdev->frame_irq,
+               (unsigned long long)hdev->dma_irq,
+               (unsigned long long)hdev->blit_irq);
+    seq_printf(s, "STATUS=0x%08x INT_STATUS=0x%08x INT_MASK=0x%08x\n",
+               status, int_status, int_mask);
     return 0;
 }
 
@@ -186,6 +225,10 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
     hdev->bar0 = bar0;
     hdev->bar0_start = bar0_start;
     hdev->bar0_len   = bar0_len;
+    /* Clear/enable interrupts if the CSR map is present. */
+    hydra_bar0_wr32(hdev, HYDRA_REG_INT_STATUS, 0xFFFFFFFF);
+    hydra_bar0_wr32(hdev, HYDRA_REG_INT_MASK,
+                    HYDRA_INT_FRAME_DONE | HYDRA_INT_DMA_DONE | HYDRA_INT_BLIT_DONE);
 
     irq = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_MSI | PCI_IRQ_MSIX | PCI_IRQ_LEGACY);
     if (irq < 0) {

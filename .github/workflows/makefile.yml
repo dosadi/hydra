@@ -17,8 +17,19 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y verilator libsdl2-dev libsdl2-ttf-dev g++ make
+        sudo apt-get install -y verilator libsdl2-dev libsdl2-ttf-dev build-essential g++ make
 
     - name: Build simulator
       run: make
       working-directory: sim
+    - name: Build blitter smoke test
+      run: make blit-smoketest
+      working-directory: .
+    - name: Build libhydra helper
+      run: make libhydra
+      working-directory: .
+    - name: Try building Linux drivers (optional)
+      run: |
+        sudo apt-get install -y linux-headers-$(uname -r)
+        make -C /lib/modules/$(uname -r)/build M=$PWD/drivers/linux modules
+      continue-on-error: true

@@ -1,6 +1,6 @@
 # Hydra PCIe Driver (Linux Stub)
 
-This is a minimal out-of-tree PCI driver stub. It binds to a placeholder vendor/device ID, enables the device, and does not yet map BARs or expose IOCTLs.
+This directory contains Linux-side bring-up shims for Hydra: a misc-device PCIe stub and an optional DRM skeleton.
 
 Build (manual, optional):
 
@@ -21,3 +21,4 @@ Notes:
   - `HYDRA_IOCTL_INFO` – returns vendor/device, BAR0 info, IRQ/IRQ count.
   - `HYDRA_IOCTL_RD32`/`WR32` – read/write BAR0 offsets (aligned 32-bit).
 - This stub is not built in CI; it requires kernel headers/toolchain.
+- `hydra_drm_stub.c` is a DRM/KMS placeholder that binds to the PCI ID, maps BAR0, and registers a DRM device without planes or GEM yet. Enable it manually when you’re ready to bring up modesetting; not built by default.

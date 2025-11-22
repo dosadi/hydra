@@ -20,6 +20,8 @@
 #define  HYDRA_STATUS_FRAME_DONE BIT(1)
 #define  HYDRA_STATUS_DMA_BUSY  BIT(2)
 #define  HYDRA_STATUS_DMA_DONE  BIT(3)
+#define  HYDRA_STATUS_BLIT_BUSY BIT(4)
+#define  HYDRA_STATUS_BLIT_DONE BIT(5)
 
 #define HYDRA_REG_CAM_X         0x0020
 #define HYDRA_REG_CAM_Y         0x0024
@@ -52,9 +54,24 @@
 #define  HYDRA_INT_DMA_DONE     BIT(1)
 #define  HYDRA_INT_DMA_ERR      BIT(2)
 #define  HYDRA_INT_TEST         BIT(3)
+#define  HYDRA_INT_BLIT_DONE    BIT(4)
 
 #define HYDRA_REG_DBG_ADDR      0x00A0
 #define HYDRA_REG_DBG_DATA_LO   0x00A4
 #define HYDRA_REG_DBG_DATA_HI   0x00A8
 #define HYDRA_REG_DBG_CTRL      0x00AC  /* [0]=write_pulse */
 
+/* 3D blitter stub (0x0100 region) */
+#define HYDRA_REG_BLIT_CTRL       0x0100  /* [0]=start, [1]=dir(readback), [2]=use_fifo */
+#define HYDRA_REG_BLIT_STATUS     0x0104  /* [0]=busy, [1]=done, [2]=fifo_empty, [3]=fifo_full */
+#define HYDRA_REG_BLIT_SRC        0x0108  /* src address */
+#define HYDRA_REG_BLIT_DST        0x010C  /* dst address */
+#define HYDRA_REG_BLIT_LEN        0x0110  /* bytes */
+#define HYDRA_REG_BLIT_STRIDE     0x0114  /* bytes per line */
+#define HYDRA_REG_BLIT_PIX_ADDR   0x0120  /* pixel index */
+#define HYDRA_REG_BLIT_PIX_DATA   0x0124  /* pixel payload */
+#define HYDRA_REG_BLIT_PIX_CMD    0x0128  /* [0]=write, [1]=read */
+#define HYDRA_REG_BLIT_OBJ_IDX    0x0130  /* object index */
+#define HYDRA_REG_BLIT_OBJ_ATTR   0x0134  /* object attribute rw */
+#define HYDRA_REG_BLIT_FIFO_DATA  0x0140  /* push/pop data */
+#define HYDRA_REG_BLIT_FIFO_STATUS 0x0144 /* depth/flags */
