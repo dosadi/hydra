@@ -10,6 +10,10 @@
 #include "../linux/uapi/hydra_regs.h"
 #include "../linux/uapi/hydra_ioctl.h"
 
+#ifndef BIT
+#define BIT(nr) (1UL << (nr))
+#endif
+
 static int do_ioctl(int fd, unsigned long cmd, void* arg)
 {
     int ret = ioctl(fd, cmd, arg);
@@ -59,6 +63,17 @@ int hydra_wr32(struct hydra_handle* h, uint32_t off, uint32_t val)
         return -EINVAL;
     struct hydra_reg_rw rw = { .offset = off, .value = val };
     return do_ioctl(h->fd, HYDRA_IOCTL_WR32, &rw);
+}
+
+int hydra_dma_copy(struct hydra_handle* h, uint64_t src, uint64_t dst, uint32_t len_bytes)
+{
+    struct hydra_dma_req req = {
+        .src = src,
+        .dst = dst,
+        .len = len_bytes,
+        .flags = 0,
+    };
+    return do_ioctl(h->fd, HYDRA_IOCTL_DMA, &req);
 }
 
 int hydra_blit_fifo_push(struct hydra_handle* h, uint32_t word)

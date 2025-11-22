@@ -1,18 +1,10 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
+#include "../linux/uapi/hydra_ioctl.h"
 
 struct hydra_handle {
     int fd;
-};
-
-struct hydra_info {
-    uint32_t vendor;
-    uint32_t device;
-    int32_t  irq;
-    uint64_t bar0_start;
-    uint64_t bar0_len;
-    uint64_t irq_count;
 };
 
 int hydra_open(struct hydra_handle* h, const char* path);
@@ -25,3 +17,6 @@ int hydra_wr32(struct hydra_handle* h, uint32_t off, uint32_t val);
 int hydra_blit_fifo_push(struct hydra_handle* h, uint32_t word);
 int hydra_blit_kick_fifo(struct hydra_handle* h, uint32_t dst, uint32_t len_bytes);
 int hydra_wait_blit_done(struct hydra_handle* h, int timeout_ms, uint32_t* status_out);
+
+/* DMA helper (stub): uses device DMA registers */
+int hydra_dma_copy(struct hydra_handle* h, uint64_t src, uint64_t dst, uint32_t len_bytes);

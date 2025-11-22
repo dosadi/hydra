@@ -9,21 +9,24 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 - Mesa: Gallium stub (placeholder) to be dropped into Mesa tree when IOCTLs settle.
 
 ## Current Stubs (in-tree)
-- `drivers/linux/hydra_pcie_drv.c`: minimal PCI driver that binds to a configurable vendor/device ID, logs probe/remove, and leaves BAR mapping TODO. Not built by default.
-- `drivers/linux/Makefile`: out-of-tree `obj-m` stub for convenience.
+- `drivers/linux/hydra_pcie_drv.c`: PCI driver with BAR0 map, DMA masks, MSI/MSI-X/legacy IRQ, debugfs, misc-device IOCTLs.
+- `drivers/linux/Makefile`: out-of-tree `obj-m` for PCIe + DRM stub build.
 - `drivers/windows/README.md`: notes for KMDF setup (code TBD).
 - `drivers/macos/README.md`: notes for DriverKit setup (code TBD).
-- `drivers/linux/hydra_drm_stub.c`: DRM render-only stub using GEM shmem helpers; binds to PCI ID, maps BAR0, and registers a DRM device (no planes/modes yet).
+- `drivers/linux/hydra_drm_stub.c`: DRM render-only stub using GEM shmem helpers; binds to PCI ID, maps BAR0, registers a DRM device (no planes/modes yet).
 - `drivers/mesa/`: placeholder Gallium skeleton (`meson.build`, stub C) to guide Mesa integration later.
-- `drivers/libhydra/`: tiny userspace helper library wrapping IOCTLs and blitter helpers.
+- `drivers/libhydra/`: tiny userspace helper library wrapping IOCTLs (info/rd/wr/dma/blit).
+
+## Linux IOCTLs (misc device)
+- `HYDRA_IOCTL_INFO`: vendor/device, IRQ, BAR0/1 info, IRQ count.
+- `HYDRA_IOCTL_RD32` / `HYDRA_IOCTL_WR32`: aligned BAR0 accesses (bounds-checked).
+- `HYDRA_IOCTL_DMA`: programs the BAR0 DMA stub (src/dst/len) and polls for done (stub today).
 
 ## Recommended next steps
-1) Define PCI IDs and BAR layout (register map, MSI usage) and fill into the Linux stub.
-2) Add BAR mapping and a simple `debugfs` or `ioctl` path to poke CSRs (camera/flags).
-3) For userspace rendering: add a DRM driver skeleton (mode-setting optional) or VFIO IOMMU hook for passthrough experiments.
-4) Windows: create a KMDF skeleton (EvtDeviceAdd, BAR mapping, basic IOCTL).
-5) macOS: create a DriverKit project with PCI matching and BAR mapping.
-6) Toolchain/CI: add optional builds behind `make -C drivers/linux` and keep them off by default to avoid kernel header requirements in CI.
+1) Add BAR1 use in the blitter/DMA path and VFIO hooks once needed.
+2) Grow the DRM stub with simple GEM IOCTLs and modes (render-only is present).
+3) Windows/macOS: KMDF/DriverKit skeletons for BAR mapping and IOCTLs.
+4) Toolchain/CI: optional driver builds and Mesa config checks; keep non-blocking.
 
 ## Toolchain install notes (manual)
 - Linux driver build deps: `sudo apt-get install build-essential linux-headers-$(uname -r) pkg-config` then `make driver-linux`.

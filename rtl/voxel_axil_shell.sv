@@ -76,9 +76,11 @@ module voxel_axil_shell #(
     input  wire        s_axis_tready,
     output wire [31:0] hdmi_beat_count,
     output wire [31:0] hdmi_frame_count,
+    output wire [31:0] hdmi_crc_last,
 
     // Interrupt output
-    output wire        irq_out
+    output wire        irq_out,
+    output wire        msi_pulse
 );
 
     // --------------------------------------------------------------------
@@ -123,6 +125,8 @@ module voxel_axil_shell #(
     wire         blit_mem_re;
     wire [27:0]  blit_mem_addr;
     wire [63:0]  blit_mem_wdata;
+    reg          irq_out_d;
+    assign msi_pulse = irq_out & ~irq_out_d;
 
     voxel_axil_csr #(
         .ADDR_WIDTH(16),
@@ -502,7 +506,16 @@ module voxel_axil_shell #(
         .s_axis_tuser   (s_axis_tuser),
         .s_axis_tready  (s_axis_tready),
         .beat_count     (hdmi_beat_count),
-        .frame_count    (hdmi_frame_count)
+        .frame_count    (hdmi_frame_count),
+        .frame_crc      (),
+        .last_frame_crc (hdmi_crc_last)
     );
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            irq_out_d <= 1'b0;
+        else
+            irq_out_d <= irq_out;
+    end
 
 endmodule
