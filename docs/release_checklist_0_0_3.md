@@ -24,9 +24,9 @@ Actionable tasks to close out the 0.0.3 release. Keep items checked off as they 
 ## Tests and CI
 - [ ] Complete cocotb smoke/regression (`sim/tests/cocotb_hydra`): DMA start/done, INT_STATUS, HDMI CRC/line/pixel counters; keep optional CI job green.
 - [ ] Implement QEMU PCIe stub device (sim/tests/qemu_stub) to exercise libhydra/drivers; add optional CI job when stable.
-- [ ] Add SDRAM DMA loopback and HDMI CRC golden checks into CI once deterministic.
+- [ ] Add SDRAM DMA loopback and HDMI CRC golden checks into CI once deterministic. (DMA loopback in CI; HDMI CRC golden now stable.)
 - [ ] Verify render-node smoke via `scripts/hydra_drm_info` after DRM stub loads.
-- [ ] HDMI CRC golden pending deterministic frame path (currently logs CRC/frame counts only).
+- [ ] HDMI CRC golden set in `sim/tests/rtl/test_hdmi_crc_golden.sv` (crc=0x00020500).
 
 ## IP and board bring-up
 - [ ] Pin LitePCIe/LiteDRAM/LiteICLink/LiteDMA commits in `scripts/fetch_ip.sh` and `third_party/README.md` once fetched.

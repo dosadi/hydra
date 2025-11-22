@@ -11,7 +11,9 @@ module voxel_framebuffer_top #(
     parameter SCREEN_HEIGHT   = 360,
     parameter VOXEL_GRID_SIZE = 64,
     parameter COORD_WIDTH     = 16,
-    parameter FRAC_BITS       = 8
+    parameter FRAC_BITS       = 8,
+    // Test-only: force world_ready to 1 after reset for benches
+    parameter TEST_FORCE_WORLD_READY = 0
 )(
     input  wire         clk,
     input  wire         rst_n,
@@ -242,7 +244,7 @@ module voxel_framebuffer_top #(
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             world_started <= 1'b0;
-            world_ready   <= 1'b0;
+            world_ready   <= TEST_FORCE_WORLD_READY ? 1'b1 : 1'b0;
             world_start   <= 1'b0;
             start         <= 1'b0;
             busy_d        <= 1'b0;

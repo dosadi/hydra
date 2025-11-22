@@ -69,11 +69,12 @@ module test_hdmi_crc_golden;
     wire        irq_out;
     wire        msi_pulse;
 
-    localparam [31:0] GOLDEN_CRC = 32'h0; // update when known
+    localparam [31:0] GOLDEN_CRC = 32'h00020500;
 
     voxel_axil_shell #(
         .SCREEN_WIDTH(32),
-        .SCREEN_HEIGHT(24)
+        .SCREEN_HEIGHT(24),
+        .TEST_FORCE_WORLD_READY(1)
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
@@ -151,11 +152,11 @@ module test_hdmi_crc_golden;
         repeat (200000) @(posedge clk);
         $display("Frames: %0d, CRC: %h", hdmi_frame_count, hdmi_crc_last);
         if (hdmi_frame_count == 0)
-            $display("WARN: No frames observed (crc=%h)", hdmi_crc_last);
+            $error("No frames observed (crc=%h)", hdmi_crc_last);
         if (hdmi_crc_last === 32'd0)
-            $display("WARN: CRC is zero (frame_count=%0d)", hdmi_frame_count);
-        if (GOLDEN_CRC !== 32'h0 && hdmi_crc_last !== GOLDEN_CRC)
-            $display("WARN: CRC mismatch: got %h expected %h", hdmi_crc_last, GOLDEN_CRC);
+            $error("CRC is zero (frame_count=%0d)", hdmi_frame_count);
+        if (hdmi_crc_last !== GOLDEN_CRC)
+            $error("CRC mismatch: got %h expected %h", hdmi_crc_last, GOLDEN_CRC);
         $finish;
     end
 
