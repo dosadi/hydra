@@ -91,6 +91,8 @@ module voxel_axil_csr #(
     input  wire [63:0]              blit_mem_rdata,
     input  wire [31:0]              hdmi_crc_in,
     input  wire [31:0]              hdmi_frames_in,
+    input  wire [15:0]              hdmi_line_in,
+    input  wire [15:0]              hdmi_pix_in,
 
     // Interrupt out (level)
     output wire                     irq_out
@@ -194,6 +196,8 @@ module voxel_axil_csr #(
     localparam integer W_DBG_CTRL   = 8'h2B; // 0x00AC
     localparam integer W_HDMI_CRC   = 8'h2C; // 0x00B0
     localparam integer W_HDMI_FR    = 8'h2D; // 0x00B4
+    localparam integer W_HDMI_LINE  = 8'h2E; // 0x00B8
+    localparam integer W_HDMI_PIX   = 8'h2F; // 0x00BC
 
     // 3D blitter stub (0x0100 region)
     localparam integer W_BLIT_CTRL      = 8'h40; // 0x0100
@@ -602,6 +606,8 @@ module voxel_axil_csr #(
                     W_DBG_CTRL:  s_axil_rdata <= 32'd0;
                     W_HDMI_CRC:  s_axil_rdata <= hdmi_crc_in;
                     W_HDMI_FR:   s_axil_rdata <= hdmi_frames_in;
+                    W_HDMI_LINE: s_axil_rdata <= {16'd0, hdmi_line_in};
+                    W_HDMI_PIX:  s_axil_rdata <= {16'd0, hdmi_pix_in};
                     W_BLIT_CTRL:   s_axil_rdata <= blit_ctrl;
                     W_BLIT_STATUS: s_axil_rdata <= {28'd0, blit_status[3], blit_status[2], blit_status[1], blit_status[0]};
                     W_BLIT_SRC:    s_axil_rdata <= blit_src;

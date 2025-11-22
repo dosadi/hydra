@@ -77,6 +77,8 @@ module voxel_axil_shell #(
     output wire [31:0] hdmi_beat_count,
     output wire [31:0] hdmi_frame_count,
     output wire [31:0] hdmi_crc_last,
+    output wire [15:0] hdmi_line_count,
+    output wire [15:0] hdmi_pixel_in_line,
 
     // Interrupt output
     output wire        irq_out,
@@ -200,6 +202,8 @@ module voxel_axil_shell #(
 
         .hdmi_crc_in    (hdmi_crc_last),
         .hdmi_frames_in (hdmi_frame_count),
+        .hdmi_line_in   (hdmi_line_count),
+        .hdmi_pix_in    (hdmi_pixel_in_line),
 
         .irq_out        (irq_out)
     );
@@ -511,7 +515,9 @@ module voxel_axil_shell #(
         .beat_count     (hdmi_beat_count),
         .frame_count    (hdmi_frame_count),
         .frame_crc      (),
-        .last_frame_crc (hdmi_crc_last)
+        .last_frame_crc (hdmi_crc_last),
+        .line_count     (hdmi_line_count),
+        .pixel_in_line  (hdmi_pixel_in_line)
     );
 
     always @(posedge clk or negedge rst_n) begin

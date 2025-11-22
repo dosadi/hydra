@@ -36,6 +36,8 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `0x00A0..0x00A8` Debug voxel write: ADDR (18-bit), DATA_LO (32), DATA_HI (32), CTRL [0]=write_pulse.
 - `0x00B0` `HDMI_CRC`    (RO, sim): last frame CRC from AXI sink.
 - `0x00B4` `HDMI_FRAMES` (RO, sim): frame counter from AXI sink.
+- `0x00B8` `HDMI_LINE`   (RO, sim): last line count observed.
+- `0x00BC` `HDMI_PIX`    (RO, sim): last pixel-in-line counter.
 - `0x0100..` 3D blitter stub: CTRL/STATUS/SRC/DST/LEN/STRIDE, pixel read/write, object attribute table, FIFO data port.
 - Reserved: 0x0150..0xFFFF for future (surface extractor, perf counters).
 
