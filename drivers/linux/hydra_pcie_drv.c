@@ -11,8 +11,8 @@
 #define DRV_NAME "hydra_pcie"
 
 // Placeholder IDs; update when assigned officially.
-#define HYDRA_VENDOR_ID 0x1BAD
-#define HYDRA_DEVICE_ID 0x2024
+#define HYDRA_VENDOR_ID_DEFAULT 0x1BAD
+#define HYDRA_DEVICE_ID_DEFAULT 0x2024
 
 #include "uapi/hydra_ioctl.h"
 
@@ -22,12 +22,13 @@ struct hydra_dev {
     resource_size_t bar0_start;
     resource_size_t bar0_len;
     int irq;
+    u64 irq_count;
     struct dentry *dbg_dir;
     struct miscdevice miscdev;
 };
 
 static const struct pci_device_id hydra_pci_ids[] = {
-    { PCI_DEVICE(HYDRA_VENDOR_ID, HYDRA_DEVICE_ID) },
+    { PCI_DEVICE(HYDRA_VENDOR_ID_DEFAULT, HYDRA_DEVICE_ID_DEFAULT) },
     { 0, }
 };
 MODULE_DEVICE_TABLE(pci, hydra_pci_ids);
@@ -35,7 +36,9 @@ MODULE_DEVICE_TABLE(pci, hydra_pci_ids);
 static irqreturn_t hydra_irq(int irq, void *dev_id)
 {
     struct hydra_dev *hdev = dev_id;
-    dev_dbg(&hdev->pdev->dev, DRV_NAME ": IRQ %d\n", irq);
+    hdev->irq_count++;
+    dev_dbg(&hdev->pdev->dev, DRV_NAME ": IRQ %d count=%llu\n", irq,
+            (unsigned long long)hdev->irq_count);
     // TODO: read/clear interrupt status from BARs when defined.
     return IRQ_HANDLED;
 }
@@ -46,6 +49,7 @@ static int hydra_dbg_show(struct seq_file *s, void *unused)
     seq_printf(s, "BAR0 start=0x%pa len=0x%llx\n",
                &hdev->bar0_start, (unsigned long long)hdev->bar0_len);
     seq_printf(s, "IRQ=%d\n", hdev->irq);
+    seq_printf(s, "IRQ count=%llu\n", (unsigned long long)hdev->irq_count);
     return 0;
 }
 
@@ -66,6 +70,7 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     struct hydra_dev *hdev = container_of(file->private_data, struct hydra_dev, miscdev);
     struct hydra_reg_rw reg;
+    struct hydra_info info;
 
     if (!hdev->bar0)
         return -ENODEV;
@@ -74,6 +79,16 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         return -ENOTTY;
 
     switch (cmd) {
+    case HYDRA_IOCTL_INFO:
+        info.vendor     = hdev->pdev->vendor;
+        info.device     = hdev->pdev->device;
+        info.irq        = hdev->irq;
+        info.bar0_start = hdev->bar0_start;
+        info.bar0_len   = hdev->bar0_len;
+        info.irq_count  = hdev->irq_count;
+        if (copy_to_user((void __user *)arg, &info, sizeof(info)))
+            return -EFAULT;
+        return 0;
     case HYDRA_IOCTL_RD32:
         if (copy_from_user(&reg, (void __user *)arg, sizeof(reg)))
             return -EFAULT;
