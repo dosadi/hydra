@@ -50,6 +50,13 @@ jobs:
         cmake --preset linux-default
         cmake --build build/linux
       continue-on-error: true
+
+  # Placeholder: FreeBSD kmod build needs a FreeBSD runner. Keep stubbed here for future enablement.
+  freebsd-kmod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip FreeBSD kmod build
+        run: echo "FreeBSD kmod build requires a FreeBSD runner; not executed in this CI."
     - name: RTL DMA loopback test (icarus, optional)
       run: |
         iverilog -g2012 -Irtl -o sim/tests/rtl/dma_loopback.vvp sim/tests/rtl/test_dma_loopback.sv rtl/*.sv
