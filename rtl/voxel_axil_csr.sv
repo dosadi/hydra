@@ -89,6 +89,8 @@ module voxel_axil_csr #(
     output reg [27:0]               blit_mem_addr,
     output reg [63:0]               blit_mem_wdata,
     input  wire [63:0]              blit_mem_rdata,
+    input  wire [31:0]              hdmi_crc_in,
+    input  wire [31:0]              hdmi_frames_in,
 
     // Interrupt out (level)
     output wire                     irq_out
@@ -184,11 +186,14 @@ module voxel_axil_csr #(
 
     localparam integer W_INT_STATUS = 8'h20; // 0x0080
     localparam integer W_INT_MASK   = 8'h21; // 0x0084
+    localparam integer W_IRQ_TEST   = 8'h22; // 0x0088
 
     localparam integer W_DBG_ADDR   = 8'h28; // 0x00A0
     localparam integer W_DBG_DATA_L = 8'h29; // 0x00A4
     localparam integer W_DBG_DATA_H = 8'h2A; // 0x00A8
     localparam integer W_DBG_CTRL   = 8'h2B; // 0x00AC
+    localparam integer W_HDMI_CRC   = 8'h2C; // 0x00B0
+    localparam integer W_HDMI_FR    = 8'h2D; // 0x00B4
 
     // 3D blitter stub (0x0100 region)
     localparam integer W_BLIT_CTRL      = 8'h40; // 0x0100
@@ -425,6 +430,10 @@ module voxel_axil_csr #(
                     end
                     W_INT_STATUS: int_status <= int_status & ~s_axil_wdata; // w1c
                     W_INT_MASK:   int_mask   <= s_axil_wdata;
+                    W_IRQ_TEST: begin
+                        if (s_axil_wdata[0])
+                            int_status[3] <= 1'b1;
+                    end
                     W_DBG_ADDR: begin
                         dbg_addr     <= s_axil_wdata[17:0];
                         dbg_addr_reg <= s_axil_wdata[17:0];
@@ -438,6 +447,8 @@ module voxel_axil_csr #(
                         dbg_data_hi      <= s_axil_wdata;
                     end
                     W_DBG_CTRL: if (s_axil_wdata[0]) dbg_we_pulse <= 1'b1;
+                    W_HDMI_CRC: ; // read-only
+                    W_HDMI_FR:  ; // read-only
                     W_BLIT_CTRL: begin
                         blit_ctrl <= merge_wstrb(blit_ctrl, s_axil_wdata, s_axil_wstrb);
                         if (s_axil_wdata[0] && !blit_busy) begin
@@ -589,6 +600,8 @@ module voxel_axil_csr #(
                     W_DBG_DATA_L:s_axil_rdata <= dbg_data_lo;
                     W_DBG_DATA_H:s_axil_rdata <= dbg_data_hi;
                     W_DBG_CTRL:  s_axil_rdata <= 32'd0;
+                    W_HDMI_CRC:  s_axil_rdata <= hdmi_crc_in;
+                    W_HDMI_FR:   s_axil_rdata <= hdmi_frames_in;
                     W_BLIT_CTRL:   s_axil_rdata <= blit_ctrl;
                     W_BLIT_STATUS: s_axil_rdata <= {28'd0, blit_status[3], blit_status[2], blit_status[1], blit_status[0]};
                     W_BLIT_SRC:    s_axil_rdata <= blit_src;

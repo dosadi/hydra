@@ -30,9 +30,12 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `0x0054` `FB_BASE`     (RW): framebuffer base address (BAR1/SDRAM).
 - `0x0058` `FB_STRIDE`   (RW): bytes per line.
 - `0x0060..0x0070` DMA regs (RW): SRC, DST, LEN (bytes), CMD [0]=start, STATUS [0]=done, [1]=busy, [2]=err.
-- `0x0080` `INT_STATUS`  (RW1C): [0]=frame_done, [1]=dma_done, [2]=dma_err, [3]=irq_test.
+- `0x0080` `INT_STATUS`  (RW1C): [0]=frame_done, [1]=dma_done, [2]=dma_err, [3]=irq_test, [4]=blit_done.
 - `0x0084` `INT_MASK`    (RW): same bits as STATUS.
+- `0x0088` `IRQ_TEST`    (WO): [0]=pulse INT_STATUS[3] (sim MSI test).
 - `0x00A0..0x00A8` Debug voxel write: ADDR (18-bit), DATA_LO (32), DATA_HI (32), CTRL [0]=write_pulse.
+- `0x00B0` `HDMI_CRC`    (RO, sim): last frame CRC from AXI sink.
+- `0x00B4` `HDMI_FRAMES` (RO, sim): frame counter from AXI sink.
 - `0x0100..` 3D blitter stub: CTRL/STATUS/SRC/DST/LEN/STRIDE, pixel read/write, object attribute table, FIFO data port.
 - Reserved: 0x0150..0xFFFF for future (surface extractor, perf counters).
 
@@ -45,7 +48,7 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - Frame done (raycaster completed a frame).
 - DMA done/error.
 - Optional: hotplug/test IRQ.
-- `INT_STATUS` is RW1C; `irq_out` is level-sensitive on `INT_STATUS & INT_MASK`. `STATUS.frame_done` latches until read or the next CTRL start/reset. `blit_done` asserts `INT_STATUS[4]` in the stub.
+- `INT_STATUS` is RW1C; `irq_out` is level-sensitive on `INT_STATUS & INT_MASK`. `STATUS.frame_done` latches until read or the next CTRL start/reset. `blit_done` asserts `INT_STATUS[4]` in the stub; `IRQ_TEST` pulses `INT_STATUS[3]`.
 
 ## 3D blitter stub (bring-up shell)
 - Registers at 0x0100: `BLIT_CTRL` [0]=start, [1]=dir(readback flag), [2]=use_fifo; `BLIT_STATUS` [0]=busy, [1]=done, [2]=fifo_empty, [3]=fifo_full.

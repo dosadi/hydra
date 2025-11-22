@@ -198,6 +198,9 @@ module voxel_axil_shell #(
         .blit_mem_wdata (blit_mem_wdata),
         .blit_mem_rdata (sdram_dbg_rdata),
 
+        .hdmi_crc_in    (hdmi_crc_last),
+        .hdmi_frames_in (hdmi_frame_count),
+
         .irq_out        (irq_out)
     );
 
