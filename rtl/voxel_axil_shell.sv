@@ -212,6 +212,7 @@ module voxel_axil_shell #(
     // SDRAM + voxel window crossbar (2x2 stub)
     localparam [27:0] VOXEL_WIN_MASK = 28'h0FF_F000; // 256 KiB window
     localparam [27:0] VOXEL_WIN_BASE = 28'h000_0000;
+    localparam [27:0] BAR1_BASE      = 28'h100_0000;
 
     // DMA master wires
     wire [3:0]  m1_awid;
@@ -233,10 +234,11 @@ module voxel_axil_shell #(
     wire        m1_arvalid;
     wire        m1_rready;
 
+    wire target_bar1 = (ext_axi_awaddr >= BAR1_BASE);
     wire [3:0]  s_axi_awid   = use_dma               ? m1_awid   :
                                (ext_voxel_aw ? 4'd0  : ext_axi_awid);
     wire [27:0] s_axi_awaddr = use_dma               ? m1_awaddr :
-                               ext_axi_awaddr;
+                               (target_bar1 ? ext_axi_awaddr - BAR1_BASE : ext_axi_awaddr);
     wire [7:0]  s_axi_awlen  = use_dma               ? m1_awlen  :
                                ext_axi_awlen;
     wire [2:0]  s_axi_awsize = use_dma               ? m1_awsize :
@@ -255,10 +257,11 @@ module voxel_axil_shell #(
                                (ext_voxel_aw ? 1'b0 : ext_axi_wvalid);
     wire        s_axi_bready = use_dma               ? m1_bready :
                                (ext_voxel_aw ? 1'b0 : ext_axi_bready);
+    wire target_bar1_r = (ext_axi_araddr >= BAR1_BASE);
     wire [3:0]  s_axi_arid   = use_dma               ? m1_arid   :
                                (ext_voxel_ar ? 4'd0 : ext_axi_arid);
     wire [27:0] s_axi_araddr = use_dma               ? m1_araddr :
-                               ext_axi_araddr;
+                               (target_bar1_r ? ext_axi_araddr - BAR1_BASE : ext_axi_araddr);
     wire [7:0]  s_axi_arlen  = use_dma               ? m1_arlen  :
                                ext_axi_arlen;
     wire [2:0]  s_axi_arsize = use_dma               ? m1_arsize :
