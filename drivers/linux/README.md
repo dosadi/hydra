@@ -22,3 +22,4 @@ Notes:
   - `HYDRA_IOCTL_RD32`/`WR32` – read/write BAR0 offsets (aligned 32-bit).
 - This stub is not built in CI; it requires kernel headers/toolchain.
 - `hydra_drm_stub.c` is a DRM/KMS placeholder that binds to the PCI ID, maps BAR0, and registers a DRM device without planes or GEM yet. Enable it manually when you’re ready to bring up modesetting; not built by default.
+- DRM info ioctl: `DRM_IOCTL_HYDRA_INFO` (see `uapi/hydra_drm.h`) returns BAR0/1 sizes for discovery; render node only.
