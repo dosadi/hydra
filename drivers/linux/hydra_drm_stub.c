@@ -13,6 +13,7 @@
 #include <drm/drm_ioctl.h>
 #include <drm/drm_prime.h>
 #include <drm/drm_gem_shmem_helper.h>
+#include <drm/drm_gem_framebuffer_helper.h>
 #include <drm/drm_pci.h>
 
 #include "uapi/hydra_regs.h"
@@ -29,6 +30,7 @@ struct hydra_drm {
     void __iomem *bar1;
     resource_size_t bar1_len;
     resource_size_t bar1_start;
+    struct drm_fb_helper *fb_helper;
 };
 
 static const struct pci_device_id hydra_drm_pci_tbl[] = {
@@ -51,29 +53,54 @@ static int hydra_drm_ioctl_info(struct drm_device *drm, void *data, struct drm_f
     return 0;
 }
 
+static int hydra_drm_dumb_create(struct drm_file *file, struct drm_device *drm,
+				 struct drm_mode_create_dumb *args)
+{
+	/* force alignment/padding if needed; otherwise use shmem helper */
+	if (!args->bpp)
+		args->bpp = 32;
+	return drm_gem_shmem_dumb_create(file, drm, args);
+}
+
+static int hydra_drm_gem_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	return drm_gem_mmap(filp, vma);
+}
+
+static const struct file_operations hydra_drm_fops = {
+	.owner = THIS_MODULE,
+	.open = drm_open,
+	.release = drm_release,
+	.unlocked_ioctl = drm_ioctl,
+	.mmap = hydra_drm_gem_mmap,
+	.poll = drm_poll,
+	.read = drm_read,
+	.llseek = noop_llseek,
+};
+
 static const struct drm_ioctl_desc hydra_ioctls[] = {
-    DRM_IOCTL_DEF_DRV(HYDRA_INFO, hydra_drm_ioctl_info, DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(HYDRA_INFO, hydra_drm_ioctl_info, DRM_RENDER_ALLOW),
 };
 
 static const struct drm_driver hydra_drm_driver = {
-    .driver_features = DRIVER_GEM | DRIVER_RENDER,
+	.driver_features = DRIVER_GEM | DRIVER_RENDER,
 	.name = "hydra_drm_stub",
 	.desc = "Hydra DRM stub (render-only)",
 	.date = "2024",
 	.major = 0,
-    .minor = 3,
-    .fops = &drm_gem_shmem_fops,
-    .dumb_create = drm_gem_shmem_dumb_create,
-    .gem_free_object_unlocked = drm_gem_shmem_free_object,
-    .gem_create_object = drm_gem_shmem_create_object,
-    .prime_handle_to_fd = drm_gem_prime_handle_to_fd,
+	.minor = 4,
+	.fops = &hydra_drm_fops,
+	.dumb_create = hydra_drm_dumb_create,
+	.gem_free_object_unlocked = drm_gem_shmem_free_object,
+	.gem_create_object = drm_gem_shmem_create_object,
+	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
 	.prime_fd_to_handle = drm_gem_prime_fd_to_handle,
 	.gem_prime_import = drm_gem_prime_import,
-    .gem_prime_export = drm_gem_prime_export,
-    .gem_prime_import_sg_table = drm_gem_shmem_prime_import_sg_table,
-    .gem_prime_mmap = drm_gem_prime_mmap,
-    .ioctls = hydra_ioctls,
-    .num_ioctls = ARRAY_SIZE(hydra_ioctls),
+	.gem_prime_export = drm_gem_prime_export,
+	.gem_prime_import_sg_table = drm_gem_shmem_prime_import_sg_table,
+	.gem_prime_mmap = drm_gem_prime_mmap,
+	.ioctls = hydra_ioctls,
+	.num_ioctls = ARRAY_SIZE(hydra_ioctls),
 };
 
 static int hydra_drm_pci_probe(struct pci_dev *pdev,
