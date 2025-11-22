@@ -45,3 +45,8 @@ jobs:
         pip install cocotb
         make -C sim/tests/cocotb_hydra SIM=icarus || true
       continue-on-error: true
+    - name: RTL DMA loopback test (icarus, optional)
+      run: |
+        iverilog -g2012 -Irtl -o sim/tests/rtl/dma_loopback.vvp sim/tests/rtl/test_dma_loopback.sv rtl/*.sv
+        vvp sim/tests/rtl/dma_loopback.vvp || true
+      continue-on-error: true
