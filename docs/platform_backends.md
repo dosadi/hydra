@@ -9,6 +9,7 @@ Current state:
   - Detects host OS to mark Wayland/X11/fbdev (Linux), Win32, and macOS as “supported”.
   - Returns success from `platform_init` for any OS-supported backend, with no-op present/shutdown; ready to be replaced with real backends.
 - Makefile builds the stub alongside `live_sdl_main.cpp` so downstream code can include the header without link errors.
+- Stub per-backend files exist (`backend_gl.cpp`, `backend_vulkan.cpp`, `backend_wayland.cpp`, `backend_x11.cpp`, `backend_fbdev.cpp`, `backend_win32.cpp`, `backend_macos.cpp`) returning the stub ops; replace these with real implementations as needed.
 
 Planned follow-ons (per-OS/driver):
 

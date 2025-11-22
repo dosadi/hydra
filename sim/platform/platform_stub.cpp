@@ -1,10 +1,6 @@
 #include "platform.h"
 
-struct BackendOps {
-    bool (*init)(PlatformContext&, const PlatformConfig&) = nullptr;
-    void (*present)(PlatformContext&, const uint32_t*, int, int) = nullptr;
-    void (*shutdown)(PlatformContext&) = nullptr;
-};
+#include "backend_ops.h"
 
 static bool is_linux() {
 #if defined(__linux__)
@@ -44,21 +40,39 @@ bool platform_backend_supported(PlatformBackend backend) {
     }
 }
 
-static bool stub_init(PlatformContext& ctx, const PlatformConfig&) {
-    // Tag backend in the user pointer for easy inspection.
-    ctx.user = reinterpret_cast<void*>(0x1);
-    return true;
+BackendOps make_stub_ops() {
+    BackendOps ops;
+    ops.init = [](PlatformContext& ctx, const PlatformConfig&) -> bool {
+        ctx.user = reinterpret_cast<void*>(0x1);
+        return true;
+    };
+    ops.present = [](PlatformContext&, const uint32_t*, int, int) {};
+    ops.shutdown= [](PlatformContext&) {};
+    return ops;
 }
 
-static void stub_present(PlatformContext&, const uint32_t*, int, int) {}
-static void stub_shutdown(PlatformContext&) {}
+// Backend-specific ops (strong definitions can override these stubs in other files)
+BackendOps get_ops_sdl();
+BackendOps get_ops_gl();
+BackendOps get_ops_vulkan();
+BackendOps get_ops_wayland();
+BackendOps get_ops_x11();
+BackendOps get_ops_fbdev();
+BackendOps get_ops_win32();
+BackendOps get_ops_macos();
 
-static BackendOps get_ops(PlatformBackend) {
-    BackendOps ops;
-    ops.init     = &stub_init;
-    ops.present  = &stub_present;
-    ops.shutdown = &stub_shutdown;
-    return ops;
+static BackendOps get_ops(PlatformBackend backend) {
+    switch (backend) {
+        case PlatformBackend::SDL:    return get_ops_sdl();
+        case PlatformBackend::GL:     return get_ops_gl();
+        case PlatformBackend::Vulkan: return get_ops_vulkan();
+        case PlatformBackend::Wayland:return get_ops_wayland();
+        case PlatformBackend::X11:    return get_ops_x11();
+        case PlatformBackend::Fbdev:  return get_ops_fbdev();
+        case PlatformBackend::Win32:  return get_ops_win32();
+        case PlatformBackend::MacOS:  return get_ops_macos();
+        default: return make_stub_ops();
+    }
 }
 
 bool platform_init(PlatformBackend backend, const PlatformConfig& cfg, PlatformContext& ctx) {
