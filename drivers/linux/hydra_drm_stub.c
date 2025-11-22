@@ -10,44 +10,70 @@
 #include <linux/io.h>
 #include <drm/drm_drv.h>
 #include <drm/drm_file.h>
+#include <drm/drm_ioctl.h>
 #include <drm/drm_prime.h>
 #include <drm/drm_gem_shmem_helper.h>
 #include <drm/drm_pci.h>
 
 #include "uapi/hydra_regs.h"
+#include "uapi/hydra_drm.h"
 
 #define HYDRA_VENDOR_ID_DEFAULT 0x1BAD
 #define HYDRA_DEVICE_ID_DEFAULT 0x2024
 
 struct hydra_drm {
-	struct drm_device *drm;
-	void __iomem *bar0;
-	resource_size_t bar0_len;
+    struct drm_device *drm;
+    void __iomem *bar0;
+    resource_size_t bar0_len;
+    resource_size_t bar0_start;
+    void __iomem *bar1;
+    resource_size_t bar1_len;
+    resource_size_t bar1_start;
 };
 
 static const struct pci_device_id hydra_drm_pci_tbl[] = {
-	{ PCI_DEVICE(HYDRA_VENDOR_ID_DEFAULT, HYDRA_DEVICE_ID_DEFAULT) },
-	{ 0, }
+    { PCI_DEVICE(HYDRA_VENDOR_ID_DEFAULT, HYDRA_DEVICE_ID_DEFAULT) },
+    { 0, }
 };
 MODULE_DEVICE_TABLE(pci, hydra_drm_pci_tbl);
 
+static int hydra_drm_ioctl_info(struct drm_device *drm, void *data, struct drm_file *file)
+{
+    struct hydra_drm *h = drm_get_drvdata(drm);
+    struct drm_hydra_info *info = data;
+
+    info->vendor = HYDRA_VENDOR_ID_DEFAULT;
+    info->device = HYDRA_DEVICE_ID_DEFAULT;
+    info->bar0_start = h->bar0_start;
+    info->bar0_len = h->bar0_len;
+    info->bar1_start = h->bar1_start;
+    info->bar1_len = h->bar1_len;
+    return 0;
+}
+
+static const struct drm_ioctl_desc hydra_ioctls[] = {
+    DRM_IOCTL_DEF_DRV(HYDRA_INFO, hydra_drm_ioctl_info, DRM_RENDER_ALLOW),
+};
+
 static const struct drm_driver hydra_drm_driver = {
-	.driver_features = DRIVER_GEM | DRIVER_RENDER,
+    .driver_features = DRIVER_GEM | DRIVER_RENDER,
 	.name = "hydra_drm_stub",
 	.desc = "Hydra DRM stub (render-only)",
 	.date = "2024",
 	.major = 0,
-	.minor = 2,
-	.fops = &drm_gem_shmem_fops,
-	.dumb_create = drm_gem_shmem_dumb_create,
-	.gem_free_object_unlocked = drm_gem_shmem_free_object,
-	.gem_create_object = drm_gem_shmem_create_object,
-	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
+    .minor = 3,
+    .fops = &drm_gem_shmem_fops,
+    .dumb_create = drm_gem_shmem_dumb_create,
+    .gem_free_object_unlocked = drm_gem_shmem_free_object,
+    .gem_create_object = drm_gem_shmem_create_object,
+    .prime_handle_to_fd = drm_gem_prime_handle_to_fd,
 	.prime_fd_to_handle = drm_gem_prime_fd_to_handle,
 	.gem_prime_import = drm_gem_prime_import,
-	.gem_prime_export = drm_gem_prime_export,
-	.gem_prime_import_sg_table = drm_gem_shmem_prime_import_sg_table,
-	.gem_prime_mmap = drm_gem_prime_mmap,
+    .gem_prime_export = drm_gem_prime_export,
+    .gem_prime_import_sg_table = drm_gem_shmem_prime_import_sg_table,
+    .gem_prime_mmap = drm_gem_prime_mmap,
+    .ioctls = hydra_ioctls,
+    .num_ioctls = ARRAY_SIZE(hydra_ioctls),
 };
 
 static int hydra_drm_pci_probe(struct pci_dev *pdev,
@@ -74,8 +100,14 @@ static int hydra_drm_pci_probe(struct pci_dev *pdev,
 		return PTR_ERR(drm);
 
 	h->drm = drm;
-	h->bar0 = pcim_iomap_table(pdev)[0];
-	h->bar0_len = pci_resource_len(pdev, 0);
+    h->bar0 = pcim_iomap_table(pdev)[0];
+    h->bar0_len = pci_resource_len(pdev, 0);
+    h->bar0_start = pci_resource_start(pdev, 0);
+    if (pci_resource_len(pdev, 1)) {
+        h->bar1 = pcim_iomap_table(pdev)[1];
+        h->bar1_len = pci_resource_len(pdev, 1);
+        h->bar1_start = pci_resource_start(pdev, 1);
+    }
 	drm_set_drvdata(drm, h);
 	pci_set_drvdata(pdev, drm);
 

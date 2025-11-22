@@ -4,6 +4,8 @@
 
 hydra_files = [
   'hydra_gallium_stub.c',
+  'hydra_screen.c',
+  'hydra_context.c',
 ]
 
 if with_gallium_hydra
