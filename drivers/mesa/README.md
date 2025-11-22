@@ -12,3 +12,4 @@ Notes:
 - Target render-only initially; reuse DRM dumb-buffers or BO IOCTLs once defined in the kernel driver.
 - Keep UAPI in `drivers/linux/uapi/`; mirror any new IOCTLs in Mesa side.
 - When ready, add CI jobs in Mesa to build `gallium-drivers=hudra` (optional, off by default).
+- See `meson.build` in this directory for a starter template; wire `with_gallium_hydra` in Mesa’s options and add the driver to `gallium-drivers`.
