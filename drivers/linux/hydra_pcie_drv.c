@@ -15,6 +15,7 @@
 #define HYDRA_DEVICE_ID_DEFAULT 0x2024
 
 #include "uapi/hydra_ioctl.h"
+#include "uapi/hydra_regs.h"
 
 struct hydra_dev {
     struct pci_dev *pdev;
@@ -92,7 +93,9 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     case HYDRA_IOCTL_RD32:
         if (copy_from_user(&reg, (void __user *)arg, sizeof(reg)))
             return -EFAULT;
-        if (reg.offset + sizeof(u32) > hdev->bar0_len || reg.offset & 0x3)
+        if (reg.offset + sizeof(u32) > hdev->bar0_len ||
+            reg.offset + sizeof(u32) > HYDRA_BAR0_SIZE ||
+            reg.offset & 0x3)
             return -EINVAL;
         reg.value = readl(hdev->bar0 + reg.offset);
         if (copy_to_user((void __user *)arg, &reg, sizeof(reg)))
@@ -101,7 +104,9 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     case HYDRA_IOCTL_WR32:
         if (copy_from_user(&reg, (void __user *)arg, sizeof(reg)))
             return -EFAULT;
-        if (reg.offset + sizeof(u32) > hdev->bar0_len || reg.offset & 0x3)
+        if (reg.offset + sizeof(u32) > hdev->bar0_len ||
+            reg.offset + sizeof(u32) > HYDRA_BAR0_SIZE ||
+            reg.offset & 0x3)
             return -EINVAL;
         writel(reg.value, hdev->bar0 + reg.offset);
         return 0;

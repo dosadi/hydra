@@ -25,3 +25,4 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 - Linux driver build deps: `sudo apt-get install build-essential linux-headers-$(uname -r) pkg-config` then `make driver-linux`.
 - Windows KMDF (when code exists): install Visual Studio Build Tools (Desktop C++), Windows SDK, and WDK (matching SDK); build with `msbuild` on the KMDF project.
 - macOS DriverKit (when code exists): install Xcode + Command Line Tools; build with `xcodebuild` on the DriverKit target (signing/provisioning required for deploy).
+- BAR0 register sketch lives in `docs/hydra_spec.md` and mirrored offsets in `drivers/linux/uapi/hydra_regs.h`; keep RTL/driver aligned.
