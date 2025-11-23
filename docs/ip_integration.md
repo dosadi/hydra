@@ -5,7 +5,7 @@ Goal: standardize around a PCIe control/data fabric (no Wishbone exposure upstre
 ## Targets
 - **Primary board**: Digilent Nexys Video (Artix-7, PCIe Gen2 x4 edge, HDMI in/out, 512 MiB DDR3).  
   Alternate: Xilinx KC705 (Kintex-7, PCIe Gen2 x4, DDR3; HDMI via FMC or TMDS mezz).
-- **Flow**: LiteX-family IP (BSD) for PCIe, DRAM, DMA, HDMI. Keep BAR-exposed AXI-Lite for CSRs and AXI-Stream for DMA paths.
+- **Flow**: LiteX-family IP (BSD) for PCIe, DRAM, DMA, HDMI. Keep BAR-exposed AXI-Lite for CSRs and AXI-Stream for DMA paths; use `scripts/hydra_litex_shell.py` + `scripts/hydra_litex_nexysvideo.py` for the FPGA shell.
 
 ## IP Blocks (open source)
 - **PCIe**: LitePCIe (BSD) – exposes BARs (AXI-Lite or Wishbone bridge) and host↔FPGA DMA endpoints. Use BAR0 for CSRs (camera/flags/DMA ctrl) and BAR1 for framebuffer scatter/gather if needed.
@@ -42,7 +42,7 @@ Pinned commit hashes should be recorded in `third_party/README.md`.
 2) Define AXI-Lite CSR map for BAR0 (camera/flags/world/DMA/HDMI) and add a thin AXI-Lite slave that drives existing voxel regs.
 3) Add `ifdef SIM` stubs for PCIe, DRAM, and HDMI so CI can run without the real cores.
 4) Wire BRAM-backed “SDRAM” into the voxel core path for sim; keep LiteDRAM port wiring in place for real FPGA builds (use `axi_sdram_stub`).
-5) Create a Nexys Video synthesis target (constraints + LiteDRAM PHY params + LitePCIe x4 config); keep a KC705 variant as fallback.
+5) Create a Nexys Video synthesis target (constraints + LiteDRAM PHY params + LitePCIe x4 config) using `scripts/hydra_litex_shell.py` as the voxel-shell↔LiteX glue; keep a KC705 variant as fallback.
 6) Add a minimal DMA CSR block (mem2mem) and a smoke test that copies a pattern through the stub DRAM and verifies contents.
 
 ## ASIC Notes

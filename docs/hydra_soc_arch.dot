@@ -20,7 +20,7 @@ digraph hydra_soc {
   }
 
   subgraph cluster_shell {
-    label="Hydra voxel shell (sim top: voxel_axil_shell)";
+    label="Hydra voxel shell\n(sim: voxel_axil_shell, FPGA: HydraBoardShell)";
     style=filled; color=lightcyan;
 
     csr [label="voxel_axil_csr\n(camera/flags/sel/DMA/IRQ)"];
@@ -46,6 +46,23 @@ digraph hydra_soc {
 
     // pixel stream to HDMI sink
     voxel -> hdmi_sink [label="AXI-Stream RGB\n(720p frame)"];
+  }
+
+  subgraph cluster_fpga {
+    label="FPGA shell (LiteX / Nexys Video)";
+    style=filled; color=lightgoldenrod1;
+
+    hydra_shell [label="HydraBoardShell\n(hydra_litex_shell.py)", shape=box3d];
+    hydra_soc   [label="HydraNexysVideoSoC\n(hydra_litex_nexysvideo.py)", shape=box];
+
+    litepcie   -> hydra_shell [label="AXI-Lite / AXI\n(BAR0 + DRAM window)"];
+    hydra_shell -> csr        [label="AXI-Lite CSR bus", style=dashed];
+    hydra_shell -> sdram      [label="AXI to SDRAM stub / LiteDRAM", style=dashed];
+    hydra_shell -> hdmi_sink  [label="AXI-Stream RGB", style=dashed];
+
+    hydra_soc -> litepcie [label="integrates LitePCIe", style=dotted];
+    hydra_soc -> litedram [label="integrates LiteDRAM", style=dotted];
+    hydra_soc -> liteic   [label="integrates HDMI core", style=dotted];
   }
 
   // Planned external IP around the shell
