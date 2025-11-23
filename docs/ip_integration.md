@@ -35,7 +35,6 @@ Goal: standardize around a PCIe control/data fabric (no Wishbone exposure upstre
 - LitePCIe: https://github.com/enjoy-digital/litepcie
 - LiteDRAM: https://github.com/enjoy-digital/litedram
 - LiteVideo/LiteICLink: https://github.com/enjoy-digital/liteiclink (HDMI/DVI); timing helpers in LiteX.
-- WB2AXIP (for bridges if needed): https://github.com/ZipCPU/wb2axip
 Pinned commit hashes should be recorded in `third_party/README.md`.
 
 ## Open Tasks (suggested order)

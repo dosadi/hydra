@@ -1,6 +1,6 @@
 # Third-Party IP (to be fetched when network is available)
 
-Use pinned commits for reproducibility; clone into `third_party/` via `scripts/fetch_ip.sh`. Nothing is vendored yet.
+Use pinned commits for reproducibility; IP is tracked as git submodules under `third_party/` and initialized via `scripts/fetch_ip.sh` (a thin wrapper around `git submodule update`).
 
 | IP        | Source                                    | License | Commit                                 | Notes |
 |-----------|-------------------------------------------|---------|----------------------------------------|-------|
@@ -8,7 +8,6 @@ Use pinned commits for reproducibility; clone into `third_party/` via `scripts/f
 | LiteDRAM  | https://github.com/enjoy-digital/litedram | BSD     | 8ca007a0372788d3d64cdc196220e729e6e940e3 | DDR3/DDR4 controller/PHY; Nexys Video preset available |
 | LiteICLink/LiteVideo | https://github.com/enjoy-digital/liteiclink | BSD | 679befc2271e64297345b15e974b2d2fdcd8fad5 | HDMI/DVI TMDS encoder + video timing |
 | LiteDMA (LiteX stream2mem/mem2stream) | https://github.com/enjoy-digital/litex | BSD | 10c52e742094ce72884fb7f0711576a4f6fb4892 | Stream↔mem DMA helpers |
-| WB2AXIP (bridges, optional) | https://github.com/ZipCPU/wb2axip | BSD | 70f9d2b041742fb1823208c4ff4b0a099e669b5e | Wishbone↔AXI bridges if needed |
 
-Update this file with commit hashes after fetching. Keep GPL/LGPL IP out unless isolated.
+These hashes should match the submodule commits recorded in the Git tree. Keep GPL/LGPL IP out unless isolated.
 

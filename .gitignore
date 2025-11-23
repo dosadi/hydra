@@ -18,3 +18,7 @@ scripts/hydra_dma_blit_demo
 sim/tests/rtl/*.vvp
 third_party/*
 !third_party/README.md
+!third_party/litepcie
+!third_party/litedram
+!third_party/liteiclink
+!third_party/litex

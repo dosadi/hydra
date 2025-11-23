@@ -1,0 +1,15 @@
+[submodule "third_party/litepcie"]
+	path = third_party/litepcie
+	url = https://github.com/enjoy-digital/litepcie
+
+[submodule "third_party/litedram"]
+	path = third_party/litedram
+	url = https://github.com/enjoy-digital/litedram
+
+[submodule "third_party/liteiclink"]
+	path = third_party/liteiclink
+	url = https://github.com/enjoy-digital/liteiclink
+
+[submodule "third_party/litex"]
+	path = third_party/litex
+	url = https://github.com/enjoy-digital/litex

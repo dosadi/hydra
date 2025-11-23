@@ -351,7 +351,11 @@ module voxel_axil_shell #(
     assign ext_axi_rvalid  = ext_voxel_ar ? ext_rvalid_voxel : (use_dma ? 1'b0 : sdram_rvalid_int);
     assign ext_axi_rid     = ext_voxel_ar ? ext_rid_voxel : (use_dma ? 4'd0 : sdram_rid_int);
 
-    // Internal SDRAM stub signals
+    // Internal SDRAM stub signals and framebuffer layout
+    localparam integer SDRAM_MEM_WORDS  = 1 << 18; // 2 MiB of 64-bit words for sim
+    localparam integer SDRAM_ADDR_SHIFT = 28 - $clog2(SDRAM_MEM_WORDS);
+    localparam integer FB_BASE_WORD     = 0;       // framebuffer base index in SDRAM words
+
     wire sdram_awready_int, sdram_wready_int, sdram_bvalid_int, sdram_arready_int, sdram_rlast_int, sdram_rvalid_int;
     wire [3:0] sdram_bid_int, sdram_rid_int;
     wire [1:0] sdram_bresp_int, sdram_rresp_int;
@@ -361,13 +365,31 @@ module voxel_axil_shell #(
     wire        sdram_dbg_re;
     wire [27:0] sdram_dbg_addr;
     wire [63:0] sdram_dbg_wdata;
-    assign sdram_dbg_we    = blit_mem_we;
-    assign sdram_dbg_re    = blit_mem_re;
-    assign sdram_dbg_addr  = blit_mem_addr;
-    assign sdram_dbg_wdata = blit_mem_wdata;
+
+    // Framebuffer writes from voxel core via SDRAM debug port (one pixel per word)
+    wire        fb_dbg_we;
+    wire [27:0] fb_dbg_addr;
+    wire [63:0] fb_dbg_wdata;
+
+    assign fb_dbg_we    = pixel_write_en;
+    assign fb_dbg_addr  = ((FB_BASE_WORD + pixel_addr[27:0]) << SDRAM_ADDR_SHIFT);
+    assign fb_dbg_wdata = {32'd0, pixel_word1};
+
+    // HDMI scanout reads from SDRAM via debug port
+    wire        hdmi_dbg_re;
+    wire [27:0] hdmi_dbg_addr;
+
+    // Combine blitter, framebuffer writer, and HDMI reader on debug port
+    assign sdram_dbg_we    = fb_dbg_we | blit_mem_we;
+    assign sdram_dbg_re    = hdmi_dbg_re | blit_mem_re;
+    assign sdram_dbg_addr  = fb_dbg_we   ? fb_dbg_addr  :
+                              hdmi_dbg_re ? hdmi_dbg_addr :
+                              blit_mem_addr;
+    assign sdram_dbg_wdata = fb_dbg_we ? fb_dbg_wdata : blit_mem_wdata;
+
     // Simple BAR1 range guard: limit external accesses to stub depth.
-    wire bar1_out_of_range = target_bar1 && (ext_axi_awaddr[27:0] >= (1 << 16));
-    wire bar1_r_out_of_range = target_bar1_r && (ext_axi_araddr[27:0] >= (1 << 16));
+    wire bar1_out_of_range   = target_bar1   && (ext_axi_awaddr[27:0] >= (SDRAM_MEM_WORDS << 3));
+    wire bar1_r_out_of_range = target_bar1_r && (ext_axi_araddr[27:0] >= (SDRAM_MEM_WORDS << 3));
 
     axi_sdram_stub #(
         .ADDR_WIDTH(28),
