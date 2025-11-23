@@ -1,9 +1,9 @@
-# Hydra Component Status (0.0.3)
+# Hydra Component Status (0.0.4)
 
 Quick maturity snapshot to track what’s stubbed vs. operational.
 
 ## RTL
-- Operational (sim): voxel core, AXI-Lite CSR (rev 0x02/build 0x01), AXI shell, DMA/crossbar/SDRAM/stream stubs; builds with Verilator/icarus. Deterministic tests (DMA loopback, HDMI CRC golden) still needed.
+- Operational (sim): voxel core, AXI-Lite CSR (rev 0x02/build 0x01), AXI shell, DMA/crossbar/SDRAM/stream stubs; builds with Verilator/icarus. Deterministic frame-path test wired into CI via `make -C sim test_frame`; additional RTL benches (DMA loopback, HDMI CRC golden) runnable via `sim/tests/run_rtl_tests.sh`.
 - Stubbed: external IP replacements (LitePCIe/LiteDRAM/LiteVideo), real MSI/IRQ wiring.
 
 ## Drivers/UAPI
@@ -16,10 +16,11 @@ Quick maturity snapshot to track what’s stubbed vs. operational.
 - Stubbed: GL/Vulkan/Wayland/X11/fbdev/Win32/macOS backends (no-op). SDL path is functional via sim.
 
 ## Build/CI tooling
-- Makeflow: sim build; cocotb smoke (icarus) for IRQ_TEST/DMA done; top-level targets for drivers/backends/sdk.
-- CMake: host-side libhydra + tools for Linux/MSVC via presets.
-- FreeBSD: kmod builds via Makefile.kmod (manual).
-- Needs: CI coverage for CMake presets, deterministic RTL tests, optional FreeBSD build check.
+- Makeflow: sim build; optional cocotb smoke (icarus) for IRQ_TEST/DMA done; top-level targets for drivers/backends/sdk.
+- CMake: host-side libhydra + tools for Linux/MSVC via presets; Linux preset built in CI.
+- CI: GitHub Actions job builds Linux host tools, Verilated sim, and runs the headless frame regression (`make -C sim test_frame`). A best-effort RTL bench wrapper runs when iverilog/vvp are available, an optional cocotb job runs a smoke test via Icarus, and an optional QEMU smoke job is wired but off by default.
+- FreeBSD: kmod builds via Makefile.kmod; a best-effort CI job uses a FreeBSD VM action to build the stub when available.
+- Needs: expand cocotb coverage and consider a dedicated FreeBSD runner if available.
 
 ## Docs
 - Spec, driver integration, IP plan, platform backends, hardware test plan, release checklist, FreeBSD QEMU guide, Windows sim notes.

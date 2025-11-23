@@ -41,10 +41,17 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 ## Userspace smoke test (Linux)
 - A small helper to exercise BAR0 blitter CSRs lives at `scripts/hydra_blit_smoketest.c`.
 - Build: `gcc -I drivers/linux/uapi -O2 -o hydra_blit_smoketest scripts/hydra_blit_smoketest.c` or `make blit-smoketest` (writes to `scripts/hydra_blit_smoketest`).
-- Run (requires loaded driver + device present): `sudo ./hydra_blit_smoketest /dev/hydra_pcie`
+- Run (requires loaded driver + device present): `sudo ./hydra_blit_smoketest /dev/hydra_pcie`.
 - It clears/enables INTs, pushes a few words into the blitter FIFO, kicks a FIFO-driven blit, and reads back the destination pixels and INT/STATUS latches.
-- Userspace helper lib: `make libhydra` builds `drivers/libhydra/libhydra.a` for simple IOCTL wrappers (info/rd/wr/blit).
+- Userspace helper lib: `make libhydra` builds `drivers/libhydra/libhydra.a` for simple IOCTL wrappers (info/rd/wr/blit/dma).
+- Example Linux bring-up loop:
+  1. Build SDK + tools: `./scripts/setup_sdk.sh` (builds libhydra, blitter smoke, and DRM info helper when libdrm is present).
+  2. Build and load the Linux PCIe/DRM stubs per `drivers/linux/README.md` (out-of-tree kmod build + `modprobe hydra_pcie_drv hydra_drm_stub`).
+  3. Run `sudo ./scripts/hydra_blit_smoketest /dev/hydra_pcie` and confirm STATUS/INT_STATUS and PIX reads look sane.
+  4. Optionally run `./scripts/hydra_dma_blit_demo` (libhydra-based) or write your own tiny tool that calls `hydra_dma_copy()` followed by `hydra_blit_*()` to validate DMA+blit IRQ paths.
 - DRM info tool: `make drm-info` builds `scripts/hydra_drm_info` (requires libdrm); queries DRM ioctl info and reads STATUS/INT_STATUS via CSROUT.
 - CI:
-  - Builds: sim, blitter smoke test, libhydra. Attempts Linux driver build (non-blocking).
-  - Mesa stub configure step (non-blocking) to catch wiring mistakes.
+  - Builds: Linux host tools, Verilated sim, and runs the frame regression (`make -C sim test_frame`).
+  - Builds SDK tools via `scripts/setup_sdk.sh` and runs best-effort RTL benches and a cocotb smoke job (Icarus) when tools are available.
+  - Optional QEMU smoke job (`qemu-smoke`) exercises a QEMU Hydra PCI stub and guest when configured; a best-effort FreeBSD kmod job (`freebsd-kmod`) builds the BSD stub in a VM.
+  - Mesa stub configure step (non-blocking) can be added later to catch wiring mistakes.

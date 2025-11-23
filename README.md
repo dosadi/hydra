@@ -2,6 +2,24 @@
 
 This repo contains a **voxel raycaster core in SystemVerilog** plus a **Verilator + SDL2** interactive viewer.
 
+## Quickstart (Linux)
+
+```bash
+# Install minimal deps on Debian/Ubuntu
+sudo apt-get update
+sudo apt-get install -y \
+  verilator libsdl2-dev libsdl2-ttf-dev build-essential cmake ninja-build python3
+
+# Clone and run the developer loop from the repo root
+./scripts/hydra_dev_loop.sh
+
+# Then run the interactive viewer
+cd sim
+./sim_voxel
+```
+
+That script builds the sim, runs the frame regression, builds SDK tools (libhydra + smoketests), and, where possible, runs RTL benches and QEMU smoke.
+
 Features (alpha):
 
 - 64×64×64 voxel volume, 64-bit voxels.
@@ -47,6 +65,8 @@ Optional backends (opt-in at build time):
 
 ### Windows / Visual Studio (libhydra and tools)
 
+For contributor notes and a more detailed development workflow, see `CONTRIBUTING.md`.
+
 This repo ships a minimal CMake build for host-side components (libhydra and optional POSIX tools).
 
 ```
@@ -75,12 +95,17 @@ The cocotb/Verilator/SDL sim flow remains Makefile-driven; the CMake path is for
 - Prereqs for a native Windows sim attempt: Verilator (5.x), SDL2/SDL2_ttf dev libs, a MinGW/MSYS2 toolchain, and a POSIX-like shell for the Make-based flow. Cocotb is easiest under WSL/MSYS2.
 - More: `docs/windows_sim.md` for Windows build/sim details, `docs/freebsd_qemu.md` for FreeBSD kmod testing, `docs/component_status.md` for a maturity snapshot.
 
+## Testing & debugging
+
+See also: `docs/testing_overview.md` for a full tour of sim, RTL, SDK, and QEMU tests.
+
 Logging, debug, and tests:
 
 - `LOG_FRAMES=1 ./sim_voxel` – print per-frame stats (pixels written, nonzero pixels, hit count).
 - `LOG_KEYS=1 ./sim_voxel` – print key down/up events (for input debugging).
 - `FRAME_DUMP=frame.ppm AUTO_EXIT=1 ./sim_voxel` – non-interactive run that dumps a single frame as PPM and exits.
 - `make -C sim test_frame` – build the sim, dump a frame with a dummy SDL backend, and compare against `sim/tests/golden_frame.ppm` using `scripts/check_frame.py`.
+- `./scripts/hydra_dev_loop.sh` – convenience script that runs the sim build + frame regression, SDK build, and (optionally) RTL benches and QEMU smoke if tools/images are available.
 - HUD shows FPS, flags, and “Hits this frame” to confirm scene intersections.
 - `[O]` toggles a diagnostic slice renderer on/off (handy if you want to peek inside the lit/shadow scene).
 

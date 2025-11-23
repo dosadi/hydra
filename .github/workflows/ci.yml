@@ -27,3 +27,92 @@ jobs:
           cd sim
           make
           make test_frame
+
+      - name: Build SDK tools (libhydra, smoketests)
+        run: |
+          chmod +x scripts/setup_sdk.sh
+          ./scripts/setup_sdk.sh || echo "setup_sdk.sh reported non-fatal issues (e.g., missing libdrm)"
+
+      - name: Run RTL benches (best-effort)
+        run: |
+          chmod +x scripts/rtl_ci_wrapper.sh
+          scripts/rtl_ci_wrapper.sh
+
+      - name: Collect CI artifacts
+        if: always()
+        run: |
+          chmod +x scripts/ci_collect_logs.sh
+          scripts/ci_collect_logs.sh
+
+      - name: Upload CI artifacts (frame diff, logs)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-ci-artifacts
+          path: artifacts
+          if-no-files-found: ignore
+
+  qemu-smoke:
+    runs-on: ubuntu-latest
+    needs: linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 curl
+
+      - name: Fetch Hydra QEMU guest image (optional)
+        env:
+          HYDRA_QEMU_GUEST_URL: ${{ secrets.HYDRA_QEMU_GUEST_URL }}
+        run: |
+          if [ -n "${HYDRA_QEMU_GUEST_URL:-}" ]; then
+            mkdir -p artifacts
+            echo "[qemu-smoke] Downloading guest image from ${HYDRA_QEMU_GUEST_URL}"
+            curl -L "${HYDRA_QEMU_GUEST_URL}" -o artifacts/hydra-guest.qcow2
+            echo "HYDRA_QEMU_GUEST_IMG=$PWD/artifacts/hydra-guest.qcow2" >> $GITHUB_ENV
+          else
+            echo "[qemu-smoke] HYDRA_QEMU_GUEST_URL not set; QEMU smoke will skip unless HYDRA_QEMU_GUEST_IMG is provided via env"
+          fi
+
+      - name: Run QEMU Hydra PCI stub smoke (if configured)
+        run: |
+          chmod +x sim/tests/qemu_stub/qemu_hydra_smoke.sh
+          sim/tests/qemu_stub/qemu_hydra_smoke.sh
+
+  cocotb:
+    runs-on: ubuntu-latest
+    needs: linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cocotb + Icarus
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog python3 python3-pip
+          python3 -m pip install --upgrade pip
+          python3 -m pip install cocotb
+
+      - name: Run cocotb smoke test (voxel_axil_shell)
+        run: |
+          cd sim/tests/cocotb_hydra
+          make SIM=icarus
+
+  freebsd-kmod:
+    runs-on: ubuntu-latest
+    needs: linux
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build FreeBSD kmod stub (best-effort via vmactions/freebsd-vm)
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: '13.2'
+          usesh: true
+          prepare: |
+            pkg install -y git gmake
+          run: |
+            cd $GITHUB_WORKSPACE
+            gmake -C drivers/bsd -f Makefile.kmod

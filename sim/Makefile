@@ -89,7 +89,7 @@ test_frame: $(CXX_EXE)
 	@mkdir -p $(TEST_BUILD_DIR)
 	@rm -f $(TEST_FRAME)
 	cd $(SIM_DIR) && FRAME_DUMP="$(TEST_FRAME)" AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
-	cd $(PROJECT_ROOT) && python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm
+	cd $(PROJECT_ROOT) && python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm > sim/build/frame_diff.log 2>&1
 
 clean:
 	rm -rf obj_dir $(CXX_EXE)

@@ -1,8 +1,14 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean sdk-setup
+.PHONY: all sim driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean sdk-setup dev-loop
 
 all: sim
+
+# One-shot dev loop (mirrors CI): sim build+frame test, SDK build, optional RTL/QEMU
+# Usage: make dev-loop
+
+dev-loop:
+	@./scripts/hydra_dev_loop.sh
 
 sim:
 	@$(MAKE) -C sim
