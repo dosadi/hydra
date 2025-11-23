@@ -108,3 +108,91 @@ int hydra_wait_blit_done(struct hydra_handle* h, int timeout_ms, uint32_t* statu
         *status_out = status;
     return (status & HYDRA_STATUS_BLIT_DONE) ? 0 : -ETIMEDOUT;
 }
+
+int hydra_set_camera_raw(struct hydra_handle* h,
+                         int32_t cam_x, int32_t cam_y, int32_t cam_z,
+                         int32_t dir_x, int32_t dir_y, int32_t dir_z,
+                         int32_t plane_x, int32_t plane_y)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+
+    int ret = 0;
+    ret = hydra_wr32(h, HYDRA_REG_CAM_X, (uint32_t)cam_x);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_CAM_Y, (uint32_t)cam_y);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_CAM_Z, (uint32_t)cam_z);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_CAM_DIR_X, (uint32_t)dir_x);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_CAM_DIR_Y, (uint32_t)dir_y);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_CAM_DIR_Z, (uint32_t)dir_z);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_CAM_PLANE_X, (uint32_t)plane_x);
+    if (ret) return ret;
+    return hydra_wr32(h, HYDRA_REG_CAM_PLANE_Y, (uint32_t)plane_y);
+}
+
+int hydra_set_flags(struct hydra_handle* h,
+                    bool smooth, bool curvature,
+                    bool extra_light, bool diag_slice)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+    uint32_t flags = 0;
+    if (smooth)      flags |= BIT(0);
+    if (curvature)   flags |= BIT(1);
+    if (extra_light) flags |= BIT(2);
+    if (diag_slice)  flags |= BIT(3);
+    return hydra_wr32(h, HYDRA_REG_FLAGS, flags);
+}
+
+int hydra_set_selection(struct hydra_handle* h,
+                        bool active, uint8_t x, uint8_t y, uint8_t z)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+
+    int ret = 0;
+    ret = hydra_wr32(h, HYDRA_REG_SEL_ACTIVE, active ? 1u : 0u);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_SEL_X, (uint32_t)(x & 0x3F));
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_SEL_Y, (uint32_t)(y & 0x3F));
+    if (ret) return ret;
+    return hydra_wr32(h, HYDRA_REG_SEL_Z, (uint32_t)(z & 0x3F));
+}
+
+int hydra_soft_reset(struct hydra_handle* h)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+    uint32_t ctrl = 0;
+    int ret = hydra_rd32(h, HYDRA_REG_CTRL, &ctrl);
+    if (ret)
+        return ret;
+    ctrl |= HYDRA_CTRL_SOFT_RESET;
+    ret = hydra_wr32(h, HYDRA_REG_CTRL, ctrl);
+    if (ret)
+        return ret;
+    ctrl &= ~HYDRA_CTRL_SOFT_RESET;
+    return hydra_wr32(h, HYDRA_REG_CTRL, ctrl);
+}
+
+int hydra_start_frame(struct hydra_handle* h)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+    uint32_t ctrl = 0;
+    int ret = hydra_rd32(h, HYDRA_REG_CTRL, &ctrl);
+    if (ret)
+        return ret;
+    ctrl |= HYDRA_CTRL_START_FRAME;
+    ret = hydra_wr32(h, HYDRA_REG_CTRL, ctrl);
+    if (ret)
+        return ret;
+    ctrl &= ~HYDRA_CTRL_START_FRAME;
+    return hydra_wr32(h, HYDRA_REG_CTRL, ctrl);
+}

@@ -1,7 +1,7 @@
 // ============================================================================
 // voxel_memory_64.sv
-// - Simple 1R1W block-RAM-friendly memory for 64^3 voxels.
-// - Address mapping: {x[5:0], y[5:0], z[5:0]} -> [17:12]=x, [11:6]=y, [5:0]=z.
+// - Simple 1R1W block-RAM-friendly memory for GRID_SIZE^3 voxels (default 64^3).
+// - Address mapping: {x, y, z} is typically formed by concatenation in the caller.
 // - Write-first behavior on read-after-write to the same address.
 // ============================================================================
 
@@ -10,7 +10,7 @@
 module voxel_memory_64 #(
     parameter integer DATA_WIDTH = 64,
     parameter integer GRID_SIZE  = 64,
-    parameter integer ADDR_WIDTH = 18,
+    parameter integer ADDR_WIDTH = $clog2(GRID_SIZE*GRID_SIZE*GRID_SIZE),
     // Simulation-only zero/init helper; synthesis will ignore the for loop.
     parameter integer INIT_ZERO  = 1'b0,
     parameter INIT_FILE          = ""

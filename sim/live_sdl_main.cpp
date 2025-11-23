@@ -530,11 +530,16 @@ int main(int argc, char** argv) {
                     uint32_t w2 = top->pixel_word2;
                     framebuffer[addr] = pixel96_to_argb(w0, w1, w2);
 
-                    if (log_frames && log_pixel_samples < 8) {
-                        std::fprintf(stderr, "pix addr=%u w0=%08x w1=%08x w2=%08x argb=%08x\n",
-                                     addr, w0, w1, w2,
-                                     pixel96_to_argb(w0, w1, w2));
-                        ++log_pixel_samples;
+                    if (log_frames && log_pixel_samples < 512) {
+                        uint32_t x = addr % SCREEN_WIDTH;
+                        uint32_t y = addr / SCREEN_WIDTH;
+                        if (y == SCREEN_HEIGHT - 8 && x < 64) {
+                            std::fprintf(stderr,
+                                "probe y=%u x=%u addr=%u w0=%08x w1=%08x w2=%08x argb=%08x\n",
+                                y, x, addr, w0, w1, w2,
+                                pixel96_to_argb(w0, w1, w2));
+                            ++log_pixel_samples;
+                        }
                     }
                 }
                 ++pixels_this_frame;

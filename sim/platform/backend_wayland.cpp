@@ -183,7 +183,7 @@ static bool wayland_init(PlatformContext& ctx, const PlatformConfig& cfg) {
     wl_shell_surface_set_title(wc->shell_surface, "Hydra Wayland Backend");
     wl_shell_surface_set_toplevel(wc->shell_surface);
 
-    wc->buffer = create_buffer(wc, cfg.width, cfg.height);
+    wc->buffer = create_buffer(*wc, cfg.width, cfg.height);
     if (!wc->buffer) {
         wl_shell_surface_destroy(wc->shell_surface);
         wl_surface_destroy(wc->surface);

@@ -82,6 +82,10 @@ module voxel_raycaster_core_pipelined #(
     reg [10:0] pixel_x, pixel_y;
     reg        cursor_sample;
 
+    // Simple 2x2 supersampling accumulators (RGB only).
+    reg [1:0]  sample_idx;
+    reg [15:0] acc_r, acc_g, acc_b;
+
     // Current ray voxel position
     reg [5:0]  voxel_x, voxel_y, voxel_z;
     reg [7:0]  ray_steps;
@@ -148,19 +152,10 @@ module voxel_raycaster_core_pipelined #(
     end
     endtask
 
-    function automatic is_shadowed_floor;
-        input [5:0] fx;
-        input [5:0] fz;
-        reg signed [7:0] dx;
-        reg signed [7:0] dz;
-        reg [15:0] dist2;
-    begin
-        dx = $signed({1'b0,fx}) - $signed({1'b0,SHADOW_CX});
-        dz = $signed({1'b0,fz}) - $signed({1'b0,SHADOW_CZ});
-        dist2 = dx*dx + dz*dz;
-        is_shadowed_floor = (dist2 <= SHADOW_RADIUS2);
-    end
-    endfunction
+    // Soft shadow falloff: extend radius by a fixed band so the floor shadow
+    // transitions smoothly instead of a hard on/off circle.
+    localparam [15:0] SHADOW_SOFT_WIDTH2 = 16'd256; // extra band beyond SHADOW_RADIUS2
+    localparam [15:0] SHADOW_OUTER2      = SHADOW_RADIUS2 + SHADOW_SOFT_WIDTH2;
 
     // --------------------------------------------------------------------
     // Compute pixel from voxel fields + selection
@@ -174,6 +169,13 @@ module voxel_raycaster_core_pipelined #(
         reg       shadow_hit;
         reg [7:0] shadow_scale;
         reg [15:0] scaled;
+        reg signed [7:0] sh_dx, sh_dz;
+        reg [15:0] sh_dist2;
+        reg [15:0] sh_delta;
+        reg [15:0] sh_blend;
+        reg [7:0]  sh_t;
+        reg [15:0] light_term;
+        reg [23:0] mul_tmp;
     begin
         // Base lighting
         out_r = (voxel_color[23:16] * voxel_light) >> 8;
@@ -193,8 +195,8 @@ module voxel_raycaster_core_pipelined #(
             tmp = out_b + ((voxel_emissive * out_b) >> 8); out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
         end
 
-        // Material fields
-        out_material_id = {voxel_material_type, 4'h0};
+        // Material ID is unused in the current feature set; keep it zero for debug compatibility.
+        out_material_id = 8'h00;
 
         if (voxel_material_type == 4'd3)       out_reflection = 8'd255;
         else if (voxel_material_type == 4'd5)  out_reflection = 8'd200;
@@ -222,18 +224,40 @@ module voxel_raycaster_core_pipelined #(
         apply_advanced_lighting(render_config, out_curvature,
                                 out_r, out_g, out_b);
 
-        // Simple top-down shadow from the main blob onto the floor plane.
+        // Soft top-down shadow from the main blob onto the floor plane.
+        // Uses a dark core under the sphere and a radial falloff band so the
+        // shadow edge does not appear stippled.
         shadow_hit   = 1'b0;
         shadow_scale = 8'd255;
         if (voxel_y >= FLOOR_MIN_Y && voxel_y <= FLOOR_MAX_Y) begin
-            shadow_hit   = is_shadowed_floor(voxel_x, voxel_z);
-            shadow_scale = shadow_hit ? 8'd80 : (8'd180 + (LIGHT_PLANE_Y >> 1)); // brighter with overhead light
+            // Distance from shadow center (projected sphere center onto floor).
+            sh_dx    = $signed({1'b0,voxel_x}) - $signed({1'b0,SHADOW_CX});
+            sh_dz    = $signed({1'b0,voxel_z}) - $signed({1'b0,SHADOW_CZ});
+            sh_dist2 = sh_dx*sh_dx + sh_dz*sh_dz;
+
+            if (sh_dist2 <= SHADOW_RADIUS2) begin
+                // Umbra: strong shadow directly under sphere.
+                shadow_hit   = 1'b1;
+                shadow_scale = 8'd80;
+            end else if (sh_dist2 >= SHADOW_OUTER2) begin
+                // Fully lit region outside soft band.
+                shadow_hit   = 1'b0;
+                shadow_scale = 8'd210;
+            end else begin
+                // Penumbra: linearly blend between dark and lit scales.
+                // SHADOW_SOFT_WIDTH2 is chosen so (sh_dist2 - SHADOW_RADIUS2)
+                // maps into 0..255 with a simple >>8.
+                sh_delta = sh_dist2 - SHADOW_RADIUS2;
+                sh_t     = sh_delta[15:8];               // 0..255 across soft band
+                sh_blend = 16'(8'd130) * sh_t;           // 130 = (210 - 80)
+                shadow_scale = 8'd80 + sh_blend[15:8];   // 80..210
+            end
 
             scaled = out_r * shadow_scale; out_r = scaled[15:8];
             scaled = out_g * shadow_scale; out_g = scaled[15:8];
             scaled = out_b * shadow_scale; out_b = scaled[15:8];
 
-            // Warm bounce from the emissive ceiling when not occluded
+            // Warm bounce from the emissive ceiling when not fully occluded.
             if (!shadow_hit) begin
                 tmp = out_r + 9'd20; out_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
                 tmp = out_g + 9'd12; out_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];

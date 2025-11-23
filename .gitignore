@@ -6,3 +6,6 @@ sim/sim_voxel
 *.d
 *.log
 *~
+
+# ignore built libhydra archive
+drivers/libhydra/libhydra.a
