@@ -1,6 +1,6 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean sdk-setup dev-loop
+.PHONY: all sim driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean sdk-setup dev-loop ip-fetch
 
 all: sim
 
@@ -9,6 +9,12 @@ all: sim
 
 dev-loop:
 	@./scripts/hydra_dev_loop.sh
+
+# Fetch third-party IP cores (LitePCIe/LiteDRAM/LiteICLink/LiteX/wb2axip) into third_party/
+# Usage: make ip-fetch
+
+ip-fetch:
+	@./scripts/fetch_ip.sh
 
 sim:
 	@$(MAKE) -C sim

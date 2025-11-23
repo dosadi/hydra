@@ -16,3 +16,5 @@ sim/build/
 scripts/hydra_blit_smoketest
 scripts/hydra_dma_blit_demo
 sim/tests/rtl/*.vvp
+third_party/*
+!third_party/README.md

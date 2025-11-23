@@ -2,12 +2,13 @@
 
 Use pinned commits for reproducibility; clone into `third_party/` via `scripts/fetch_ip.sh`. Nothing is vendored yet.
 
-| IP        | Source                                  | License | Notes |
-|-----------|-----------------------------------------|---------|-------|
-| LitePCIe  | https://github.com/enjoy-digital/litepcie | BSD     | PCIe endpoint + DMA; AXI-Lite BAR, AXI-Stream DMA |
-| LiteDRAM  | https://github.com/enjoy-digital/litedram | BSD     | DDR3/DDR4 controller/PHY; Nexys Video preset available |
-| LiteICLink/LiteVideo | https://github.com/enjoy-digital/liteiclink | BSD | HDMI/DVI TMDS encoder + video timing |
-| LiteDMA (LiteX stream2mem/mem2stream) | https://github.com/enjoy-digital/litex | BSD | Stream↔mem DMA helpers |
-| WB2AXIP (bridges, optional) | https://github.com/ZipCPU/wb2axip | BSD | Wishbone↔AXI bridges if needed |
+| IP        | Source                                    | License | Commit                                 | Notes |
+|-----------|-------------------------------------------|---------|----------------------------------------|-------|
+| LitePCIe  | https://github.com/enjoy-digital/litepcie | BSD     | 5a50f83f33b7ceea75a0b226893d3b74c2361e79 | PCIe endpoint + DMA; AXI-Lite BAR, AXI-Stream DMA |
+| LiteDRAM  | https://github.com/enjoy-digital/litedram | BSD     | 8ca007a0372788d3d64cdc196220e729e6e940e3 | DDR3/DDR4 controller/PHY; Nexys Video preset available |
+| LiteICLink/LiteVideo | https://github.com/enjoy-digital/liteiclink | BSD | 679befc2271e64297345b15e974b2d2fdcd8fad5 | HDMI/DVI TMDS encoder + video timing |
+| LiteDMA (LiteX stream2mem/mem2stream) | https://github.com/enjoy-digital/litex | BSD | 10c52e742094ce72884fb7f0711576a4f6fb4892 | Stream↔mem DMA helpers |
+| WB2AXIP (bridges, optional) | https://github.com/ZipCPU/wb2axip | BSD | 70f9d2b041742fb1823208c4ff4b0a099e669b5e | Wishbone↔AXI bridges if needed |
 
 Update this file with commit hashes after fetching. Keep GPL/LGPL IP out unless isolated.
+
