@@ -79,6 +79,18 @@ $(CXX_EXE): V$(TOP_MODULE)___024root.h
 V$(TOP_MODULE)___024root.h: $(RTL_DIR)/*.sv $(SIM_DIR)/$(CXX_SRCS)
 	cd $(SIM_DIR) && $(VERILATOR) $(VERILATOR_FLAGS) -CFLAGS '$(SDL_CFLAGS) $(EXTRA_CFLAGS)' -LDFLAGS $(SDL_LIBS) $(patsubst %,-LDFLAGS %,$(EXTRA_LIBS))
 
+# Simple non-interactive frame test: dumps one frame and compares to golden.
+TEST_BUILD_DIR := $(SIM_DIR)/build
+TEST_FRAME     := $(TEST_BUILD_DIR)/frame_test.ppm
+GOLDEN_FRAME   := $(SIM_DIR)/tests/golden_frame.ppm
+
+.PHONY: test_frame
+test_frame: $(CXX_EXE)
+	@mkdir -p $(TEST_BUILD_DIR)
+	@rm -f $(TEST_FRAME)
+	cd $(SIM_DIR) && FRAME_DUMP="$(TEST_FRAME)" AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
+	cd $(PROJECT_ROOT) && python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm
+
 clean:
 	rm -rf obj_dir $(CXX_EXE)
 

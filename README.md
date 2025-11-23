@@ -75,10 +75,12 @@ The cocotb/Verilator/SDL sim flow remains Makefile-driven; the CMake path is for
 - Prereqs for a native Windows sim attempt: Verilator (5.x), SDL2/SDL2_ttf dev libs, a MinGW/MSYS2 toolchain, and a POSIX-like shell for the Make-based flow. Cocotb is easiest under WSL/MSYS2.
 - More: `docs/windows_sim.md` for Windows build/sim details, `docs/freebsd_qemu.md` for FreeBSD kmod testing, `docs/component_status.md` for a maturity snapshot.
 
-Logging and debug:
+Logging, debug, and tests:
 
 - `LOG_FRAMES=1 ./sim_voxel` – print per-frame stats (pixels written, nonzero pixels, hit count).
 - `LOG_KEYS=1 ./sim_voxel` – print key down/up events (for input debugging).
+- `FRAME_DUMP=frame.ppm AUTO_EXIT=1 ./sim_voxel` – non-interactive run that dumps a single frame as PPM and exits.
+- `make -C sim test_frame` – build the sim, dump a frame with a dummy SDL backend, and compare against `sim/tests/golden_frame.ppm` using `scripts/check_frame.py`.
 - HUD shows FPS, flags, and “Hits this frame” to confirm scene intersections.
 - `[O]` toggles a diagnostic slice renderer on/off (handy if you want to peek inside the lit/shadow scene).
 

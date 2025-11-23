@@ -176,6 +176,10 @@ module voxel_raycaster_core_pipelined #(
         reg [7:0]  sh_t;
         reg [15:0] light_term;
         reg [23:0] mul_tmp;
+        reg signed [7:0] n_x, n_y, n_z;
+        reg signed [7:0] l_x, l_y, l_z;
+        reg signed [17:0] nl_acc;
+        reg [7:0]  lambert_scale;
     begin
         // Base lighting
         out_r = (voxel_color[23:16] * voxel_light) >> 8;
@@ -221,49 +225,55 @@ module voxel_raycaster_core_pipelined #(
             out_curvature = 8'd0;
         end
 
+        // Simple Lambert term using approximate geometry-based normals and a
+        // point light near the small emissive sphere.
+        // Floor: up-normal; spheres: radial normal from their respective centers.
+        if (voxel_material_type == 4'd6) begin
+            n_x = 8'sd0;
+            n_y = 8'sd127;
+            n_z = 8'sd0;
+        end else if (voxel_material_type == 4'd5) begin
+            n_x = $signed({1'b0,voxel_x}) - $signed({1'b0,6'd32});
+            n_y = $signed({1'b0,voxel_y}) - $signed({1'b0,6'd32});
+            n_z = $signed({1'b0,voxel_z}) - $signed({1'b0,6'd32});
+        end else if (voxel_material_type == 4'd1) begin
+            n_x = $signed({1'b0,voxel_x}) - $signed({1'b0,6'd38});
+            n_y = $signed({1'b0,voxel_y}) - $signed({1'b0,6'd32});
+            n_z = $signed({1'b0,voxel_z}) - $signed({1'b0,6'd28});
+        end else begin
+            n_x = 8'sd0;
+            n_y = 8'sd127;
+            n_z = 8'sd0;
+        end
+
+        // Light vector from hit voxel toward the small emissive sphere.
+        l_x = $signed({1'b0,6'd38}) - $signed({1'b0,voxel_x});
+        l_y = $signed({1'b0,6'd32}) - $signed({1'b0,voxel_y});
+        l_z = $signed({1'b0,6'd28}) - $signed({1'b0,voxel_z});
+
+        // Dot product N·L, clamp to [0, 255] range for scaling.
+        nl_acc = n_x * l_x + n_y * l_y + n_z * l_z;
+        if (nl_acc <= 0) begin
+            lambert_scale = 8'd0;
+        end else begin
+            // Take a coarse upper byte as the diffuse factor.
+            lambert_scale = (nl_acc[17:10] > 8'hFF) ? 8'hFF : nl_acc[17:10];
+        end
+
+        // Apply Lambert to the already light-multiplied color.
+        if (lambert_scale != 8'd0) begin
+            out_r = (out_r * lambert_scale) >> 8;
+            out_g = (out_g * lambert_scale) >> 8;
+            out_b = (out_b * lambert_scale) >> 8;
+        end
+
         apply_advanced_lighting(render_config, out_curvature,
                                 out_r, out_g, out_b);
 
-        // Soft top-down shadow from the main blob onto the floor plane.
-        // Uses a dark core under the sphere and a radial falloff band so the
-        // shadow edge does not appear stippled.
+        // Slab-based top-down shadow has been removed; rely on voxel_light and
+        // baked scene content instead of a separate floor shadow mask.
         shadow_hit   = 1'b0;
         shadow_scale = 8'd255;
-        if (voxel_y >= FLOOR_MIN_Y && voxel_y <= FLOOR_MAX_Y) begin
-            // Distance from shadow center (projected sphere center onto floor).
-            sh_dx    = $signed({1'b0,voxel_x}) - $signed({1'b0,SHADOW_CX});
-            sh_dz    = $signed({1'b0,voxel_z}) - $signed({1'b0,SHADOW_CZ});
-            sh_dist2 = sh_dx*sh_dx + sh_dz*sh_dz;
-
-            if (sh_dist2 <= SHADOW_RADIUS2) begin
-                // Umbra: strong shadow directly under sphere.
-                shadow_hit   = 1'b1;
-                shadow_scale = 8'd80;
-            end else if (sh_dist2 >= SHADOW_OUTER2) begin
-                // Fully lit region outside soft band.
-                shadow_hit   = 1'b0;
-                shadow_scale = 8'd210;
-            end else begin
-                // Penumbra: linearly blend between dark and lit scales.
-                // SHADOW_SOFT_WIDTH2 is chosen so (sh_dist2 - SHADOW_RADIUS2)
-                // maps into 0..255 with a simple >>8.
-                sh_delta = sh_dist2 - SHADOW_RADIUS2;
-                sh_t     = sh_delta[15:8];               // 0..255 across soft band
-                sh_blend = 16'(8'd130) * sh_t;           // 130 = (210 - 80)
-                shadow_scale = 8'd80 + sh_blend[15:8];   // 80..210
-            end
-
-            scaled = out_r * shadow_scale; out_r = scaled[15:8];
-            scaled = out_g * shadow_scale; out_g = scaled[15:8];
-            scaled = out_b * shadow_scale; out_b = scaled[15:8];
-
-            // Warm bounce from the emissive ceiling when not fully occluded.
-            if (!shadow_hit) begin
-                tmp = out_r + 9'd20; out_r = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-                tmp = out_g + 9'd12; out_g = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-                tmp = out_b + 9'd4;  out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
-            end
-        end
 
         // Selection highlight
         if (sel_active &&

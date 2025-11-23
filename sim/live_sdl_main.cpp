@@ -238,6 +238,10 @@ int main(int argc, char** argv) {
     }
 
     const size_t NPIX = size_t(SCREEN_WIDTH) * SCREEN_HEIGHT;
+
+    const char* frame_dump_path = std::getenv("FRAME_DUMP");
+    const char* auto_exit_env   = std::getenv("AUTO_EXIT");
+    bool auto_exit              = auto_exit_env && auto_exit_env[0] != '\0';
     std::vector<uint32_t> framebuffer(NPIX, 0);
 
     // Reset sequence
@@ -533,10 +537,12 @@ int main(int argc, char** argv) {
                     if (log_frames && log_pixel_samples < 512) {
                         uint32_t x = addr % SCREEN_WIDTH;
                         uint32_t y = addr / SCREEN_WIDTH;
-                        if (y == SCREEN_HEIGHT - 8 && x < 64) {
+                        // Probe a single vertical column through the middle of the screen
+                        // to see sky, geometry, and floor along one ray.
+                        if (x == SCREEN_WIDTH / 2) {
                             std::fprintf(stderr,
-                                "probe y=%u x=%u addr=%u w0=%08x w1=%08x w2=%08x argb=%08x\n",
-                                y, x, addr, w0, w1, w2,
+                                "probe x=%u y=%u addr=%u w0=%08x w1=%08x w2=%08x argb=%08x\n",
+                                x, y, addr, w0, w1, w2,
                                 pixel96_to_argb(w0, w1, w2));
                             ++log_pixel_samples;
                         }
@@ -552,6 +558,30 @@ int main(int argc, char** argv) {
         }
 
         if (frame_done) {
+             if (auto_exit) {
+                 running = false;
+             }
+            if (frame_dump_path && frame_dump_path[0] != '\0') {
+                FILE* f = std::fopen(frame_dump_path, "wb");
+                if (!f) {
+                    std::fprintf(stderr, "Failed to open FRAME_DUMP '%s' for write\n", frame_dump_path);
+                } else {
+                    std::fprintf(stderr, "Writing frame dump to %s\n", frame_dump_path);
+                    std::fprintf(f, "P6\n%d %d\n255\n", SCREEN_WIDTH, SCREEN_HEIGHT);
+                    for (int fy = 0; fy < SCREEN_HEIGHT; ++fy) {
+                        for (int fx = 0; fx < SCREEN_WIDTH; ++fx) {
+                            uint32_t argb = framebuffer[size_t(fy) * SCREEN_WIDTH + fx];
+                            uint8_t r = (argb >> 16) & 0xFF;
+                            uint8_t g = (argb >> 8)  & 0xFF;
+                            uint8_t b =  argb        & 0xFF;
+                            uint8_t rgb[3] = {r, g, b};
+                            std::fwrite(rgb, 1, 3, f);
+                        }
+                    }
+                    std::fclose(f);
+                }
+            }
+
             if (log_frames) {
                 size_t nonzero = 0;
                 for (uint32_t v : framebuffer) {

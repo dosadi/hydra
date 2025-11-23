@@ -37,6 +37,10 @@ module voxel_world_gen #(
     reg  [15:0] radius2_0;
     reg  [15:0] radius2_1;
 
+    // Floor shading helpers
+    reg  [7:0] floor_light;
+    reg  [7:0] floor_r, floor_g, floor_b;
+
     localparam [5:0] SPH0_CX = 6'd32;
     localparam [5:0] SPH0_CY = 6'd32;
     localparam [5:0] SPH0_CZ = 6'd32;
@@ -103,14 +107,36 @@ module voxel_world_gen #(
                 // Floor slab (FLOOR_Y0..FLOOR_Y1) and ceiling light slab (LIGHT_Y0..LIGHT_Y1)
                 S_PLANES: begin
                     if ((y >= FLOOR_Y0 && y <= FLOOR_Y1) && (x <= SLAB_MAX_X)) begin
+                        // Smooth floor lighting: radial falloff under the main sphere with
+                        // a subtle color gradient to reduce visible banding.
+                        dx    = $signed({1'b0,x}) - $signed({1'b0,SPH0_CX});
+                        dz    = $signed({1'b0,z}) - $signed({1'b0,SPH0_CZ});
+                        dist2 = dx*dx + dz*dz;
+
+                        // Base light ~150, slightly brighter under the sphere, clamped.
+                        floor_light = 8'd150;
+                        if (dist2 < 16'd1024) begin // within ~32 voxels of center
+                            if (floor_light > dist2[11:4])
+                                floor_light = floor_light - dist2[11:4];
+                            else
+                                floor_light = 8'd40;
+                        end else begin
+                            floor_light = 8'd110;
+                        end
+
+                        // Subtle bluish gradient that shifts slightly with X.
+                        floor_r = 8'd64 + {5'd0, x[3:1]};
+                        floor_g = 8'd80 + {5'd0, x[3:1]};
+                        floor_b = 8'd96 + {5'd0, x[3:1]};
+
                         write_addr <= {x, y, z};
                         write_data <= {
-                            8'd196,    // material_props
-                            8'd0,      // emissive
-                            8'd255,    // alpha
-                            8'd150,    // light (base, boosted by shader)
-                            8'h40, 8'h50, 8'h60, // RGB (cool floor)
-                            4'd6, 4'd0           // material_type, reserved
+                            8'd196,          // material_props
+                            8'd0,            // emissive
+                            8'd255,          // alpha
+                            floor_light,     // light (smooth base, boosted by shader)
+                            floor_r, floor_g, floor_b, // RGB (cool floor with gradient)
+                            4'd6, 4'd0       // material_type, reserved
                         };
                         write_en <= 1'b1;
                     end else if ((y >= LIGHT_Y0 && y <= LIGHT_Y1) && (x <= SLAB_MAX_X)) begin
