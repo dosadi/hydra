@@ -71,6 +71,7 @@ In CI, these are run best-effort via `scripts/rtl_ci_wrapper.sh` and logged to `
 - Multiple frames: `for i in $(seq 1 5); do FRAME_DUMP=frame_$i.ppm AUTO_EXIT=1 ./sim_voxel; done`
 - If a display server is unavailable (CI), stick to the SDL backend (`HYDRA_BACKEND=SDL`) and use `AUTO_EXIT=1`; a full headless backend toggle is tracked in `docs/todo_master.md`.
 - Numbered dumps: set `HYDRA_FRAME_BASE=frame` and `HYDRA_MAX_FRAME_DUMPS=N` to emit `frame_0.ppm...frame_(N-1).ppm`.
+- Other useful envs: `HYDRA_CLEAR_COLOR=r,g,b` to init the framebuffer; `HYDRA_CAM_POS=x,y,z` / `HYDRA_CAM_ANG=yaw,pitch` for initial pose; `HYDRA_MOVE_SPEED`, `HYDRA_MOVE_SPEED_FAST`, `HYDRA_TURN_SPEED_KEYS`, `HYDRA_MOUSE_SENS`, `HYDRA_INVERT_Y` for movement feel; `HYDRA_FONT` / `HYDRA_FONT_SCALE` for HUD font; `HYDRA_FPS_TARGET` to pace frames.
 
 ## 3. SDK + Linux driver loop
 
