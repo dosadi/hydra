@@ -293,6 +293,7 @@ int main(int argc, char** argv) {
     const size_t NPIX = size_t(SCREEN_WIDTH) * SCREEN_HEIGHT;
 
     const char* frame_dump_path = std::getenv("FRAME_DUMP");
+    const char* frame_dump_base = std::getenv("HYDRA_FRAME_BASE");
     const char* auto_exit_env   = std::getenv("AUTO_EXIT");
     bool auto_exit              = auto_exit_env && auto_exit_env[0] != '\0';
     const char* max_dump_env    = std::getenv("HYDRA_MAX_FRAME_DUMPS");
@@ -639,11 +640,17 @@ int main(int argc, char** argv) {
              }
             if (frame_dump_path && frame_dump_path[0] != '\0' &&
                 (max_frame_dumps == 0 || frame_dumps_written < max_frame_dumps)) {
-                FILE* f = std::fopen(frame_dump_path, "wb");
-                if (!f) {
-                    std::fprintf(stderr, "Failed to open FRAME_DUMP '%s' for write\n", frame_dump_path);
+                char pathbuf[512];
+                if (frame_dump_base && max_frame_dumps != 1) {
+                    std::snprintf(pathbuf, sizeof(pathbuf), "%s_%d.ppm", frame_dump_base, frame_dumps_written);
                 } else {
-                    std::fprintf(stderr, "Writing frame dump to %s\n", frame_dump_path);
+                    std::snprintf(pathbuf, sizeof(pathbuf), "%s", frame_dump_path);
+                }
+                FILE* f = std::fopen(pathbuf, "wb");
+                if (!f) {
+                    std::fprintf(stderr, "Failed to open FRAME_DUMP '%s' for write\n", pathbuf);
+                } else {
+                    std::fprintf(stderr, "Writing frame dump to %s\n", pathbuf);
                     std::fprintf(f, "P6\n%d %d\n255\n", SCREEN_WIDTH, SCREEN_HEIGHT);
                     for (int fy = 0; fy < SCREEN_HEIGHT; ++fy) {
                         for (int fx = 0; fx < SCREEN_WIDTH; ++fx) {
