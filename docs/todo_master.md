@@ -33,6 +33,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a tiny config file parser (e.g., env-var-provided path) to preload camera/flags/backend/seed.
 - TODO: Add input-device detection log (mouse/keyboard/gamepad) at startup to aid repro of input bugs.
 - TODO: Add a latency/profiling overlay (ms/frame breakdown) toggled by a hotkey for perf debugging.
+- TODO: Add a toggle to freeze camera but keep rendering (to inspect static scenes) and another to pause rendering ticks.
+- TODO: Add a “noclip off” mode that keeps the camera inside the voxel bounds for guided demos.
+- TODO: Add a minimal unit test for `pixel96_to_argb` to guard the packing assumptions.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -50,6 +53,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add optional perf counters for pixel drops/STALLs in the AXI-Stream path to surface backpressure issues.
 - TODO: Add a compile-time switch to bypass auto-start frames (AUTO_START_FRAMES=0) and verify manual start_frame path.
 - TODO: Add a simple scoreboard in sim to check pixel_addr monotonicity and no gaps per frame when tready is asserted.
+- TODO: Add an assertion that frame_done only pulses after the final pixel (TOTAL_PIXELS-1) unless reset.
+- TODO: Add a “sim slow” knob to inject wait-states into mem-side counters to stress stalls/backpressure paths.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -79,6 +84,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a kselftest-style script in `scripts/` to exercise ioctl/mmap paths and report pass/fail.
 - TODO: Add a tiny `hydra_irq_test` userspace tool to pulse IRQ_TEST and poll INT_STATUS for quick sanity.
 - TODO: Add a FreeBSD userspace sample matching the Linux ones (info + IRQ test) to validate that stub.
+- TODO: Add a libhydra API to read INT_MASK/INT_STATUS and clear bits to reduce boilerplate in tools.
+- TODO: Add a quick “device present?” helper in libhydra (returns ENODEV if node missing) to simplify app startup.
+- TODO: Add a debugfs entry that dumps recent IRQ timestamps/counts for profiling interrupt cadence.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -107,6 +115,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
 - TODO: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
 - TODO: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
+- TODO: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
+- TODO: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
+- TODO: Add an automated spellcheck/lint for docs to keep wording clean.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -125,3 +136,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a release checklist for 0.0.6 (tests to run, docs to touch, version bumps).
 - TODO: Add a driver bring-up checklist (Linux/FreeBSD) with expected dmesg/debugfs/sysctl outputs.
 - TODO: Add a short primer on interpreting HUD perf counters and mem utilization readings.
+- TODO: Add a short “troubleshooting sim build” section (missing SDL_ttf, Verilator version mismatches).
+- TODO: Add doc pointers in README to the new TODO tracker so contributors can pick items easily.
