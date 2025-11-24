@@ -113,3 +113,49 @@ Scene notes:
 
 - A warm emissive ceiling slab near y≈52 shines down onto a cool floor band near y≈10; the main cyan sphere casts a soft shadow on the floor.
 - Stand near the floor looking upward to see the light slab; move above the floor to see the shadowed area beneath the sphere.
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **`docs/hydra_spec.md`** - Device register map (BAR0 CSR layout)
+- **`docs/testing_overview.md`** - Complete test infrastructure guide
+- **`docs/driver_integration.md`** - Driver bring-up and integration guide
+- **`docs/hardware_test_plan.md`** - FPGA validation strategy
+- **`docs/rtl_coding_standards.md`** - RTL coding conventions
+- **`docs/architecture_cleanup_summary.md`** - Recent architecture improvements
+- **`docs/dma_architecture.md`** - DMA data path, BAR1 decode, and sim harness layout
+- **`docs/hdmi_scanout_architecture.md`** - HDMI scanout path and CRC instrumentation
+- **`docs/litex_crossbar_integration.md`** - LiteX AXI fabric hookup for HydraCore
+- **`docs/ip_integration_cleanup.md`** - Split of simulation vs. FPGA shells and next steps
+- **`docs/component_status.md`** - Component maturity and status
+
+See `CLAUDE.md` for guidance on working with Claude Code in this repository.
+
+## Contributing
+
+Contributions are welcome! Please see `CONTRIBUTING.md` for:
+
+- Development workflow and branch strategy
+- Commit message conventions
+- Testing requirements
+- Code review process
+- Shared task list: see `docs/todo_master.md` for the current 0.0.6 TODOs.
+
+## License
+
+This project is licensed under the BSD 3-Clause license (see `LICENSE`).
+
+## Status
+
+**Current Version**: 0.0.5 (Alpha)
+
+**Maturity**: Early development - suitable for experimentation and research. Not production-ready.
+
+**Platforms**:
+- Linux: Primary development platform (full support)
+- FreeBSD: Kernel module stub (basic support)
+- Windows: Host tools via CMake/MSVC (partial support)
+- macOS: Documented but not tested
+
+For detailed component status, see `docs/component_status.md`.

@@ -3,6 +3,13 @@
 This repo has several layers of tests and debug tools, from pure RTL up to driver/PCIe stubs.
 This document summarizes the main entry points.
 
+## Quick first run (new contributors)
+
+1. Install deps: `verilator`, `libsdl2-dev`, `libsdl2-ttf-dev`, `g++`, `make`.
+2. From repo root: `make -C sim test_frame` (builds and runs the frame regression).
+3. Launch the viewer: `cd sim && ./sim_voxel` (mouse-look + WASD; see keybinds in README).
+4. Optional: `LOG_FRAMES=1 ./sim_voxel` (per-frame stats) or `LOG_KEYS=1 ./sim_voxel` (input debug).
+
 ## 1. Sim-only tests (no drivers required)
 
 ### Build and run the SDL viewer
@@ -43,8 +50,16 @@ sim/tests/run_rtl_tests.sh
 Requires: `iverilog` and `vvp` on PATH.
 
 Benches:
-- `test_dma_loopback.sv` – issues a DMA copy inside the SDRAM stub, checks source/dest and INT_STATUS/STATUS bits.
-- `test_hdmi_crc_golden.sv` – checks `hdmi_crc_last` against a golden for a fixed camera/config.
+- `test_dma_loopback.sv` – Issues a DMA copy inside the SDRAM stub, checks source/dest and INT_STATUS/STATUS bits.
+- `test_hdmi_crc_golden.sv` – HDMI CRC using the full voxel pipeline at 16x12 (TEST_FORCE_WORLD_READY=1, AUTO_START_FRAMES=1), golden CRC `0x00010600` (single-frame run; checks beat count bounds and CSR mirrors).
+- `test_hdmi_crc_full.sv` – HDMI CRC at 32x24, golden CRC `0x00020500` (single-frame run; CSR + beat checks).
+- `test_bar1_dma_loopback.sv` – BAR1 + DMA copy using the SDRAM stub directly (fast seeding + forced DMA start for simulation speed).
+- `test_dma_stub_direct.sv` – Direct DMA-to-SDRAM validation bench (tests DMA and SDRAM stubs).
+
+Notes:
+- The SDRAM stub (`axi_sdram_stub.sv`) supports optional `READ_LATENCY`/`WRITE_LATENCY` parameters if you want to inject wait states for stress; defaults are zero for fast benches.
+
+All tests use `voxel_sim_harness.sv` which provides a complete simulation environment with AXI stubs.
 
 In CI, these are run best-effort via `scripts/rtl_ci_wrapper.sh` and logged to `artifacts/rtl_tests.log` when tools are present.
 
