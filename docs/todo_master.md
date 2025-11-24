@@ -59,6 +59,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a hotkey/env to toggle cursor ray visualization (line to hit point) for debugging aiming/selection.
 - TODO: Add an audio click/feedback on selection or edit to improve UX during demos (optional, env-controlled).
 - TODO: Add a seed/randomize hotkey to quickly flip worlds without restarting the sim.
+- TODO: Add a “demo mode” that runs a scripted camera path and toggles flags for capture reels.
+- TODO: Add per-axis inversion/sensitivity sliders (env/CLI) for finer camera tuning.
+- TODO: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -144,6 +147,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a module param to disable debugfs creation for locked-down environments.
 - TODO: Add a tiny tool to map BAR1 (when present) and hexdump a small range for sanity.
 - TODO: Add a DRM stub ioctl negative test to ensure proper error codes on bad args.
+- TODO: Add a helper script to load/unload the driver with module params (MSI, IDs) for quick iteration.
+- TODO: Add a CI-friendly script to run all userland tools with `--help` to ensure they parse options.
+- TODO: Add a libhydra version getter and expose it in tools for troubleshooting.
 - TODO: Add a kselftest case that exercises unaligned IOCTL offsets to ensure -EINVAL is returned.
 - TODO: Add a libhydra call to fetch BAR sizes/info (mirrors HYDRA_IOCTL_INFO) for convenience.
 - TODO: Add CI smoke that runs libhydra samples under strace to confirm IOCTL sequences look sane.
@@ -202,6 +208,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a CI job that builds/runs `sim/tests/run_rtl_tests.sh` when iverilog/vvp are present, marking non-fatal otherwise.
 - TODO: Add a `make shellcheck` target to lint bash scripts (hydra_dev_loop.sh, fetch_ip.sh, etc.).
 - TODO: Add a helper script to bump version numbers across README/CMake/RELEASE_NOTES consistently.
+- TODO: Add a CI job to run `scripts/hydra_dev_loop.sh` in best-effort mode to mirror developer flow.
+- TODO: Add a quick gate to warn when generated files are manually edited (if detectable).
+- TODO: Add a LICENSE header checker for new files.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -236,3 +245,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a glossary of module names/prefixes (cam_/cfg_/sel_/dbg_) for newcomers.
 - TODO: Add a short doc showing example outputs from libhydra tools (info/irq_test) to set expectations.
 - TODO: Add a section on how to interpret INT_STATUS/INT_MASK bits in the docs/hydra_spec.md narrative.
+- TODO: Add a “developer workflow” doc tying together dev_loop, test_frame, cocotb, and TODO tracker updates.
+- TODO: Add sample PR descriptions/commit message examples that align with repo guidance.
