@@ -158,6 +158,17 @@ module voxel_axi_core #(
     assign dma_status = 32'd0;
     assign blit_mem_rdata = 64'd0;
 
+    // Simple safety assertions (simulation only).
+`ifdef VERILATOR
+    // Selection should stay within the voxel grid bounds.
+    always @(*) begin
+        if (sel_active) begin
+            assert(sel_x < VOXEL_GRID_SIZE && sel_y < VOXEL_GRID_SIZE && sel_z < VOXEL_GRID_SIZE)
+                else $fatal("Selection out of bounds: %0d %0d %0d", sel_x, sel_y, sel_z);
+        end
+    end
+`endif
+
     // TODO: Wire HDMI counters once LiteVideo scanout is integrated
     assign hdmi_crc_last      = 32'd0;
     assign hdmi_frame_count   = 32'd0;
