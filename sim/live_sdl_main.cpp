@@ -300,7 +300,15 @@ int main(int argc, char** argv) {
     int max_frame_dumps         = max_dump_env ? std::max(0, std::atoi(max_dump_env)) : 1;
     int frame_dumps_written     = 0;
     const char* autosave_cfg    = std::getenv("HYDRA_AUTOSAVE_CFG");
-    std::vector<uint32_t> framebuffer(NPIX, 0);
+    const char* fg_env = std::getenv("HYDRA_CLEAR_COLOR");
+    uint32_t clear_color = 0;
+    if (fg_env) {
+        unsigned int r=0,g=0,b=0;
+        if (std::sscanf(fg_env, "%u,%u,%u", &r, &g, &b) == 3) {
+            clear_color = (0xFFu << 24) | ((r & 0xFFu) << 16) | ((g & 0xFFu) << 8) | (b & 0xFFu);
+        }
+    }
+    std::vector<uint32_t> framebuffer(NPIX, clear_color);
 
     // Reset sequence
     for (int i = 0; i < 10; ++i) {
