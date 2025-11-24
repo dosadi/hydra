@@ -308,11 +308,30 @@ int main(int argc, char** argv) {
     }
     top->rst_n = 1;
 
+    const char* cam_pos_env = std::getenv("HYDRA_CAM_POS");   // "x,y,z"
+    const char* cam_ang_env = std::getenv("HYDRA_CAM_ANG");   // "yaw,pitch"
+    auto parse_vec3 = [](const char* s, float def_x, float def_y, float def_z, float& ox, float& oy, float& oz) {
+        ox = def_x; oy = def_y; oz = def_z;
+        if (!s) return;
+        if (std::sscanf(s, "%f,%f,%f", &ox, &oy, &oz) != 3) {
+            ox = def_x; oy = def_y; oz = def_z;
+        }
+    };
+    auto parse_vec2 = [](const char* s, float def_a, float def_b, float& oa, float& ob) {
+        oa = def_a; ob = def_b;
+        if (!s) return;
+        if (std::sscanf(s, "%f,%f", &oa, &ob) != 2) {
+            oa = def_a; ob = def_b;
+        }
+    };
+
     float pos_x = 10.0f;
     float pos_y = 10.0f;
     float pos_z = 10.0f;
     float yaw   = 0.0f;
     float pitch = 0.0f;
+    parse_vec3(cam_pos_env, pos_x, pos_y, pos_z, pos_x, pos_y, pos_z);
+    parse_vec2(cam_ang_env, yaw, pitch, yaw, pitch);
 
     auto getenv_float = [](const char* name, float def_val) -> float {
         const char* v = std::getenv(name);
