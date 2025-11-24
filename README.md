@@ -129,6 +129,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **`docs/litex_crossbar_integration.md`** - LiteX AXI fabric hookup for HydraCore
 - **`docs/ip_integration_cleanup.md`** - Split of simulation vs. FPGA shells and next steps
 - **`docs/component_status.md`** - Component maturity and status
+- **`docs/sim_controls.md`** - sim_voxel keybinds and editing shortcuts
 
 See `CLAUDE.md` for guidance on working with Claude Code in this repository.
 

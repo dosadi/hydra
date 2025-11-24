@@ -9,6 +9,7 @@ This document summarizes the main entry points.
 2. From repo root: `make -C sim test_frame` (builds and runs the frame regression).
 3. Launch the viewer: `cd sim && ./sim_voxel` (mouse-look + WASD; see keybinds in README).
 4. Optional: `LOG_FRAMES=1 ./sim_voxel` (per-frame stats) or `LOG_KEYS=1 ./sim_voxel` (input debug).
+5. Need a keybind refresher? See `docs/sim_controls.md`.
 
 ## 1. Sim-only tests (no drivers required)
 
