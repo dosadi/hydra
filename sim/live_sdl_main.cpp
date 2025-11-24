@@ -365,6 +365,9 @@ int main(int argc, char** argv) {
     bool diag_slice      = false;
 
     bool mouse_captured  = true;
+    const char* mouse_cap_env = std::getenv("HYDRA_MOUSE_CAPTURE");
+    if (mouse_cap_env && std::strcmp(mouse_cap_env, "0") == 0)
+        mouse_captured = false;
 
     bool selection_active = false;
     uint8_t selection_x = 0;
