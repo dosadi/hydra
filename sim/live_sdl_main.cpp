@@ -270,7 +270,15 @@ int main(int argc, char** argv) {
 
     const char* font_env = std::getenv("HYDRA_FONT");
     const char* font_path = font_env ? font_env : "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-    TTF_Font* font = TTF_OpenFont(font_path, 11);
+    const char* font_scale_env = std::getenv("HYDRA_FONT_SCALE");
+    int font_size = 11;
+    if (font_scale_env) {
+        float scale = std::atof(font_scale_env);
+        if (scale < 0.5f) scale = 0.5f;
+        if (scale > 3.0f) scale = 3.0f;
+        font_size = std::max(8, static_cast<int>(11 * scale));
+    }
+    TTF_Font* font = TTF_OpenFont(font_path, font_size);
     if (!font && font_env) {
         // If an override was provided but failed, fall back to the default.
         std::fprintf(stderr, "Warning: HYDRA_FONT='%s' failed: %s; falling back to default\n",
