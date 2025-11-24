@@ -25,6 +25,7 @@ Useful env vars:
 - `LOG_FRAMES=1 ./sim_voxel` – per-frame stats (pixels written, nonzero pixels, hit count).
 - `LOG_KEYS=1 ./sim_voxel` – key down/up events for input debugging.
 - `FRAME_DUMP=frame.ppm AUTO_EXIT=1 ./sim_voxel` – dump a single frame as PPM and exit.
+- `HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN>` – request a specific backend (falls back to SDL if unavailable).
 
 ### Frame regression test
 
@@ -62,6 +63,12 @@ Notes:
 All tests use `voxel_sim_harness.sv` which provides a complete simulation environment with AXI stubs.
 
 In CI, these are run best-effort via `scripts/rtl_ci_wrapper.sh` and logged to `artifacts/rtl_tests.log` when tools are present.
+
+### Headless / batch frame dumps
+
+- Single frame: `FRAME_DUMP=frame.ppm AUTO_EXIT=1 ./sim_voxel` (480x360 PPM ≈ 520 KiB).
+- Multiple frames: `for i in $(seq 1 5); do FRAME_DUMP=frame_$i.ppm AUTO_EXIT=1 ./sim_voxel; done`
+- If a display server is unavailable (CI), stick to the SDL backend (`HYDRA_BACKEND=SDL`) and use `AUTO_EXIT=1`; a full headless backend toggle is tracked in `docs/todo_master.md`.
 
 ## 3. SDK + Linux driver loop
 
