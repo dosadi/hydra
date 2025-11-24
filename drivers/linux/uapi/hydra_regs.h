@@ -6,6 +6,10 @@
  * Offsets are byte offsets from BAR0 base.
  */
 
+#ifndef BIT
+#define BIT(nr) (1U << (nr))
+#endif
+
 #define HYDRA_BAR0_SIZE         0x00010000
 
 #define HYDRA_REG_ID            0x0000  /* [31:16]=vendor, [15:0]=device */

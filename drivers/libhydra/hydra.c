@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #include "hydra.h"
 
 #include <errno.h>

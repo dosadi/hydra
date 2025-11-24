@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "../drivers/linux/uapi/hydra_drm.h"
+#include "../drivers/linux/uapi/hydra_regs.h"
 
 static int do_ioctl(int fd, unsigned long req, void* arg)
 {
