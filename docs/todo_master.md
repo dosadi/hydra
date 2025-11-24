@@ -27,6 +27,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a grid/axis overlay toggle to help orientation inside the voxel volume.
 - TODO: Add joystick/gamepad input support (fallback to SDL game controller mappings).
 - TODO: Add a HUD indicator when selection is active and editable keys (C/X/Z/B) are available, to reduce guesswork.
+- TODO: Add crosshair style/color/size customization (env/hotkey) so recorded clips can match different backgrounds.
+- TODO: Add an option to log HUD stats (FPS, mem util, hits) to a CSV for offline perf tracking.
+- TODO: Add a world-seed override for the procedural scene to make deterministic repros across runs.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -40,6 +43,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add coverage/assertions that INT_MASK gates irq_out/msi_pulse correctly on each bit.
 - TODO: Add a lint-time check or assertion that camera/flag pulses are single-cycle to avoid missed updates.
 - TODO: Add a lightweight formal/cover for dbg write path (address range, pulse duration) to catch off-by-one errors.
+- TODO: Add parameterized address widths for dbg write addr to match different VOXEL_GRID_SIZE targets cleanly.
+- TODO: Add optional perf counters for pixel drops/STALLs in the AXI-Stream path to surface backpressure issues.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -63,6 +68,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a simple DRM stub “modeset info” tool to enumerate any registered render node and dump its Hydra-specific props.
 - TODO: Add a kernel tracepoint or trace_printk path for IRQ/DMA events to aid debugging without extra printk noise.
 - TODO: Add udev rules example for creating `/dev/hydra_pcie` with group permissions for non-root access.
+- TODO: Add a module param to force-disable MSI (or force legacy) for platforms with broken MSI routing.
+- TODO: Add an automated userspace test that toggles INT_MASK bits and validates interrupt delivery counts.
+- TODO: Add an example systemd service that loads the driver and sets permissions for devnode on boot.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -85,6 +93,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a CI artifact upload for failing frame dumps (PPM) to speed visual diffing.
 - TODO: Add a script/target to purge stale `sim/obj_dir` when Verilator version changes to avoid weird rebuilds.
 - TODO: Add a `make quick` target that just builds C++ harness without re-verilating (for fast HUD tweaks).
+- TODO: Add a small unit test for `scripts/check_frame.py` (golden vs shifted image) to lock thresholds.
+- TODO: Add caching/ccache setup for the C++ harness in CI to reduce rebuild times.
+- TODO: Add a GitHub issue template that links to `docs/todo_master.md` to keep work items centralized.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -99,3 +110,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a “backend compatibility matrix” note (which OS/flags are exercised in CI vs. untested).
 - TODO: Add a short “how to repro a frame” doc snippet (FRAME_DUMP/AUTO_EXIT usage with expected outputs).
 - TODO: Document cocotb smoke expectations and how to interpret failures/timeouts for `sim/tests/cocotb_hydra`.
+- TODO: Add a contributor note explaining status tags (TODO/IN-PROGRESS/DONE/WONTFIX-0.0.6) and how to update owners.
+- TODO: Add a release checklist for 0.0.6 (tests to run, docs to touch, version bumps).
