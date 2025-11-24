@@ -300,6 +300,7 @@ int main(int argc, char** argv) {
     int max_frame_dumps         = max_dump_env ? std::max(0, std::atoi(max_dump_env)) : 1;
     int frame_dumps_written     = 0;
     const char* autosave_cfg    = std::getenv("HYDRA_AUTOSAVE_CFG");
+    const bool clear_each_frame = (std::getenv("HYDRA_CLEAR_EACH_FRAME") != nullptr);
     const char* fg_env = std::getenv("HYDRA_CLEAR_COLOR");
     uint32_t clear_color = 0;
     if (fg_env) {
@@ -928,9 +929,10 @@ int main(int argc, char** argv) {
             SDL_RenderCopy(ren, tex, nullptr, nullptr);
             SDL_RenderPresent(ren);
 
-            // Clear framebuffer for next frame to avoid stale pixels if the RTL stalls early.
-            if (pixels_written_this_frame < NPIX) {
-                std::fill(framebuffer.begin(), framebuffer.end(), 0);
+            // Clear framebuffer for next frame to avoid stale pixels if the RTL stalls early
+            // or when explicit per-frame clearing is requested.
+            if (clear_each_frame || pixels_written_this_frame < NPIX) {
+                std::fill(framebuffer.begin(), framebuffer.end(), clear_color);
             }
 
             pixels_this_frame = 0;
