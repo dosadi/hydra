@@ -313,10 +313,16 @@ int main(int argc, char** argv) {
     float yaw   = 0.0f;
     float pitch = 0.0f;
 
-    float move_speed      = 0.10f;
-    float move_speed_fast = 0.35f;
-    float turn_speed_keys = 0.04f;
-    float mouse_sens      = 0.0025f;
+    auto getenv_float = [](const char* name, float def_val) -> float {
+        const char* v = std::getenv(name);
+        if (!v) return def_val;
+        return std::atof(v);
+    };
+
+    float move_speed      = getenv_float("HYDRA_MOVE_SPEED", 0.10f);
+    float move_speed_fast = getenv_float("HYDRA_MOVE_SPEED_FAST", 0.35f);
+    float turn_speed_keys = getenv_float("HYDRA_TURN_SPEED_KEYS", 0.04f);
+    float mouse_sens      = getenv_float("HYDRA_MOUSE_SENS", 0.0025f);
 
     bool smooth_surfaces = true;
     bool curvature       = true;
