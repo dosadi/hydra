@@ -341,6 +341,11 @@ int main(int argc, char** argv) {
     float pitch = 0.0f;
     parse_vec3(cam_pos_env, pos_x, pos_y, pos_z, pos_x, pos_y, pos_z);
     parse_vec2(cam_ang_env, yaw, pitch, yaw, pitch);
+    const float default_pos_x = pos_x;
+    const float default_pos_y = pos_y;
+    const float default_pos_z = pos_z;
+    const float default_yaw   = yaw;
+    const float default_pitch = pitch;
 
     auto getenv_float = [](const char* name, float def_val) -> float {
         const char* v = std::getenv(name);
@@ -515,6 +520,23 @@ int main(int argc, char** argv) {
                         case SDLK_g:
                             selection_active = false;
                             selection_word   = 0;
+                            apply_selection_to_dut();
+                            break;
+                        case SDLK_r:
+                            // Reset camera and flags to defaults; clear selection.
+                            pos_x = default_pos_x;
+                            pos_y = default_pos_y;
+                            pos_z = default_pos_z;
+                            yaw   = default_yaw;
+                            pitch = default_pitch;
+                            smooth_surfaces = true;
+                            curvature       = true;
+                            extra_light     = false;
+                            diag_slice      = false;
+                            selection_active = false;
+                            selection_word   = 0;
+                            apply_camera_to_dut();
+                            apply_flags_to_dut();
                             apply_selection_to_dut();
                             break;
                         default: break;
