@@ -70,6 +70,7 @@ In CI, these are run best-effort via `scripts/rtl_ci_wrapper.sh` and logged to `
 - Single frame: `FRAME_DUMP=frame.ppm AUTO_EXIT=1 ./sim_voxel` (480x360 PPM ≈ 520 KiB).
 - Multiple frames: `for i in $(seq 1 5); do FRAME_DUMP=frame_$i.ppm AUTO_EXIT=1 ./sim_voxel; done`
 - If a display server is unavailable (CI), stick to the SDL backend (`HYDRA_BACKEND=SDL`) and use `AUTO_EXIT=1`; a full headless backend toggle is tracked in `docs/todo_master.md`.
+- Numbered dumps: set `HYDRA_FRAME_BASE=frame` and `HYDRA_MAX_FRAME_DUMPS=N` to emit `frame_0.ppm...frame_(N-1).ppm`.
 
 ## 3. SDK + Linux driver loop
 
