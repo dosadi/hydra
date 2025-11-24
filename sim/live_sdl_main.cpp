@@ -20,6 +20,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
+#include <strings.h>
 
 static const int   SCREEN_WIDTH  = 480;
 static const int   SCREEN_HEIGHT = 360;
@@ -365,6 +366,11 @@ int main(int argc, char** argv) {
     bool extra_light     = false;
     bool diag_slice      = false;
     bool hud_enabled     = true;
+    bool hud_theme_light = false;
+    if (const char* hud_theme_env = std::getenv("HYDRA_HUD_THEME")) {
+        if (strcasecmp(hud_theme_env, "light") == 0)
+            hud_theme_light = true;
+    }
 
     bool mouse_captured  = true;
     const char* mouse_cap_env = std::getenv("HYDRA_MOUSE_CAPTURE");
@@ -529,6 +535,9 @@ int main(int argc, char** argv) {
                             break;
                         case SDLK_h:
                             hud_enabled = !hud_enabled;
+                            break;
+                        case SDLK_t:
+                            hud_theme_light = !hud_theme_light;
                             break;
                         case SDLK_r:
                             // Reset camera and flags to defaults; clear selection.
@@ -802,7 +811,7 @@ int main(int argc, char** argv) {
             }
 
             if (hud_enabled && font) {
-                // Darken HUD band in the framebuffer.
+                // Darken or lighten HUD band in the framebuffer based on theme.
                 for (int y = SCREEN_HEIGHT - HUD_HEIGHT; y < SCREEN_HEIGHT; ++y) {
                     if (y < 0) continue;
                     for (int x = 0; x < SCREEN_WIDTH; ++x) {
@@ -810,9 +819,15 @@ int main(int argc, char** argv) {
                         uint8_t r = (px >> 16) & 0xFF;
                         uint8_t g = (px >> 8)  & 0xFF;
                         uint8_t b =  px        & 0xFF;
-                        r = static_cast<uint8_t>((r * 3) / 4);
-                        g = static_cast<uint8_t>((g * 3) / 4);
-                        b = static_cast<uint8_t>((b * 3) / 4);
+                        if (hud_theme_light) {
+                            r = static_cast<uint8_t>(r + (255 - r) / 4);
+                            g = static_cast<uint8_t>(g + (255 - g) / 4);
+                            b = static_cast<uint8_t>(b + (255 - b) / 4);
+                        } else {
+                            r = static_cast<uint8_t>((r * 3) / 4);
+                            g = static_cast<uint8_t>((g * 3) / 4);
+                            b = static_cast<uint8_t>((b * 3) / 4);
+                        }
                         px = (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
                     }
                 }
@@ -821,17 +836,18 @@ int main(int argc, char** argv) {
                 uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
                 const int hud_y = SCREEN_HEIGHT - HUD_HEIGHT + 4;
                 int yoff = hud_y;
+                SDL_Color hud_text_color = hud_theme_light ? SDL_Color{0,0,0,255} : SDL_Color{255,255,255,255};
 
                 std::snprintf(buf, sizeof(buf),
                     "FPS %.1f | Pos %.1f %.1f %.1f",
                     fps, pos_x, pos_y, pos_z);
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
                     "Yaw %.2f  Pitch %.2f",
                     yaw, pitch);
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
@@ -839,26 +855,26 @@ int main(int argc, char** argv) {
                     smooth_surfaces ? "ON" : "OFF",
                     curvature       ? "ON" : "OFF",
                     extra_light     ? "ON" : "OFF");
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
                     "[O] Slice %s  [M] Mouse %s",
                     diag_slice     ? "ON" : "OFF",
                     mouse_captured ? "ON" : "OFF");
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
                     "Hits this frame: %u", hits);
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
                     "Mem: rd %.1f%% wr %.1f%%",
                     last_mem_read_util * 100.0f,
                     last_mem_write_util * 100.0f);
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
@@ -872,7 +888,7 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (no hit)");
                 }
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 if (selection_active) {
@@ -885,7 +901,7 @@ int main(int argc, char** argv) {
                     std::snprintf(buf, sizeof(buf),
                         "Sel: (none)  (aim + F to select)");
                 }
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
                 if (selection_active) {
@@ -903,7 +919,7 @@ int main(int argc, char** argv) {
                         "Probe RGBA %3u/%3u/%3u/%3u L%3u MT%u MP=%02X E%3u",
                         r, g, b, alpha, light,
                         material_type, material_props, emissive);
-                    draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                    draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 }
             }
 
