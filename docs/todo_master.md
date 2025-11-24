@@ -50,6 +50,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a batch/headless mode to render N frames to numbered files for CI comparisons.
 - TODO: Add command-line flags (in addition to env) for backend, seed, camera, speeds, to ease scripted runs.
 - TODO: Add an on-screen indicator when mouse capture is off, with a hint to toggle.
+- TODO: Add an env/hotkey to choose mouse smoothing vs. raw input (helpful for touchpads).
+- TODO: Add a HUD toggle to briefly display keybinds on startup and when pressed.
+- TODO: Add an env to auto-exit after N frames (with optional rotating FRAME_DUMP names) for CI captures.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -79,6 +82,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add parameterized screen dims for non-480x360 builds and propagate to TOTAL_PIXELS checks.
 - TODO: Add a cover/check that dbg writes do not coincide with soft_reset/start_frame (or define behavior).
 - TODO: Add an assertion that frame_done clears core_busy within a bounded number of cycles.
+- TODO: Add a check that no pixel writes occur after frame_done until the next frame start.
+- TODO: Add a parameter to disable extra_light flag effects for baseline testing.
+- TODO: Add coverage on selection edit paths (C/X/Z/B) to ensure dbg write pulses reach voxel RAM in sim.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -123,6 +129,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add DKMS packaging script or notes for the Linux driver for easier installs.
 - TODO: Add build-req documentation (kernel headers) and a quick `make -C drivers/linux help` target.
 - TODO: Add a libhydra convenience wrapper to set multiple flags/camera fields in one call to reduce ioctl churn.
+- TODO: Add a module param to disable debugfs creation for locked-down environments.
+- TODO: Add a tiny tool to map BAR1 (when present) and hexdump a small range for sanity.
+- TODO: Add a DRM stub ioctl negative test to ensure proper error codes on bad args.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -166,6 +175,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a container/devcontainer or Dockerfile for a known-good toolchain (Verilator, SDL2, etc.).
 - TODO: Add a `make package` target to bundle sim binaries/tests/docs into an artifact tarball.
 - TODO: Add a minimal “host-only” CI job that just builds CMake preset without RTL to guard host tools.
+- TODO: Add a .clang-tidy/.verible config checked into the repo and referenced by lint targets.
+- TODO: Add a script to ensure `docs/todo_master.md` stays sorted/unique (no duplicate TODOs).
+- TODO: Add a CI check that running `make clean` leaves the tree tidy (no staged changes).
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -194,3 +206,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add instructions for running cocotb tests with alternative simulators (icarus/vcs/etc.) if applicable.
 - TODO: Add a FAQ section capturing common setup/running errors and fixes.
 - TODO: Add a “first run” checklist (deps, make, test_frame, sim_voxel) for new contributors.
+- TODO: Add a release-notes template snippet (what changed/how validated) for future versions.
+- TODO: Add a short doc on integrating Hydra RTL into other projects (AXI shell expectations).
