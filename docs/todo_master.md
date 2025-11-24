@@ -13,9 +13,14 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Allow font path override (env) in `sim/live_sdl_main.cpp` to avoid silent HUD loss when DejaVuSans is absent.
 - TODO: Expose a debug/HUD toggle to visualize the 96-bit pixel sidebands (`pixel_word0/2`) instead of dropping them in `pixel96_to_argb`.
 - TODO: Relax/case-fold `HYDRA_BACKEND` parsing and prefer compiled GPU backends ahead of SDL in `sim/platform/backend_selector.cpp`.
-- TODO: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don't need a display server.
+- TODO: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don’t need a display server.
 - TODO: Surface an on-screen help overlay (keybind list) in the HUD, gated by a hotkey, to improve discoverability.
 - TODO: Clamp camera position to the voxel volume bounds (configurable) to avoid flying far outside the scene during demos.
+- TODO: Handle SDL window resizes by adjusting the logical size/texture and clearing the framebuffer to avoid stretched/hung frames.
+- TODO: Add a simple frame pacing cap (sleep when FPS >> target) to make automated captures deterministic.
+- TODO: Add a small “record inputs to script” mode (log keys/mouse deltas with timestamps) and a “playback” mode for deterministic repros.
+- TODO: Emit a brief startup summary (backend, font path, env knobs in effect) to stderr to aid reproducibility in logs.
+- TODO: Offer a HUD toggle for memory/bandwidth counters exposed from RTL (mem_cycle/read/write) so perf data is visible without LOG_FRAMES spam.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -23,6 +28,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Surface or assert the `pixel_reemissure` sideband in `rtl/voxel_axi_core.sv` so the 96-bit format stays exercised.
 - TODO: Add simple AXI-Lite SVAs in `rtl/voxel_axil_csr.sv` (handshakes, INT_STATUS RW1C correctness).
 - TODO: Add a lightweight SV testbench that drives AXI-Lite writes/reads over the BAR0 map to flag regressions when CSRs change.
+- TODO: Add compile-time parameters or CSRs for VOXEL_GRID_SIZE/SCREEN dims that propagate into the sim HUD for consistency.
+- TODO: Add an assertion or coverage point for `frame_done` cadence vs. expected pixel count to catch truncated frames in RTL.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -34,6 +41,12 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Flesh out the FreeBSD stub (`drivers/bsd/hydra_pci_stub.c`) to mirror the Linux ioctl map and BAR1 exposure instead of placeholder comments.
 - TODO: Make `scripts/hydra_drm_info.c` fail hard (non-zero) when DRM ioctls fail and print clearer error context.
 - TODO: Add a small libhydra sample that exercises camera/flags/selection APIs so new users can sanity-check BAR0 writes.
+- TODO: Allow overriding vendor/device IDs in the Linux driver via module params to ease bring-up on FPGA prototypes.
+- TODO: Add a tiny userspace test that issues `HYDRA_IOCTL_DMA` with bad offsets to confirm the driver rejects wraps (negative test).
+- TODO: Add uapi header versioning (struct size check) in userspace tools to catch mismatch with the kernel driver.
+- TODO: Add a debugfs knob in `hydra_pcie_drv` to toggle verbose IRQ logging without recompiling.
+- TODO: Package a pkg-config file for libhydra so external tools can find headers/libs without hardcoded paths.
+- TODO: Make the FreeBSD stub expose a `devctl`/sysctl readout similar to the Linux debugfs status for parity.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -44,9 +57,19 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a `make lint` (or similar) target that runs `verilator --lint-only`/`clang-tidy` on the sim C++ and RTL for quick hygiene checks.
 - TODO: Teach CI to capture and publish `sim/build/frame_diff.log` and HUD screenshots on test failures for quicker triage.
 - TODO: Provide a preset or helper to run CMake host builds from the top-level `Makefile` (delegating to `cmake --preset linux-default`).
+- TODO: Add a `make docs` target to build/check that referenced doc files exist and link anchors (prevent doc rot).
+- TODO: Cache Verilator build artifacts between CI jobs (ccache or Verilator’s cache) to speed up repeated runs.
+- TODO: Add a quick “smoke” target that builds `sim_voxel` without optional backends to validate a minimal toolchain quickly.
+- TODO: Add formatting checks (clang-format for C/C++, verible/svformat for SV) to keep diffs clean.
+- TODO: Provide a minimal `requirements.txt` for Python scripts used in CI (`check_frame.py`, etc.) to document versions.
+- TODO: Add a top-level `make docs-lint` that scans docs for stale file references and missing anchors.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
 - TODO: Refresh IDs/rev/build in `docs/hydra_spec.md` to the current (0.0.5/next) values.
 - TODO: Update platform backend status (GL path renders) in README/docs to avoid “stubbed” confusion.
 - TODO: Document the backend selection/env vars and headless mode in README/test docs once implemented.
+- TODO: Add a short “known issues” section for 0.0.6 (e.g., stubbed DMA/AXI master, Vulkan backend stability) to set expectations.
+- TODO: Expand `docs/testing_overview.md` with example commands for negative tests (bad IOCTLs, headless frame dump).
+- TODO: Document keybindings and editing shortcuts in a dedicated sim controls doc to reduce friction for new testers.
+- TODO: Add a brief “architecture at a glance” diagram or ASCII map linking RTL modules to sim components for onboarding.
