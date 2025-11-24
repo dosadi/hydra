@@ -287,6 +287,9 @@ int main(int argc, char** argv) {
     const char* frame_dump_path = std::getenv("FRAME_DUMP");
     const char* auto_exit_env   = std::getenv("AUTO_EXIT");
     bool auto_exit              = auto_exit_env && auto_exit_env[0] != '\0';
+    const char* max_dump_env    = std::getenv("HYDRA_MAX_FRAME_DUMPS");
+    int max_frame_dumps         = max_dump_env ? std::max(0, std::atoi(max_dump_env)) : 1;
+    int frame_dumps_written     = 0;
     std::vector<uint32_t> framebuffer(NPIX, 0);
 
     // Reset sequence
@@ -619,7 +622,8 @@ int main(int argc, char** argv) {
              if (auto_exit) {
                  running = false;
              }
-            if (frame_dump_path && frame_dump_path[0] != '\0') {
+            if (frame_dump_path && frame_dump_path[0] != '\0' &&
+                (max_frame_dumps == 0 || frame_dumps_written < max_frame_dumps)) {
                 FILE* f = std::fopen(frame_dump_path, "wb");
                 if (!f) {
                     std::fprintf(stderr, "Failed to open FRAME_DUMP '%s' for write\n", frame_dump_path);
@@ -637,6 +641,10 @@ int main(int argc, char** argv) {
                         }
                     }
                     std::fclose(f);
+                    ++frame_dumps_written;
+                    if (max_frame_dumps > 0 && frame_dumps_written >= max_frame_dumps) {
+                        std::fprintf(stderr, "Max frame dumps (%d) reached, disabling further FRAME_DUMP writes\n", max_frame_dumps);
+                    }
                 }
             }
 
