@@ -363,6 +363,7 @@ int main(int argc, char** argv) {
     bool curvature       = true;
     bool extra_light     = false;
     bool diag_slice      = false;
+    bool hud_enabled     = true;
 
     bool mouse_captured  = true;
     const char* mouse_cap_env = std::getenv("HYDRA_MOUSE_CAPTURE");
@@ -524,6 +525,9 @@ int main(int argc, char** argv) {
                             selection_active = false;
                             selection_word   = 0;
                             apply_selection_to_dut();
+                            break;
+                        case SDLK_h:
+                            hud_enabled = !hud_enabled;
                             break;
                         case SDLK_r:
                             // Reset camera and flags to defaults; clear selection.
@@ -783,22 +787,22 @@ int main(int argc, char** argv) {
                 last_mem_write_util = float(dw) / float(dc);
             }
 
-            // Darken HUD band in the framebuffer.
-            for (int y = SCREEN_HEIGHT - HUD_HEIGHT; y < SCREEN_HEIGHT; ++y) {
-                if (y < 0) continue;
-                for (int x = 0; x < SCREEN_WIDTH; ++x) {
-                    uint32_t& px = framebuffer[static_cast<size_t>(y) * SCREEN_WIDTH + x];
-                    uint8_t r = (px >> 16) & 0xFF;
-                    uint8_t g = (px >> 8)  & 0xFF;
-                    uint8_t b =  px        & 0xFF;
-                    r = static_cast<uint8_t>((r * 3) / 4);
-                    g = static_cast<uint8_t>((g * 3) / 4);
-                    b = static_cast<uint8_t>((b * 3) / 4);
-                    px = (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
+            if (hud_enabled && font) {
+                // Darken HUD band in the framebuffer.
+                for (int y = SCREEN_HEIGHT - HUD_HEIGHT; y < SCREEN_HEIGHT; ++y) {
+                    if (y < 0) continue;
+                    for (int x = 0; x < SCREEN_WIDTH; ++x) {
+                        uint32_t& px = framebuffer[static_cast<size_t>(y) * SCREEN_WIDTH + x];
+                        uint8_t r = (px >> 16) & 0xFF;
+                        uint8_t g = (px >> 8)  & 0xFF;
+                        uint8_t b =  px        & 0xFF;
+                        r = static_cast<uint8_t>((r * 3) / 4);
+                        g = static_cast<uint8_t>((g * 3) / 4);
+                        b = static_cast<uint8_t>((b * 3) / 4);
+                        px = (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
+                    }
                 }
-            }
 
-            if (font) {
                 char buf[256];
                 uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
                 const int hud_y = SCREEN_HEIGHT - HUD_HEIGHT + 4;
