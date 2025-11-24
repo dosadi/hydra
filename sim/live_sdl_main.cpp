@@ -619,6 +619,7 @@ int main(int argc, char** argv) {
         }
 
         if (frame_done) {
+             size_t pixels_written_this_frame = pixels_this_frame;
              if (auto_exit) {
                  running = false;
              }
@@ -807,6 +808,11 @@ int main(int argc, char** argv) {
             SDL_RenderClear(ren);
             SDL_RenderCopy(ren, tex, nullptr, nullptr);
             SDL_RenderPresent(ren);
+
+            // Clear framebuffer for next frame to avoid stale pixels if the RTL stalls early.
+            if (pixels_written_this_frame < NPIX) {
+                std::fill(framebuffer.begin(), framebuffer.end(), 0);
+            }
 
             pixels_this_frame = 0;
         }
