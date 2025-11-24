@@ -1,39 +1,33 @@
 // ============================================================================
-// voxel_axil_shell.sv
-//
-// ** DEPRECATION NOTICE **
-// This module is DEPRECATED and will be removed in a future release.
-// It tried to serve both simulation and FPGA integration, causing confusion.
-//
-// Please use instead:
-//   - rtl/voxel_sim_harness.sv  : For simulation (Verilator/iverilog/cocotb)
-//   - rtl/voxel_axi_core.sv     : For FPGA integration (LiteX/LitePCIe/LiteDRAM)
-//
-// See docs/ip_integration_cleanup.md for migration guide.
-// ============================================================================
-//
-// Original description:
-// - AXI-Lite + AXI stub shell around voxel_framebuffer_top for simulation/bring-up.
-// - Instantiates:
-//     * voxel_axil_csr      : AXI4-Lite CSR block driving voxel controls.
-//     * axi_sdram_stub      : BRAM-backed AXI memory (stand-in for SDRAM/DDR).
-//     * axi_stream_sink_stub: captures pixel stream (stand-in for HDMI sink).
-// - Connects voxel_framebuffer_top pixel writes into the AXI-Stream sink and
-//   exposes a simple AXI-Lite/AXI presence for early fabric testing.
+// voxel_sim_harness.sv
+// - Simulation-only testbench wrapper around voxel_framebuffer_top.
+// - Instantiates all stubs (SDRAM, DMA, HDMI sink, AXI-Lite CSR) for
+//   simulation testing (Verilator, iverilog, cocotb).
+// - Self-contained: no external AXI ports (everything mocked internally).
+// - NOT for FPGA synthesis! Use voxel_axi_core.sv for real hardware integration.
 // ============================================================================
 `timescale 1ns/1ps
 
-module voxel_axil_shell #(
+`ifndef SIM
+    // Safety check: fail synthesis if this module is accidentally included
+    // in FPGA builds. Comment out this check only if you understand the risks.
+    `ifdef SYNTHESIS
+        `error "voxel_sim_harness is for simulation only! Use voxel_axi_core for FPGA."
+    `endif
+`endif
+
+module voxel_sim_harness #(
     parameter integer SCREEN_WIDTH    = 480,
     parameter integer SCREEN_HEIGHT   = 360,
     parameter integer VOXEL_GRID_SIZE = 64,
-    parameter        TEST_FORCE_WORLD_READY = 0,
-    parameter        AUTO_START_FRAMES = 1
+    parameter integer TEST_FORCE_WORLD_READY = 0,
+    parameter integer AUTO_START_FRAMES = 1,
+    parameter integer FAST_HDMI_TEST = 0
 )(
     input  wire clk,
     input  wire rst_n,
 
-    // AXI-Lite slave (BAR0 placeholder)
+    // AXI-Lite slave (BAR0 placeholder for host sim driver)
     input  wire [15:0] s_axil_awaddr,
     input  wire        s_axil_awvalid,
     output wire        s_axil_awready,
@@ -52,7 +46,7 @@ module voxel_axil_shell #(
     output wire        s_axil_rvalid,
     input  wire        s_axil_rready,
 
-    // AXI (placeholder SDRAM port) exposed externally
+    // External AXI port (for host sim to read/write SDRAM stub)
     input  wire [3:0]  ext_axi_awid,
     input  wire [27:0] ext_axi_awaddr,
     input  wire [7:0]  ext_axi_awlen,
@@ -83,7 +77,7 @@ module voxel_axil_shell #(
     output wire        ext_axi_rvalid,
     input  wire        ext_axi_rready,
 
-    // AXI-Stream sink (HDMI placeholder)
+    // AXI-Stream sink outputs (for test capture)
     output wire [23:0] s_axis_tdata,
     output wire        s_axis_tvalid,
     output wire        s_axis_tlast,
@@ -95,7 +89,7 @@ module voxel_axil_shell #(
     output wire [15:0] hdmi_line_count,
     output wire [15:0] hdmi_pixel_in_line,
 
-    // Interrupt output
+    // Interrupt outputs
     output wire        irq_out,
     output wire        msi_pulse
 );
@@ -148,6 +142,15 @@ module voxel_axil_shell #(
     reg          irq_out_d;
     assign msi_pulse = irq_out & ~irq_out_d;
 
+    // Core/framebuffer signals (declared early to avoid implicit wires)
+    wire         frame_done_int;
+    wire         core_busy_int;
+    wire         pixel_write_en_int;
+    wire [31:0]  pixel_addr_int;
+    wire [31:0]  pixel_word0_int, pixel_word1_int, pixel_word2_int;
+    wire [31:0]  pixel_reemissure_int;
+    wire [63:0]  sdram_dbg_rdata;
+
     voxel_axil_csr #(
         .ADDR_WIDTH(16),
         .DATA_WIDTH(32)
@@ -198,8 +201,8 @@ module voxel_axil_shell #(
         .dbg_addr       (dbg_addr),
         .dbg_wdata      (dbg_wdata),
 
-        .frame_done_pulse(frame_done),
-        .core_busy      (core_busy),
+        .frame_done_pulse(frame_done_int),
+        .core_busy      (core_busy_int),
 
         .soft_reset_pulse(soft_reset_pulse),
         .start_frame_pulse(start_frame_pulse),
@@ -227,11 +230,13 @@ module voxel_axil_shell #(
     );
 
     // --------------------------------------------------------------------
-    // SDRAM + voxel window crossbar (2x2 stub)
+    // SDRAM stub + crossbar for sim
+    // Decode voxel window (256 KiB at base 0x000_0000) vs. BAR1 (offset 0x100_0000)
+    // --------------------------------------------------------------------
     localparam [27:0] VOXEL_WIN_MASK = 28'h0FF_F000; // 256 KiB window
     localparam [27:0] VOXEL_WIN_BASE = 28'h000_0000;
     localparam [27:0] BAR1_BASE      = 28'h100_0000;
-    // Decode voxel window on external AXI port (maps to debug write path, not SDRAM)
+
     wire ext_voxel_aw = ((ext_axi_awaddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
     wire ext_voxel_ar = ((ext_axi_araddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
 
@@ -366,14 +371,13 @@ module voxel_axil_shell #(
 
     // Internal SDRAM stub signals and framebuffer layout
     localparam integer SDRAM_MEM_WORDS  = 1 << 18; // 2 MiB of 64-bit words for sim
-    localparam integer SDRAM_ADDR_SHIFT = 28 - $clog2(SDRAM_MEM_WORDS);
+    localparam integer SDRAM_ADDR_SHIFT = 3;       // byte shift for 64-bit words
     localparam integer FB_BASE_WORD     = 0;       // framebuffer base index in SDRAM words
 
     wire sdram_awready_int, sdram_wready_int, sdram_bvalid_int, sdram_arready_int, sdram_rlast_int, sdram_rvalid_int;
     wire [3:0] sdram_bid_int, sdram_rid_int;
     wire [1:0] sdram_bresp_int, sdram_rresp_int;
     wire [63:0] sdram_rdata_int;
-    wire [63:0] sdram_dbg_rdata;
     wire        sdram_dbg_we;
     wire        sdram_dbg_re;
     wire [27:0] sdram_dbg_addr;
@@ -384,14 +388,14 @@ module voxel_axil_shell #(
     wire [27:0] fb_dbg_addr;
     wire [63:0] fb_dbg_wdata;
 
-    assign fb_dbg_we    = pixel_write_en;
-    assign fb_dbg_addr  = ((FB_BASE_WORD + pixel_addr[27:0]) << SDRAM_ADDR_SHIFT);
+    assign fb_dbg_we    = pixel_write_en_int;
+    assign fb_dbg_addr  = (FB_BASE_WORD + pixel_addr_int[27:0]) << SDRAM_ADDR_SHIFT;
     // Pack reemissure32 + RGB/material into one 64-bit word for SDRAM/host readback.
-    assign fb_dbg_wdata = {pixel_reemissure, pixel_word1};
+    assign fb_dbg_wdata = {pixel_reemissure_int, pixel_word1_int};
 
-    // HDMI scanout reads from SDRAM via debug port
-    wire        hdmi_dbg_re;
-    wire [27:0] hdmi_dbg_addr;
+    // HDMI scanout reads from SDRAM via debug port (unused in sink stub)
+    wire        hdmi_dbg_re   = 1'b0;
+    wire [27:0] hdmi_dbg_addr = 28'd0;
 
     // Combine blitter, framebuffer writer, and HDMI reader on debug port
     assign sdram_dbg_we    = fb_dbg_we | blit_mem_we;
@@ -401,15 +405,11 @@ module voxel_axil_shell #(
                               blit_mem_addr;
     assign sdram_dbg_wdata = fb_dbg_we ? fb_dbg_wdata : blit_mem_wdata;
 
-    // Simple BAR1 range guard: limit external accesses to stub depth.
-    wire bar1_out_of_range   = target_bar1   && (ext_axi_awaddr[27:0] >= (SDRAM_MEM_WORDS << 3));
-    wire bar1_r_out_of_range = target_bar1_r && (ext_axi_araddr[27:0] >= (SDRAM_MEM_WORDS << 3));
-
     axi_sdram_stub #(
         .ADDR_WIDTH(28),
         .DATA_WIDTH(64),
         .ID_WIDTH  (4),
-        .MEM_WORDS (1 << 16) // 64 KiB of 64-bit words for sim
+        .MEM_WORDS (SDRAM_MEM_WORDS) // 2 MiB of 64-bit words for sim
     ) u_sdram (
         .clk          (clk),
         .rst_n        (rst_n),
@@ -459,8 +459,8 @@ module voxel_axil_shell #(
         .clk           (clk),
         .rst_n         (rst_n),
         .start         (dma_start_pulse),
-        .src_addr      ({4'd0, dma_src[27:0]}),
-        .dst_addr      ({4'd0, dma_dst[27:0]}),
+        .src_addr      (dma_src[27:0]),
+        .dst_addr      (dma_dst[27:0]),
         .len_bytes     (dma_len),
         .busy          (dma_busy),
         .done          (dma_done),
@@ -500,65 +500,108 @@ module voxel_axil_shell #(
         .m_axi_rready  (m1_rready)
     );
 
-    // Voxel framebuffer + AXI-Stream bridge (HDMI placeholder)
     // --------------------------------------------------------------------
-    wire         pixel_write_en;
-    wire [31:0]  pixel_addr;
-    wire [31:0]  pixel_word0, pixel_word1, pixel_word2;
-    wire [31:0]  pixel_reemissure;
-    wire         frame_done;
-    wire         core_busy;
+    // Voxel framebuffer core (or fast stub for HDMI tests)
+    // --------------------------------------------------------------------
+    generate
+        if (FAST_HDMI_TEST) begin : g_fast_hdmi
+            reg [31:0] fast_pixel_addr;
+            reg        fast_pixel_we;
+            reg        fast_frame_done;
 
+            always @(posedge clk or negedge rst_n) begin
+                if (!rst_n) begin
+                    fast_pixel_addr  <= 32'd0;
+                    fast_pixel_we    <= 1'b0;
+                    fast_frame_done  <= 1'b0;
+                end else begin
+                    fast_pixel_we    <= 1'b1;
+                    fast_pixel_addr  <= (fast_pixel_addr == TOTAL_PIXELS-1) ? 32'd0 : fast_pixel_addr + 1'b1;
+                    fast_frame_done  <= (fast_pixel_addr == TOTAL_PIXELS-1);
+                end
+            end
 
-    voxel_framebuffer_top #(
-        .SCREEN_WIDTH   (SCREEN_WIDTH),
-        .SCREEN_HEIGHT  (SCREEN_HEIGHT),
-        .VOXEL_GRID_SIZE(VOXEL_GRID_SIZE),
-        .TEST_FORCE_WORLD_READY(TEST_FORCE_WORLD_READY),
-        .AUTO_START_FRAMES(AUTO_START_FRAMES)
-    ) u_voxel (
-        .clk            (clk),
-        .rst_n          (rst_n),
-        .pixel_write_en (pixel_write_en),
-        .pixel_addr     (pixel_addr),
-        .pixel_word0    (pixel_word0),
-        .pixel_word1    (pixel_word1),
-        .pixel_word2    (pixel_word2),
-        .pixel_reemissure(pixel_reemissure),
-        .frame_done     (frame_done),
-        .core_busy      (core_busy),
-        .cam_load       (cam_load_pulse),
-        .cam_x_in       (cam_x),
-        .cam_y_in       (cam_y),
-        .cam_z_in       (cam_z),
-        .cam_dir_x_in   (cam_dir_x),
-        .cam_dir_y_in   (cam_dir_y),
-        .cam_dir_z_in   (cam_dir_z),
-        .cam_plane_x_in (cam_plane_x),
-        .cam_plane_y_in (cam_plane_y),
-        .flags_load     (flags_load_pulse),
-        .flag_smooth_in (flag_smooth),
-        .flag_curvature_in(flag_curvature),
-        .flag_extra_light_in(flag_extra_light),
-        .flag_diag_slice_in(flag_diag_slice),
-        .sel_load       (sel_load_pulse),
-        .sel_active_in  (sel_active),
-        .sel_voxel_x_in (sel_x),
-        .sel_voxel_y_in (sel_y),
-        .sel_voxel_z_in (sel_z),
-        .dbg_ext_write_en  (dbg_we_pulse | ext_dbg_we),
-        .dbg_ext_write_addr(ext_dbg_we ? ext_dbg_addr : dbg_addr),
-        .dbg_ext_write_data(ext_dbg_we ? ext_dbg_data : dbg_wdata),
-        .start_frame_ext (start_frame_pulse),
-        .soft_reset_ext  (soft_reset_pulse)
-    );
+            assign pixel_write_en_int  = fast_pixel_we;
+            assign pixel_addr_int      = fast_pixel_addr;
+            assign pixel_word0_int     = 32'h0000_0000;
+            assign pixel_word1_int     = {8'h20, fast_pixel_addr[7:0], 16'h00FF};
+            assign pixel_word2_int     = 32'h0000_0000;
+            assign pixel_reemissure_int= 32'h0000_0100;
+            assign frame_done_int      = fast_frame_done;
+            assign core_busy_int       = 1'b1;
+        end else begin : g_full_voxel
+            voxel_framebuffer_top #(
+                .SCREEN_WIDTH   (SCREEN_WIDTH),
+                .SCREEN_HEIGHT  (SCREEN_HEIGHT),
+                .VOXEL_GRID_SIZE(VOXEL_GRID_SIZE),
+                .TEST_FORCE_WORLD_READY(TEST_FORCE_WORLD_READY),
+                .AUTO_START_FRAMES(AUTO_START_FRAMES)
+            ) u_voxel (
+                .clk            (clk),
+                .rst_n          (rst_n),
+                .pixel_write_en (pixel_write_en_int),
+                .pixel_addr     (pixel_addr_int),
+                .pixel_word0    (pixel_word0_int),
+                .pixel_word1    (pixel_word1_int),
+                .pixel_word2    (pixel_word2_int),
+                .pixel_reemissure(pixel_reemissure_int),
+                .frame_done     (frame_done_int),
+                .core_busy      (core_busy_int),
+                .cam_load       (cam_load_pulse),
+                .cam_x_in       (cam_x),
+                .cam_y_in       (cam_y),
+                .cam_z_in       (cam_z),
+                .cam_dir_x_in   (cam_dir_x),
+                .cam_dir_y_in   (cam_dir_y),
+                .cam_dir_z_in   (cam_dir_z),
+                .cam_plane_x_in (cam_plane_x),
+                .cam_plane_y_in (cam_plane_y),
+                .flags_load     (flags_load_pulse),
+                .flag_smooth_in (flag_smooth),
+                .flag_curvature_in(flag_curvature),
+                .flag_extra_light_in(flag_extra_light),
+                .flag_diag_slice_in(flag_diag_slice),
+                .sel_load       (sel_load_pulse),
+                .sel_active_in  (sel_active),
+                .sel_voxel_x_in (sel_x),
+                .sel_voxel_y_in (sel_y),
+                .sel_voxel_z_in (sel_z),
+                .dbg_ext_write_en  (dbg_we_pulse | ext_dbg_we),
+                .dbg_ext_write_addr(ext_dbg_we ? ext_dbg_addr : dbg_addr),
+                .dbg_ext_write_data(ext_dbg_we ? ext_dbg_data : dbg_wdata),
+                .start_frame_ext (start_frame_pulse),
+                .soft_reset_ext  (soft_reset_pulse)
+            );
+        end
+    endgenerate
 
+    // --------------------------------------------------------------------
+    // AXI-Stream sink stub (HDMI placeholder)
+    // --------------------------------------------------------------------
     localparam integer TOTAL_PIXELS = SCREEN_WIDTH * SCREEN_HEIGHT;
 
-    assign s_axis_tdata  = pixel_word1[23:0]; // RGB
-    assign s_axis_tvalid = pixel_write_en;
-    assign s_axis_tuser  = (pixel_addr == 0);
-    assign s_axis_tlast  = (pixel_addr == TOTAL_PIXELS-1);
+    assign s_axis_tdata  = pixel_word1_int[23:0]; // RGB
+    assign s_axis_tvalid = pixel_write_en_int;
+    assign s_axis_tuser  = (pixel_addr_int == 0);
+    assign s_axis_tlast  = (pixel_addr_int == TOTAL_PIXELS-1);
+
+    `ifdef PIXEL_COUNT_DEBUG
+        integer pixel_seen;
+        initial pixel_seen = 0;
+        always @(posedge clk or negedge rst_n) begin
+            if (!rst_n)
+                pixel_seen <= 0;
+            else if (s_axis_tvalid && s_axis_tready) begin
+                pixel_seen <= pixel_seen + 1;
+                if (s_axis_tlast)
+                    $display("PIX_LAST: seen=%0d addr=%0d user=%b frame_count=%0d crc=%h time=%0t",
+                             pixel_seen, pixel_addr_int, s_axis_tuser, hdmi_frame_count, hdmi_crc_last, $time);
+                if ((pixel_seen & 16'h00FF) == 0)
+                    $display("PIX_DBG: seen=%0d addr=%0d last=%b user=%b frames=%0d",
+                             pixel_seen, pixel_addr_int, s_axis_tlast, s_axis_tuser, hdmi_frame_count);
+            end
+        end
+    `endif
 
     axi_stream_sink_stub #(
         .DATA_WIDTH(24)
@@ -578,6 +621,7 @@ module voxel_axil_shell #(
         .pixel_in_line  (hdmi_pixel_in_line)
     );
 
+    // IRQ edge detection
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n)
             irq_out_d <= 1'b0;

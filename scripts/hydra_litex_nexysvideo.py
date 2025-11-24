@@ -2,7 +2,7 @@
 """Nexys Video FPGA wrapper for the voxel engine using LiteX-family IP.
 
 This is *not* a traditional CPU SoC. It is a flat shell that:
-- exposes Hydra's voxel engine through HydraBoardShell (AXI-Lite + AXI + AXI-Stream),
+- exposes Hydra's voxel engine through HydraCore (AXI-Lite + AXI + AXI-Stream),
 - terminates control on PCIe BAR0 (AXI-Lite),
 - maps bulk data moves over PCIe DMA into external DDR3,
 - and drives HDMI using LiteICLink/LiteVideo TMDS cores.
@@ -44,11 +44,11 @@ except ImportError as e:  # pragma: no cover - depends on external package
 SCRIPTS_ROOT = ROOT_DIR / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
-from hydra_litex_shell import HydraBoardShell  # type: ignore
+from hydra_litex_shell import HydraCore  # type: ignore
 
 
 # ---------------------------------------------------------------------------
-# SoC wrapper (CPU-less dataplane with HydraBoardShell)
+# SoC wrapper (CPU-less dataplane with HydraCore)
 # ---------------------------------------------------------------------------
 
 class HydraNexysVideoSoC(SoCCore):
@@ -56,7 +56,7 @@ class HydraNexysVideoSoC(SoCCore):
 
     - No CPU, no CSR buses beyond what PCIe BAR0 exposes.
     - LitePCIe terminates PCIe, providing BAR0 AXI-Lite + DMA streams.
-    - LiteDRAM provides DDR3; an AXI port is given directly to HydraBoardShell.
+    - LiteDRAM provides DDR3; an AXI port is given directly to HydraCore.
     - LiteICLink/LiteVideo provides HDMI TMDS and timing, fed by Hydra's AXI-Stream.
     """
 
@@ -89,7 +89,7 @@ class HydraNexysVideoSoC(SoCCore):
         # Hydra voxel shell (AXI-Lite + AXI + AXI-Stream)
         # ------------------------------------------------------------------
 
-        self.submodules.hydra = HydraBoardShell()
+        self.submodules.hydra = HydraCore()
 
         # Map BAR0 AXI-Lite onto Hydra's control interface.
         if with_pcie and hasattr(self, "pcie_endpoint"):

@@ -78,8 +78,10 @@ HYDRA_BACKEND=SDL ./sim_voxel
   - `voxel_raycaster_core_pipelined.sv` - Pipelined ray marching engine
   - `voxel_memory_64.sv` - 64×64×64 voxel BRAM
   - `voxel_world_gen.sv` - Procedural world generator
-  - `voxel_axil_shell.sv` - AXI-Lite CSR wrapper for PCIe integration
-  - `axi_*.sv` - AXI/AXI-Lite stubs for DMA/SDRAM/stream interfaces
+  - `voxel_axil_csr.sv` - AXI-Lite CSR block for control registers
+  - `voxel_axi_core.sv` - Clean FPGA integration wrapper (for LiteX/PCIe)
+  - `voxel_sim_harness.sv` - Simulation-only testbench with stubs
+  - `axi_*.sv` - AXI/AXI-Lite stubs for DMA/SDRAM/stream interfaces (sim only)
 
 - **`sim/`** - Verilator+SDL viewer and test harness
   - `live_sdl_main.cpp` - Main sim harness
@@ -129,7 +131,7 @@ UAPI headers: `drivers/linux/uapi/hydra_regs.h`
 1. **World generation** (hardware): `voxel_world_gen.sv` populates BRAM with procedural scene (lit floor, emissive ceiling, spheres)
 2. **Raycaster core**: `voxel_raycaster_core_pipelined.sv` performs fixed-point ray marching, outputs 96-bit extended pixels
 3. **Framebuffer output**: Pixel interface writes RGBA32 + reemissure32 sidecar to host memory or AXI-Stream video sink
-4. **Host control**: AXI-Lite CSR shell (`voxel_axil_shell.sv`) exposes camera, flags, selection, DMA to driver
+4. **Host control**: AXI-Lite CSR block (`voxel_axil_csr.sv`) exposes camera, flags, selection, DMA to driver
 5. **Sim loop**: `live_sdl_main.cpp` drives clock, reads pixel stream, updates SDL window with HUD
 
 ## RTL Development Notes
