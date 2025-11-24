@@ -21,9 +21,12 @@ Quick reference for the SDL viewer (Verilator + SDL2) in `sim/`.
 - `C` – cycle material type (selected voxel)
 - `X` / `Z` – increase / decrease emissive (selected voxel)
 - `B` – brighten RGB components (selected voxel)
+- `P` – print current camera/flags/selection to stderr (for scripts/logging)
 
 ## Misc
 - `M` – toggle mouse capture
+- `H` – toggle HUD on/off
+- `R` – reset camera/flags/selection to defaults
 - `ESC` – exit
 
 Notes:

@@ -546,6 +546,19 @@ int main(int argc, char** argv) {
                             apply_flags_to_dut();
                             apply_selection_to_dut();
                             break;
+                        case SDLK_p:
+                            std::fprintf(stderr,
+                                "State: cam=(%.3f,%.3f,%.3f) yaw=%.3f pitch=%.3f flags[smooth=%d curv=%d extra=%d diag=%d] sel=%d (%u,%u,%u)\n",
+                                pos_x, pos_y, pos_z, yaw, pitch,
+                                smooth_surfaces ? 1 : 0,
+                                curvature ? 1 : 0,
+                                extra_light ? 1 : 0,
+                                diag_slice ? 1 : 0,
+                                selection_active ? 1 : 0,
+                                (unsigned)selection_x,
+                                (unsigned)selection_y,
+                                (unsigned)selection_z);
+                            break;
                         default: break;
                     }
 
