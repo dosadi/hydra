@@ -56,6 +56,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add an option to persist camera/selection/flags to a small config file and reload on startup.
 - TODO: Add a HUD toggle to flash when selection write fails (e.g., cursor miss) to aid debugging.
 - TODO: Add a “safe capture” mode that disables input and keeps camera fixed while dumping frames.
+- TODO: Add a hotkey/env to toggle cursor ray visualization (line to hit point) for debugging aiming/selection.
+- TODO: Add an audio click/feedback on selection or edit to improve UX during demos (optional, env-controlled).
+- TODO: Add a seed/randomize hotkey to quickly flip worlds without restarting the sim.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -91,6 +94,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a simple check that fb_base/fb_stride CSRs hold non-zero values when start_frame pulses (or define default).
 - TODO: Add an assertion that diag_slice changes only take effect on flags_load to avoid glitches mid-frame.
 - TODO: Add a lightweight SV monitor that logs first/last pixel addresses per frame for debugging.
+- TODO: Add coverpoints for MSI pulse generation on frame_done/dma_done/blit_done bits independently.
+- TODO: Add an assertion that dbg_write_en is single-cycle and deasserted on the following cycle.
+- TODO: Add an option to gate INT_STATUS/frame_done by start_frame so accidental asserts during reset are ignored.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -141,6 +147,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a kselftest case that exercises unaligned IOCTL offsets to ensure -EINVAL is returned.
 - TODO: Add a libhydra call to fetch BAR sizes/info (mirrors HYDRA_IOCTL_INFO) for convenience.
 - TODO: Add CI smoke that runs libhydra samples under strace to confirm IOCTL sequences look sane.
+- TODO: Add a tiny tool to toggle INT_MASK bits and poll INT_STATUS to validate IRQ masking from userspace.
+- TODO: Add a FreeBSD Makefile target to build/install the stub (mirroring Linux make help).
+- TODO: Add a small README for user tools describing expected outputs and exit codes.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -190,6 +199,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add CI to run Python linters (ruff/black-check) on scripts/ to catch style issues early.
 - TODO: Add a simple “env probe” script that prints tool versions (verilator, gcc, sdl2-config) in CI logs.
 - TODO: Add a `make sanitize` target to build sim with ASan/UBSan when available.
+- TODO: Add a CI job that builds/runs `sim/tests/run_rtl_tests.sh` when iverilog/vvp are present, marking non-fatal otherwise.
+- TODO: Add a `make shellcheck` target to lint bash scripts (hydra_dev_loop.sh, fetch_ip.sh, etc.).
+- TODO: Add a helper script to bump version numbers across README/CMake/RELEASE_NOTES consistently.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -222,3 +234,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a short doc on integrating Hydra RTL into other projects (AXI shell expectations).
 - TODO: Add a short “how to file a good bug” blurb (logs to attach, FRAME_DUMP, LOG_KEYS/LOG_FRAMES).
 - TODO: Add a glossary of module names/prefixes (cam_/cfg_/sel_/dbg_) for newcomers.
+- TODO: Add a short doc showing example outputs from libhydra tools (info/irq_test) to set expectations.
+- TODO: Add a section on how to interpret INT_STATUS/INT_MASK bits in the docs/hydra_spec.md narrative.
