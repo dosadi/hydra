@@ -19,6 +19,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
+echo "[dev-loop] Step 0: sync third-party IP (LitePCIe/LiteDRAM/LiteICLink/LiteX)"
+./scripts/fetch_ip.sh || echo "[dev-loop] fetch_ip.sh reported non-fatal issues (e.g., no network)"
+
 echo "[dev-loop] Step 1: build sim and run frame regression"
 cd sim
 make

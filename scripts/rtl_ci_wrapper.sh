@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Best-effort RTL bench runner for CI.
+# RTL bench runner for CI.
 # Runs sim/tests/run_rtl_tests.sh under a timeout if iverilog/vvp are present,
-# logs to artifacts/rtl_tests.log, and NEVER fails the build.
+# logs to artifacts/rtl_tests.log, and fails the build if benches themselves fail
+# (but still skips cleanly when tools/scripts are missing).
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_DIR="${ROOT_DIR}/artifacts"
@@ -21,10 +22,8 @@ LOG_FILE="${LOG_DIR}/rtl_tests.log"
     exit 0
   fi
   if command -v timeout >/dev/null 2>&1; then
-    timeout 300s "${ROOT_DIR}/sim/tests/run_rtl_tests.sh" || echo "[rtl-ci] RTL benches failed or timed out (non-fatal)"
+    timeout 300s "${ROOT_DIR}/sim/tests/run_rtl_tests.sh"
   else
-    "${ROOT_DIR}/sim/tests/run_rtl_tests.sh" || echo "[rtl-ci] RTL benches failed (non-fatal)"
+    "${ROOT_DIR}/sim/tests/run_rtl_tests.sh"
   fi
-} | tee "${LOG_FILE}" || true
-
-exit 0
+} | tee "${LOG_FILE}"

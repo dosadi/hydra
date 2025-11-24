@@ -142,18 +142,18 @@ module test_dma_loopback;
     initial begin
         $display("Starting DMA loopback test...");
         #20 rst_n = 1;
-        // Program INT_MASK
-        axil_write(16'h21, 32'h0000_0003); // mask frame_done + dma_done
-        // Program DMA src/dst/len (within SDRAM window)
-        axil_write(16'h18, 32'h0000_0000); // SRC
-        axil_write(16'h19, 32'h0000_0100); // DST
-        axil_write(16'h1A, 32'h0000_0040); // LEN
-        axil_write(16'h1B, 32'h0000_0001); // CMD start
+        // Program INT_MASK (byte offset 0x0084)
+        axil_write(16'h0084, 32'h0000_0003); // mask frame_done + dma_done
+        // Program DMA src/dst/len (within SDRAM window) using byte offsets.
+        axil_write(16'h0060, 32'h0000_0000); // DMA_SRC
+        axil_write(16'h0064, 32'h0000_0100); // DMA_DST
+        axil_write(16'h0068, 32'h0000_0040); // DMA_LEN
+        axil_write(16'h006C, 32'h0000_0001); // DMA_CTRL start
         // Wait for done bit
         repeat (500) @(posedge clk);
         if (s_axil_rdata[1] === 1'b1)
             $display("DMA done observed");
-        axil_read(16'h20); // read INT_STATUS
+        axil_read(16'h0080); // read INT_STATUS (byte offset)
         if (s_axil_rdata[1] !== 1'b1) begin
             $error("Expected INT_STATUS dma_done bit set");
         end

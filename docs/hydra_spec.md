@@ -4,11 +4,11 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 
 ## Functional blocks (initial)
 - PCIe endpoint (BAR0 CSR space, optional BAR1 aperture for frame/voxel data).
-- Voxel core: 64×64×64 volume, fixed‑point raycaster, diagnostic slice mode.
-- Surface extraction (stubbed in RTL today), 3D blitter (planned).
-- Framebuffer: RGBA32 plus “reemissure32” sidecar (per‑pixel emission/extra field).
+- Voxel core: 64×64×64 volume, fixed‑point raycaster with diagnostic slice mode.
+- Surface extraction (stubbed in RTL today), 3D blitter (bring-up stub present, not a full 3D pipeline).
+- Framebuffer: RGBA32 plus “reemissure32” sidecar (per‑pixel emission/extra field; unused in current shell).
 - HDMI/DVI output pipeline (LiteICLink/LiteVideo planned), AXI-Stream sink stub in sim.
-- DMA engine (host↔SDRAM/BRAM) for voxel/frame uploads (LitePCIe/LiteDMA planned).
+- DMA engine (host↔SDRAM/BRAM) for voxel/frame uploads (LitePCIe/LiteDMA planned; AXI stubs exist in RTL).
 
 ## Device IDs (current for 0.0.3)
 - Vendor ID: `0x1BAD`
@@ -42,9 +42,9 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `0x0100..` 3D blitter stub: CTRL/STATUS/SRC/DST/LEN/STRIDE, pixel read/write, object attribute table, FIFO data port.
 - Reserved: 0x0150..0xFFFF for future (surface extractor, perf counters).
 
-## Frame formats (planned)
-- RGBA32: 8 bits per channel, premultiplied alpha optional.
-- Reemissure32 (sidecar): reserved for future emission/extra data; 0.0.3 leaves this field zeroed in the stub.
+## Frame formats (current / planned)
+- RGBA32: 8 bits per channel, premultiplied alpha optional (current sim output path).
+- Reemissure32 (sidecar): reserved for future emission/extra data; current RTL leaves this field zeroed in the shell.
 - AXI-Stream video: 24-bit RGB, tuser=start-of-frame, tlast=end-of-frame per line/frame depending on encoder.
 
 ## Interrupts (proposed)
@@ -67,5 +67,16 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 
 ## Open items
 - Update vendor/device IDs if silicon IDs are reassigned (keep RTL/UAPI/spec in sync).
-- Extend reemissure32 definition and surface extractor control space post-0.0.3.
+- Extend reemissure32 definition and surface extractor control space post-0.0.4.
 - Add full MSI/INT wiring in the real PCIe endpoint when integrated.
+
+## Implementation status (0.0.4+)
+- Voxel core, camera, flags, selection, and debug voxel write path are implemented in RTL and exercised in the Verilator+SDL sim.
+- BAR0 register map is reflected in the Linux UAPI headers (`drivers/linux/uapi/hydra_regs.h`) and the AXI-Lite CSR shell; BAR1/SDRAM aperture is modeled by simple AXI memory stubs in sim.
+- PCIe/DRAM/HDMI integration is captured in `docs/ip_integration.md` and `docs/hardware_test_plan.md`; FPGA shells use LiteX IP, while the sim uses AXI/AXI-Stream stubs.
+- The 3D blitter is a functional bring-up stub wired to BAR0 but not yet connected to a full 3D pipeline or DMA command stream.
+
+## Simulation and regression hooks
+- The Verilator+SDL sim exposes the core via `sim_voxel`; environment variables `FRAME_DUMP` and `AUTO_EXIT` drive a deterministic single-frame dump for regression.
+- `make -C sim test_frame` builds the sim, dumps a frame through a dummy backend, and compares against `sim/tests/golden_frame.ppm` using `scripts/check_frame.py`.
+- Diagnostic slice and extra-light flags (`CTRL.diag_slice_en`, `CTRL.extra_light_en` / `FLAGS.diag_slice`, `FLAGS.extra_light`) are exercised in the sim HUD and must remain stable across hardware revisions.

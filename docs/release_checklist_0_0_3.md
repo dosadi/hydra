@@ -8,9 +8,9 @@ Actionable tasks to close out the 0.0.3 release. Keep items checked off as they 
 - [ ] Align IRQ bits/MSI wiring in RTL (`rtl/voxel_axil_shell.sv`, `rtl/axi_stream_sink_stub.sv`) with driver UAPI masks.
 
 ## RTL stabilization
-- [ ] Validate/replace AXI stubs (`rtl/axi_dma_stub.sv`, `rtl/axi_crossbar_stub.sv`, `rtl/axi_sdram_stub.sv`, `rtl/axi_stream_sink_stub.sv`) and confirm BAR1 window decode in `rtl/voxel_axil_shell.sv`.
-- [ ] Add fixed-camera HDMI CRC/line/pixel golden check; record expected CRC for regression.
-- [ ] Add SDRAM loopback DMA sim test with INT_STATUS assertions.
+- [x] Validate/replace AXI stubs (`rtl/axi_dma_stub.sv`, `rtl/axi_crossbar_stub.sv`, `rtl/axi_sdram_stub.sv`, `rtl/axi_stream_sink_stub.sv`) and confirm BAR1 window decode in `rtl/voxel_axil_shell.sv` (covered by RTL benches and cocotb smoke).
+- [x] Add fixed-camera HDMI CRC/line/pixel golden check; record expected CRC for regression (`sim/tests/rtl/test_hdmi_crc_golden.sv`, crc=0x00020500).
+- [x] Add SDRAM loopback DMA sim test with INT_STATUS/irq_out assertions (`sim/tests/rtl/test_dma_loopback.sv`, `sim/tests/rtl/test_bar1_dma_loopback.sv`).
 
 ## Driver and UAPI
 - [ ] Finish Linux misc/PCIe driver TODOs in `drivers/linux/hydra_pcie_drv.c` (DMA start/done/error handling, IRQ clear/enable, BAR1 mmap path, timeouts).
@@ -22,7 +22,7 @@ Actionable tasks to close out the 0.0.3 release. Keep items checked off as they 
 - [ ] Flesh out Mesa Gallium stubs so they compile against the frozen UAPI (`drivers/mesa/hydra_screen.c`, `drivers/mesa/hydra_context.c`, `drivers/mesa/hydra_gallium_stub.c`, `drivers/mesa/meson.build`).
 
 ## Tests and CI
-- [ ] Complete cocotb smoke/regression (`sim/tests/cocotb_hydra`): DMA start/done, INT_STATUS, HDMI CRC/line/pixel counters; keep optional CI job green.
+- [x] Complete cocotb smoke/regression (`sim/tests/cocotb_hydra`): DMA start/done, INT_STATUS, HDMI CRC/line/pixel counters; keep optional CI job green (see `test_hydra_smoke.py`).
 - [ ] Implement QEMU PCIe stub device (sim/tests/qemu_stub) to exercise libhydra/drivers; add optional CI job when stable.
 - [ ] Add SDRAM DMA loopback and HDMI CRC golden checks into CI once deterministic. (DMA loopback in CI; HDMI CRC golden now stable.)
 - [ ] Verify render-node smoke via `scripts/hydra_drm_info` after DRM stub loads.

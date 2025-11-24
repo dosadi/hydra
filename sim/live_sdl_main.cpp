@@ -16,6 +16,7 @@
 #include <string>
 #include <cmath>
 #include <chrono>
+#include <algorithm>
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
@@ -117,22 +118,55 @@ static void die(const std::string& s) {
     std::exit(1);
 }
 
-static void draw_text(SDL_Renderer* ren, TTF_Font* font,
-                      const std::string& txt,
-                      int x, int y,
-                      SDL_Color color = {255,255,255,255})
+static void draw_text_to_fb(std::vector<uint32_t>& fb, int fb_w, int fb_h,
+                             TTF_Font* font,
+                             const std::string& txt,
+                             int x, int y,
+                             SDL_Color color = {255,255,255,255})
 {
     SDL_Surface* surf = TTF_RenderText_Blended(font, txt.c_str(), color);
     if (!surf) return;
-    SDL_Texture* tex = SDL_CreateTextureFromSurface(ren, surf);
-    SDL_FreeSurface(surf);
-    if (!tex) return;
 
-    int w, h;
-    SDL_QueryTexture(tex, nullptr, nullptr, &w, &h);
-    SDL_Rect dst{ x, y, w, h };
-    SDL_RenderCopy(ren, tex, nullptr, &dst);
-    SDL_DestroyTexture(tex);
+    SDL_PixelFormat* fmt = surf->format;
+    if (!fmt || fmt->BytesPerPixel != 4) {
+        SDL_Surface* conv = SDL_ConvertSurfaceFormat(surf, SDL_PIXELFORMAT_ARGB8888, 0);
+        SDL_FreeSurface(surf);
+        surf = conv;
+        if (!surf) return;
+        fmt = surf->format;
+    }
+
+    uint8_t* src = static_cast<uint8_t*>(surf->pixels);
+    int pitch = surf->pitch;
+    for (int j = 0; j < surf->h; ++j) {
+        int dst_y = y + j;
+        if (dst_y < 0 || dst_y >= fb_h) continue;
+        uint32_t* row = reinterpret_cast<uint32_t*>(src + j * pitch);
+        for (int i = 0; i < surf->w; ++i) {
+            int dst_x = x + i;
+            if (dst_x < 0 || dst_x >= fb_w) continue;
+            uint32_t src_px = row[i];
+            uint8_t a = (src_px >> 24) & 0xFF;
+            if (a == 0) continue;
+            uint8_t sr = (src_px >> 16) & 0xFF;
+            uint8_t sg = (src_px >> 8)  & 0xFF;
+            uint8_t sb =  src_px        & 0xFF;
+
+            uint32_t& dst_px = fb[static_cast<size_t>(dst_y) * fb_w + dst_x];
+            uint8_t dr = (dst_px >> 16) & 0xFF;
+            uint8_t dg = (dst_px >> 8)  & 0xFF;
+            uint8_t db =  dst_px        & 0xFF;
+
+            uint8_t inv_a = 255 - a;
+            uint8_t rr = static_cast<uint8_t>((sr * a + dr * inv_a) / 255);
+            uint8_t gg = static_cast<uint8_t>((sg * a + dg * inv_a) / 255);
+            uint8_t bb = static_cast<uint8_t>((sb * a + db * inv_a) / 255);
+
+            dst_px = (0xFFu << 24) | (uint32_t(rr) << 16) | (uint32_t(gg) << 8) | uint32_t(bb);
+        }
+    }
+
+    SDL_FreeSurface(surf);
 }
 
 int main(int argc, char** argv) {
@@ -174,11 +208,15 @@ int main(int argc, char** argv) {
     size_t pixels_this_frame = 0;
     size_t frame_counter = 0;
     int log_pixel_samples = 0;
+    uint64_t prev_mem_cycle = 0;
+    uint64_t prev_mem_read  = 0;
+    uint64_t prev_mem_write = 0;
+    float last_mem_read_util  = 0.0f;
+    float last_mem_write_util = 0.0f;
 
-    // Ensure SDL grabs keyboard focus and uses software paths by default.
+    // Ensure SDL grabs keyboard focus; allow renderer selection via SDL hints/env.
     SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1");
-    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
         die(std::string("SDL_Init: ") + SDL_GetError());
@@ -326,6 +364,9 @@ int main(int argc, char** argv) {
     bool running = true;
     auto last_frame_time = std::chrono::high_resolution_clock::now();
     float fps = 0.0f;
+
+    const char* idle_env = std::getenv("HYDRA_SIM_IDLE_MS");
+    const int idle_ms = idle_env ? std::max(0, std::atoi(idle_env)) : 0;
 
     while (running && !Verilated::gotFinish()) {
         // Default: no debug write
@@ -519,6 +560,9 @@ int main(int argc, char** argv) {
             }
         }
 
+        // Ensure DUT flags follow local toggles every frame.
+        apply_flags_to_dut();
+
         // Simulate HDL
         const int cycles_per_chunk = 2000;
         bool frame_done = false;
@@ -600,6 +644,126 @@ int main(int argc, char** argv) {
             last_frame_time = now;
             if (dt > 0.0f) fps = 1.0f / dt;
 
+            uint64_t mem_cycle = root->voxel_framebuffer_top__DOT__mem_cycle_count;
+            uint64_t mem_read  = root->voxel_framebuffer_top__DOT__mem_read_cycles;
+            uint64_t mem_write = root->voxel_framebuffer_top__DOT__mem_write_cycles;
+            uint64_t dc = mem_cycle - prev_mem_cycle;
+            uint64_t dr = mem_read  - prev_mem_read;
+            uint64_t dw = mem_write - prev_mem_write;
+            prev_mem_cycle = mem_cycle;
+            prev_mem_read  = mem_read;
+            prev_mem_write = mem_write;
+            if (dc > 0) {
+                last_mem_read_util  = float(dr) / float(dc);
+                last_mem_write_util = float(dw) / float(dc);
+            }
+
+            // Darken HUD band in the framebuffer.
+            for (int y = SCREEN_HEIGHT - HUD_HEIGHT; y < SCREEN_HEIGHT; ++y) {
+                if (y < 0) continue;
+                for (int x = 0; x < SCREEN_WIDTH; ++x) {
+                    uint32_t& px = framebuffer[static_cast<size_t>(y) * SCREEN_WIDTH + x];
+                    uint8_t r = (px >> 16) & 0xFF;
+                    uint8_t g = (px >> 8)  & 0xFF;
+                    uint8_t b =  px        & 0xFF;
+                    r = static_cast<uint8_t>((r * 3) / 4);
+                    g = static_cast<uint8_t>((g * 3) / 4);
+                    b = static_cast<uint8_t>((b * 3) / 4);
+                    px = (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
+                }
+            }
+
+            if (font) {
+                char buf[256];
+                uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
+                const int hud_y = SCREEN_HEIGHT - HUD_HEIGHT + 4;
+                int yoff = hud_y;
+
+                std::snprintf(buf, sizeof(buf),
+                    "FPS %.1f | Pos %.1f %.1f %.1f",
+                    fps, pos_x, pos_y, pos_z);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "Yaw %.2f  Pitch %.2f",
+                    yaw, pitch);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "[1] Smooth %s  [2] Curv %s  [3] Extra %s",
+                    smooth_surfaces ? "ON" : "OFF",
+                    curvature       ? "ON" : "OFF",
+                    extra_light     ? "ON" : "OFF");
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "[O] Slice %s  [M] Mouse %s",
+                    diag_slice     ? "ON" : "OFF",
+                    mouse_captured ? "ON" : "OFF");
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "Hits this frame: %u", hits);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "Mem: rd %.1f%% wr %.1f%%",
+                    last_mem_read_util * 100.0f,
+                    last_mem_write_util * 100.0f);
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
+                    std::snprintf(buf, sizeof(buf),
+                        "Cursor: (%u,%u,%u) mat=0x%02X",
+                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_x,
+                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_y,
+                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_z,
+                        (unsigned)(root->voxel_framebuffer_top__DOT__cursor_material_id & 0xFF));
+                } else {
+                    std::snprintf(buf, sizeof(buf),
+                        "Cursor: (no hit)");
+                }
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                if (selection_active) {
+                    std::snprintf(buf, sizeof(buf),
+                        "Sel: (%u,%u,%u)  [G] clear  [F] select",
+                        (unsigned)selection_x,
+                        (unsigned)selection_y,
+                        (unsigned)selection_z);
+                } else {
+                    std::snprintf(buf, sizeof(buf),
+                        "Sel: (none)  (aim + F to select)");
+                }
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                yoff += 14;
+
+                if (selection_active) {
+                    uint64_t w = selection_word;
+                    uint8_t material_props = (w >> 56) & 0xFF;
+                    uint8_t emissive       = (w >> 48) & 0xFF;
+                    uint8_t alpha          = (w >> 40) & 0xFF;
+                    uint8_t light          = (w >> 32) & 0xFF;
+                    uint8_t r              = (w >> 24) & 0xFF;
+                    uint8_t g              = (w >> 16) & 0xFF;
+                    uint8_t b              = (w >>  8) & 0xFF;
+                    uint8_t material_type  = (w >>  4) & 0x0F;
+
+                    std::snprintf(buf, sizeof(buf),
+                        "Probe RGBA %3u/%3u/%3u/%3u L%3u MT%u MP=%02X E%3u",
+                        r, g, b, alpha, light,
+                        material_type, material_props, emissive);
+                    draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff);
+                }
+            }
+
             if (use_platform_present) {
                 present_backend(backend, plat_ctx, framebuffer.data(),
                                 SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -620,102 +784,13 @@ int main(int argc, char** argv) {
             SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
             SDL_RenderClear(ren);
             SDL_RenderCopy(ren, tex, nullptr, nullptr);
-
-            SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(ren, 0, 0, 0, 120);
-            SDL_Rect hud_rect{0, SCREEN_HEIGHT - HUD_HEIGHT, SCREEN_WIDTH, HUD_HEIGHT};
-            SDL_RenderFillRect(ren, &hud_rect);
-
-            if (font) {
-                char buf[256];
-                uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
-                const int hud_y = SCREEN_HEIGHT - HUD_HEIGHT + 4;
-                int yoff = hud_y;
-
-                std::snprintf(buf, sizeof(buf),
-                    "FPS %.1f | Pos %.1f %.1f %.1f",
-                    fps, pos_x, pos_y, pos_z);
-                draw_text(ren, font, buf, 6, yoff);
-                yoff += 14;
-
-                std::snprintf(buf, sizeof(buf),
-                    "Yaw %.2f  Pitch %.2f",
-                    yaw, pitch);
-                draw_text(ren, font, buf, 6, yoff);
-                yoff += 14;
-
-                std::snprintf(buf, sizeof(buf),
-                    "[1] Smooth %s  [2] Curv %s  [3] Extra %s",
-                    smooth_surfaces ? "ON" : "OFF",
-                    curvature       ? "ON" : "OFF",
-                    extra_light     ? "ON" : "OFF");
-                draw_text(ren, font, buf, 6, yoff);
-                yoff += 14;
-
-                std::snprintf(buf, sizeof(buf),
-                    "[O] Slice %s  [M] Mouse %s",
-                    diag_slice     ? "ON" : "OFF",
-                    mouse_captured ? "ON" : "OFF");
-                draw_text(ren, font, buf, 6, yoff);
-                yoff += 14;
-
-                std::snprintf(buf, sizeof(buf),
-                    "Hits this frame: %u", hits);
-                draw_text(ren, font, buf, 6, yoff);
-                yoff += 14;
-
-                if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
-                    std::snprintf(buf, sizeof(buf),
-                        "Cursor: (%u,%u,%u) mat=0x%02X",
-                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_x,
-                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_y,
-                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_z,
-                        (unsigned)(root->voxel_framebuffer_top__DOT__cursor_material_id & 0xFF));
-                } else {
-                    std::snprintf(buf, sizeof(buf),
-                        "Cursor: (no hit)");
-                }
-                draw_text(ren, font, buf, 6, yoff);
-                yoff += 14;
-
-                if (selection_active) {
-                    std::snprintf(buf, sizeof(buf),
-                        "Sel: (%u,%u,%u)  [G] clear  [F] select",
-                        (unsigned)selection_x,
-                        (unsigned)selection_y,
-                        (unsigned)selection_z);
-                } else {
-                    std::snprintf(buf, sizeof(buf),
-                        "Sel: (none)  (aim + F to select)");
-                }
-                draw_text(ren, font, buf, 6, yoff);
-                yoff += 14;
-
-                if (selection_active) {
-                    uint64_t w = selection_word;
-                    uint8_t material_props = (w >> 56) & 0xFF;
-                    uint8_t emissive       = (w >> 48) & 0xFF;
-                    uint8_t alpha          = (w >> 40) & 0xFF;
-                    uint8_t light          = (w >> 32) & 0xFF;
-                    uint8_t r              = (w >> 24) & 0xFF;
-                    uint8_t g              = (w >> 16) & 0xFF;
-                    uint8_t b              = (w >>  8) & 0xFF;
-                    uint8_t material_type  = (w >>  4) & 0x0F;
-
-                    std::snprintf(buf, sizeof(buf),
-                        "Probe RGBA %3u/%3u/%3u/%3u L%3u MT%u MP=%02X E%3u",
-                        r, g, b, alpha, light,
-                        material_type, material_props, emissive);
-                    draw_text(ren, font, buf, 6, yoff);
-                }
-            }
-
             SDL_RenderPresent(ren);
 
             pixels_this_frame = 0;
         }
 
-        SDL_Delay(1);
+        if (idle_ms > 0)
+            SDL_Delay(idle_ms);
     }
 
     top->final();

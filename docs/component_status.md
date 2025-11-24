@@ -1,10 +1,10 @@
-# Hydra Component Status (0.0.4)
+# Hydra Component Status (0.0.5)
 
 Quick maturity snapshot to track what’s stubbed vs. operational.
 
 ## RTL
 - Operational (sim): voxel core, AXI-Lite CSR (rev 0x02/build 0x01), AXI shell, DMA/crossbar/SDRAM/stream stubs; builds with Verilator/icarus. Deterministic frame-path test wired into CI via `make -C sim test_frame`; additional RTL benches (DMA loopback, HDMI CRC golden) runnable via `sim/tests/run_rtl_tests.sh`.
-- Stubbed: external IP replacements (LitePCIe/LiteDRAM/LiteVideo), real MSI/IRQ wiring.
+- Stubbed: external IP replacements (LitePCIe/LiteDRAM/LiteVideo) and board-level PCIe endpoint; core IRQ/INT/`msi_pulse` paths are implemented and exercised in sim but not yet wired into a physical card.
 
 ## Drivers/UAPI
 - Linux: misc PCIe + DRM render-only stubs, UAPI aligned to spec; libhydra + user tools build.

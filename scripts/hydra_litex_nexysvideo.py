@@ -21,9 +21,10 @@ import sys
 # ---------------------------------------------------------------------------
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-THIRD_PARTY_ROOT = ROOT_DIR / "third_party"
-if str(THIRD_PARTY_ROOT) not in sys.path:
-    sys.path.insert(0, str(THIRD_PARTY_ROOT))
+LITEX_ROOT = ROOT_DIR / "third_party" / "litex"
+if str(LITEX_ROOT) not in sys.path:
+    # Expect a checkout of https://github.com/enjoy-digital/litex under third_party/litex
+    sys.path.insert(0, str(LITEX_ROOT))
 
 # LiteX / Migen bits (vendored under third_party/litex).
 from litex.gen import ClockDomain, Instance  # type: ignore
@@ -39,8 +40,11 @@ try:
 except ImportError as e:  # pragma: no cover - depends on external package
     NexysVideoBaseSoC = None  # type: ignore
 
-# Hydra voxel shell.
-from scripts.hydra_litex_shell import HydraBoardShell  # type: ignore
+# Hydra voxel shell (same repo, in scripts/).
+SCRIPTS_ROOT = ROOT_DIR / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+from hydra_litex_shell import HydraBoardShell  # type: ignore
 
 
 # ---------------------------------------------------------------------------

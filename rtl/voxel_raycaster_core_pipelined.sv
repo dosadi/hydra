@@ -16,7 +16,11 @@ module voxel_raycaster_core_pipelined #(
     parameter SCREEN_HEIGHT   = 360,
     parameter VOXEL_GRID_SIZE = 64,
     parameter COORD_WIDTH     = 16,
-    parameter FRAC_BITS       = 8
+    parameter FRAC_BITS       = 8,
+    // Maximal ray steps per pixel in normal mode (sim can override for speed).
+    parameter integer MAX_RAY_STEPS = 128,
+    // Fixed-point step size along -X (1<<(FRAC_BITS-1) matches original half-voxel).
+    parameter integer RAY_STEP_SHIFT = FRAC_BITS-1
 )(
     input  wire clk,
     input  wire rst_n,
@@ -48,10 +52,11 @@ module voxel_raycaster_core_pipelined #(
     input  wire [63:0] voxel_data,
     output reg         voxel_read_en,
 
-    // Extended framebuffer: 3 words = 96 bits
-    output reg [31:0]  pixel_word0, // reflection/refraction/attenuation/emission
-    output reg [31:0]  pixel_word1, // RGB + material ID
-    output reg [31:0]  pixel_word2, // normal x/y/z + curvature
+    // Extended framebuffer: 3 words = 96 bits + 1 reemissure32 sidecar
+    output reg [31:0]  pixel_word0,   // reflection/refraction/attenuation/emission
+    output reg [31:0]  pixel_word1,   // RGB + material ID
+    output reg [31:0]  pixel_word2,   // normal x/y/z + curvature
+    output reg [31:0]  pixel_sidecar, // reemissure32: material_props | emissive | light | alpha
     output reg [31:0]  pixel_addr,
     output reg         pixel_write_en,
 
@@ -108,6 +113,7 @@ module voxel_raycaster_core_pipelined #(
     reg [7:0]  pixel_material_id;
     reg [7:0]  pixel_normal_x, pixel_normal_y, pixel_normal_z;
     reg [7:0]  pixel_curvature;
+    reg [31:0] pixel_sidecar_word;
 
     // Ray/sample accumulators
     localparam ACC_WIDTH = 24;
@@ -166,6 +172,7 @@ module voxel_raycaster_core_pipelined #(
         reg [7:0] out_reflection, out_refraction, out_attenuation, out_emission;
         reg [7:0] out_material_id;
         reg [7:0] out_normal_x, out_normal_y, out_normal_z, out_curvature;
+        reg [31:0] out_sidecar;
         reg       shadow_hit;
         reg [7:0] shadow_scale;
         reg [15:0] scaled;
@@ -285,6 +292,10 @@ module voxel_raycaster_core_pipelined #(
             tmp = out_b + 9'd96; out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
         end
 
+        // Sidecar packs reflection/refraction/emissive/absorptive for future use
+        // [31:24] reflection, [23:16] refraction, [15:8] emissive, [7:0] attenuation/absorptive
+        out_sidecar = {out_reflection, out_refraction, voxel_emissive, out_attenuation};
+
         // Commit results with non-blocking assignments to keep sequential logic consistent
         pixel_reflection  <= out_reflection;
         pixel_refraction  <= out_refraction;
@@ -298,14 +309,17 @@ module voxel_raycaster_core_pipelined #(
         pixel_normal_y    <= out_normal_y;
         pixel_normal_z    <= out_normal_z;
         pixel_curvature   <= out_curvature;
+        pixel_sidecar_word<= out_sidecar;
 
         // Pack words:
         // word0: [31:24] reflection, [23:16] refraction, [15:8] attenuation, [7:0] emission
         // word1: [31:24] R, [23:16] G, [15:8] B, [7:0] material ID
         // word2: [31:24] nx, [23:16] ny, [15:8] nz, [7:0] curvature
+        // sidecar: [31:24] reflection, [23:16] refraction, [15:8] emissive, [7:0] attenuation/absorptive
         pixel_word0 <= {out_reflection, out_refraction, out_attenuation, out_emission};
         pixel_word1 <= {out_r, out_g, out_b, out_material_id};
         pixel_word2 <= {out_normal_x, out_normal_y, out_normal_z, out_curvature};
+        pixel_sidecar <= out_sidecar;
     end
     endtask
 
@@ -432,7 +446,7 @@ module voxel_raycaster_core_pipelined #(
                             ray_steps <= slice_idx + 1'b1;
                         end
                     end else begin
-                        if (ray_steps >= 8'd128 || hit) begin
+                        if (ray_steps >= MAX_RAY_STEPS[7:0] || hit) begin
                             if (!hit) begin
                                 // sky pixel (dark blue) with slight vertical gradient
                                 reg [7:0] sky_r, sky_g, sky_b;
@@ -484,7 +498,7 @@ module voxel_raycaster_core_pipelined #(
                             state         <= S_FETCH;
 
                             // Step along -X by half a voxel to increase sampling density
-                            ray_pos_x <= ray_pos_x - (18'sd1 <<< (FRAC_BITS-1));
+                            ray_pos_x <= ray_pos_x - (18'sd1 <<< RAY_STEP_SHIFT);
                             ray_steps <= ray_steps + 1'b1;
                         end
                     end

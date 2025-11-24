@@ -373,7 +373,8 @@ module voxel_axil_shell #(
 
     assign fb_dbg_we    = pixel_write_en;
     assign fb_dbg_addr  = ((FB_BASE_WORD + pixel_addr[27:0]) << SDRAM_ADDR_SHIFT);
-    assign fb_dbg_wdata = {32'd0, pixel_word1};
+    // Pack reemissure32 + RGB/material into one 64-bit word for SDRAM/host readback.
+    assign fb_dbg_wdata = {pixel_reemissure, pixel_word1};
 
     // HDMI scanout reads from SDRAM via debug port
     wire        hdmi_dbg_re;
@@ -491,8 +492,10 @@ module voxel_axil_shell #(
     wire         pixel_write_en;
     wire [31:0]  pixel_addr;
     wire [31:0]  pixel_word0, pixel_word1, pixel_word2;
+    wire [31:0]  pixel_reemissure;
     wire         frame_done;
     wire         core_busy;
+
 
     voxel_framebuffer_top #(
         .SCREEN_WIDTH   (SCREEN_WIDTH),
@@ -508,6 +511,7 @@ module voxel_axil_shell #(
         .pixel_word0    (pixel_word0),
         .pixel_word1    (pixel_word1),
         .pixel_word2    (pixel_word2),
+        .pixel_reemissure(pixel_reemissure),
         .frame_done     (frame_done),
         .core_busy      (core_busy),
         .cam_load       (cam_load_pulse),

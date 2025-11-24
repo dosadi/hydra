@@ -63,10 +63,13 @@ endif
 
 
 VERILATOR_FLAGS := \
-    -Wall --Wno-fatal --trace \
+    -Wall --Wno-fatal \
     --Wno-WIDTHEXPAND --Wno-UNUSEDSIGNAL --Wno-UNUSEDPARAM --Wno-BLKSEQ --Wno-INITIALDLY \
     --cc $(TOP_MODULE).sv \
     --top-module $(TOP_MODULE) \
+    --public-flat-rw \
+    -GMAX_RAY_STEPS=32 \
+    -GRAY_STEP_SHIFT=8 \
     -O3 --exe $(CXX_SRCS) \
     -I$(RTL_DIR)
 

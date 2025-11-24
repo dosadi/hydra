@@ -424,13 +424,24 @@ module voxel_axil_csr #(
                     W_DMA_LEN:    dma_len   <= merge_wstrb(dma_len,   s_axil_wdata, s_axil_wstrb);
                     W_DMA_CTRL: begin
                         if (s_axil_wdata[0] && !dma_busy_in) begin
-                            dma_start_pulse <= 1'b1;
-                            dma_status[0]   <= 1'b0; // clear done
+                            // Require 8-byte alignment on SRC/DST/LEN; flag DMA_ERR on violation.
+                            if (dma_src[2:0] != 3'b000 || dma_dst[2:0] != 3'b000 || dma_len[2:0] != 3'b000) begin
+                                dma_status[2] <= 1'b1; // err
+                                dma_status[0] <= 1'b0; // clear done
+                                int_status[2] <= 1'b1; // HYDRA_INT_DMA_ERR
+                            end else begin
+                                dma_start_pulse <= 1'b1;
+                                dma_status[0]   <= 1'b0; // clear done
+                                dma_status[2]   <= 1'b0; // clear err
+                            end
                         end
                     end
                     W_DMA_STATUS: begin
+                        // W1C for done (bit0) and err (bit2); busy (bit1) is read-only mirror of dma_busy_in.
                         if (s_axil_wdata[0])
-                            dma_status[0] <= 1'b0; // w1c done
+                            dma_status[0] <= 1'b0; // clear done
+                        if (s_axil_wdata[2])
+                            dma_status[2] <= 1'b0; // clear err
                     end
                     W_INT_STATUS: int_status <= int_status & ~s_axil_wdata; // w1c
                     W_INT_MASK:   int_mask   <= s_axil_wdata;

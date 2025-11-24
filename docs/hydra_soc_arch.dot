@@ -19,6 +19,15 @@ digraph hydra_soc {
     litepcie -> bar1 [label="AXI4"];
   }
 
+  subgraph cluster_qemu {
+    label="QEMU stub / virtual device";
+    style=filled; color=lightblue;
+    qemu_dev [label="QEMU hydra-pci\n(sim/tests/qemu_stub)"];
+    host_pc -> qemu_dev [label="virt PCIe (guest)"];
+    qemu_dev -> bar0 [label="emulated BAR0"];
+    qemu_dev -> bar1 [label="emulated BAR1"];
+  }
+
   subgraph cluster_shell {
     label="Hydra voxel shell\n(sim: voxel_axil_shell, FPGA: HydraBoardShell)";
     style=filled; color=lightcyan;

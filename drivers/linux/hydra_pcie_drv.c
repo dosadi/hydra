@@ -7,6 +7,7 @@
 #include <linux/seq_file.h>
 #include <linux/miscdevice.h>
 #include <linux/mm.h>
+#include <linux/dma-mapping.h>
 #include <linux/delay.h>
 #include <linux/uaccess.h>
 
@@ -68,7 +69,7 @@ static irqreturn_t hydra_irq(int irq, void *dev_id)
     if (hdev->bar0) {
         status = hydra_bar0_rd32(hdev, HYDRA_REG_INT_STATUS);
         if (status)
-            hydra_bar0_wr32(hdev, HYDRA_REG_INT_STATUS, status); // RW1C
+            hydra_bar0_wr32(hdev, HYDRA_REG_INT_STATUS, status); /* RW1C */
     }
 
     if (status & HYDRA_INT_FRAME_DONE)
@@ -89,6 +90,7 @@ static int hydra_dbg_show(struct seq_file *s, void *unused)
     u32 status = hydra_bar0_rd32(hdev, HYDRA_REG_STATUS);
     u32 int_status = hydra_bar0_rd32(hdev, HYDRA_REG_INT_STATUS);
     u32 int_mask = hydra_bar0_rd32(hdev, HYDRA_REG_INT_MASK);
+
     seq_printf(s, "BAR0 start=0x%pa len=0x%llx\n",
                &hdev->bar0_start, (unsigned long long)hdev->bar0_len);
     if (hdev->bar1)
@@ -120,7 +122,8 @@ static const struct file_operations hydra_dbg_fops = {
 
 static int hydra_mmap(struct file *file, struct vm_area_struct *vma)
 {
-    struct hydra_dev *hdev = container_of(file->private_data, struct hydra_dev, miscdev);
+    struct hydra_dev *hdev = container_of(file->private_data,
+                                          struct hydra_dev, miscdev);
     unsigned long pgoff = vma->vm_pgoff;
     unsigned long len = vma->vm_end - vma->vm_start;
     resource_size_t phys = 0;
@@ -139,14 +142,16 @@ static int hydra_mmap(struct file *file, struct vm_area_struct *vma)
     }
 
     vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-    if (remap_pfn_range(vma, vma->vm_start, phys >> PAGE_SHIFT, len, vma->vm_page_prot))
+    if (remap_pfn_range(vma, vma->vm_start, phys >> PAGE_SHIFT,
+                        len, vma->vm_page_prot))
         return -EAGAIN;
     return 0;
 }
 
 static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
-    struct hydra_dev *hdev = container_of(file->private_data, struct hydra_dev, miscdev);
+    struct hydra_dev *hdev = container_of(file->private_data,
+                                          struct hydra_dev, miscdev);
     struct hydra_reg_rw reg;
     struct hydra_info info;
     struct hydra_dma_req dma;
@@ -194,7 +199,9 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         if (copy_from_user(&dma, (void __user *)arg, sizeof(dma)))
             return -EFAULT;
         /* Stub: program BAR0 DMA registers and poll. */
-        if (dma.len == 0 || dma.src >= hdev->bar0_len || dma.dst >= hdev->bar0_len)
+        if (dma.len == 0 ||
+            dma.src >= hdev->bar0_len ||
+            dma.dst >= hdev->bar0_len)
             return -EINVAL;
         hydra_bar0_wr32(hdev, HYDRA_REG_DMA_SRC, (u32)dma.src);
         hydra_bar0_wr32(hdev, HYDRA_REG_DMA_DST, (u32)dma.dst);
@@ -203,8 +210,10 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         /* Poll done (stub). */
         {
             int i;
+
             for (i = 0; i < 1000; i++) {
                 u32 st = hydra_bar0_rd32(hdev, HYDRA_REG_DMA_STATUS);
+
                 if (st & HYDRA_STATUS_DMA_DONE)
                     break;
                 udelay(10);
@@ -247,21 +256,15 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
         return err;
     }
 
-    err = pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
+    err = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(64));
     if (err) {
-        dev_warn(&pdev->dev, "64-bit DMA not supported (%d), falling back to 32-bit\n", err);
-        err = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+        dev_warn(&pdev->dev,
+                 "64-bit DMA not supported (%d), falling back to 32-bit\n",
+                 err);
+        err = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
         if (err) {
-            dev_err(&pdev->dev, "32-bit DMA mask setup failed: %d\n", err);
-            goto err_disable;
-        }
-    }
-    err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64));
-    if (err) {
-        dev_warn(&pdev->dev, "consistent 64-bit DMA not supported (%d), falling back to 32-bit\n", err);
-        err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
-        if (err) {
-            dev_err(&pdev->dev, "consistent 32-bit DMA mask failed: %d\n", err);
+            dev_err(&pdev->dev,
+                    "32-bit DMA mask setup failed: %d\n", err);
             goto err_disable;
         }
     }
@@ -275,7 +278,7 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
     pci_set_master(pdev);
 
     bar0_start = pci_resource_start(pdev, 0);
-    bar0_len   = pci_resource_len(pdev, 0);
+    bar0_len = pci_resource_len(pdev, 0);
     bar0 = pci_iomap(pdev, 0, 0);
     if (!bar0) {
         dev_err(&pdev->dev, "pci_iomap BAR0 failed\n");
@@ -287,36 +290,48 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
              &bar0_start, (unsigned long long)bar0_len);
     hdev->bar0 = bar0;
     hdev->bar0_start = bar0_start;
-    hdev->bar0_len   = bar0_len;
+    hdev->bar0_len = bar0_len;
+
     if (pci_resource_len(pdev, 1)) {
         bar1_start = pci_resource_start(pdev, 1);
-        bar1_len   = pci_resource_len(pdev, 1);
+        bar1_len = pci_resource_len(pdev, 1);
         bar1 = pci_iomap(pdev, 1, 0);
         if (bar1) {
             dev_info(&pdev->dev, "BAR1 start=0x%pa len=0x%llx\n",
                      &bar1_start, (unsigned long long)bar1_len);
             hdev->bar1 = bar1;
             hdev->bar1_start = bar1_start;
-            hdev->bar1_len   = bar1_len;
+            hdev->bar1_len = bar1_len;
         }
     }
+
     /* Clear/enable interrupts if the CSR map is present. */
     hydra_bar0_wr32(hdev, HYDRA_REG_INT_STATUS, 0xFFFFFFFF);
     hydra_bar0_wr32(hdev, HYDRA_REG_INT_MASK,
-                    HYDRA_INT_FRAME_DONE | HYDRA_INT_DMA_DONE | HYDRA_INT_BLIT_DONE);
+                    HYDRA_INT_FRAME_DONE |
+                    HYDRA_INT_DMA_DONE |
+                    HYDRA_INT_BLIT_DONE);
 
     if (enable_msi)
-        irq = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_MSI | PCI_IRQ_MSIX | PCI_IRQ_LEGACY);
+        irq = pci_alloc_irq_vectors(pdev, 1, 1,
+                                    PCI_IRQ_MSI |
+                                    PCI_IRQ_MSIX |
+                                    PCI_IRQ_LEGACY);
     else
         irq = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_LEGACY);
+
     if (irq < 0) {
-        dev_warn(&pdev->dev, "Failed to allocate IRQ vectors (%d)\n", irq);
+        dev_warn(&pdev->dev,
+                 "Failed to allocate IRQ vectors (%d)\n",
+                 irq);
         hdev->irq = -1;
     } else {
         hdev->irq = pci_irq_vector(pdev, 0);
         err = request_irq(hdev->irq, hydra_irq, 0, DRV_NAME, hdev);
         if (err) {
-            dev_warn(&pdev->dev, "request_irq failed: %d\n", err);
+            dev_warn(&pdev->dev,
+                     "request_irq failed: %d\n",
+                     err);
             pci_free_irq_vectors(pdev);
             hdev->irq = -1;
         }
@@ -324,32 +339,39 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
     hdev->dbg_dir = debugfs_create_dir(DRV_NAME, NULL);
     if (!IS_ERR_OR_NULL(hdev->dbg_dir))
-        debugfs_create_file("status", 0444, hdev->dbg_dir, hdev, &hydra_dbg_fops);
+        debugfs_create_file("status", 0444, hdev->dbg_dir,
+                            hdev, &hydra_dbg_fops);
 
-    // TODO: BAR mapping, DMA mask, MSI/MSI-X setup, register map.
-
+    /* Expose a misc device node for IOCTLs and mmap. */
     hdev->miscdev.minor = MISC_DYNAMIC_MINOR;
     hdev->miscdev.name  = DRV_NAME;
     hdev->miscdev.fops  = &hydra_misc_fops;
     err = misc_register(&hdev->miscdev);
     if (err) {
-        dev_warn(&pdev->dev, "misc_register failed: %d\n", err);
+        dev_warn(&pdev->dev,
+                 "misc_register failed: %d\n",
+                 err);
         hdev->miscdev.minor = MISC_DYNAMIC_MINOR;
     }
 
     return 0;
+
 err_release:
     if (hdev->irq >= 0) {
         free_irq(hdev->irq, hdev);
         pci_free_irq_vectors(pdev);
     }
+
     debugfs_remove_recursive(hdev->dbg_dir);
     hdev->dbg_dir = NULL;
+
     if (bar0)
         pci_iounmap(pdev, bar0);
     if (bar1)
         pci_iounmap(pdev, bar1);
+
     pci_release_mem_regions(pdev);
+
 err_disable:
     pci_disable_device(pdev);
     return err;
@@ -360,18 +382,25 @@ static void hydra_remove(struct pci_dev *pdev)
     struct hydra_dev *hdev = pci_get_drvdata(pdev);
 
     dev_info(&pdev->dev, DRV_NAME ": remove\n");
+
     if (hdev) {
         if (hdev->miscdev.minor != MISC_DYNAMIC_MINOR)
             misc_deregister(&hdev->miscdev);
+
         if (hdev->irq >= 0) {
             free_irq(hdev->irq, hdev);
             pci_free_irq_vectors(pdev);
         }
+
         if (hdev->bar0)
             pci_iounmap(pdev, hdev->bar0);
+        if (hdev->bar1)
+            pci_iounmap(pdev, hdev->bar1);
+
         debugfs_remove_recursive(hdev->dbg_dir);
         hdev->dbg_dir = NULL;
     }
+
     pci_release_mem_regions(pdev);
     pci_disable_device(pdev);
 }
@@ -385,6 +414,6 @@ static struct pci_driver hydra_pci_driver = {
 
 module_pci_driver(hydra_pci_driver);
 
-MODULE_LICENSE("BSD");
+MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Hydra Team");
 MODULE_DESCRIPTION("Hydra PCIe driver stub");

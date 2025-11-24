@@ -21,10 +21,10 @@ import sys
 # ---------------------------------------------------------------------------
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-_THIRD_PARTY_ROOT = _REPO_ROOT / "third_party"
-if str(_THIRD_PARTY_ROOT) not in sys.path:
-    # Expect a "litex" Python package under third_party/.
-    sys.path.insert(0, str(_THIRD_PARTY_ROOT))
+_LITEX_ROOT = _REPO_ROOT / "third_party" / "litex"
+if str(_LITEX_ROOT) not in sys.path:
+    # Expect a "litex" Python package under third_party/litex/.
+    sys.path.insert(0, str(_LITEX_ROOT))
 
 from litex.gen import LiteXModule, Signal, ClockSignal, ResetSignal  # type: ignore
 from litex.soc.interconnect.axi.axi_lite import AXILiteInterface  # type: ignore

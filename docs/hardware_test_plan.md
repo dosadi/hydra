@@ -4,7 +4,8 @@ Short-term targets to exercise drivers without real hardware:
 
 - **Verilated PCIe endpoint + cocotb/pyuvm**: build a cocotb testbench that toggles BAR0/INT_STATUS via DPI hooks. Goals: verify IRQ pulses (`msi_pulse`), DMA stub start/done, blitter stub FIFO/copy, and HDMI CRC updates. Artifact: VCD/trace for CI. (Scaffold lives in `sim/tests/cocotb_hydra`; an optional `cocotb` GitHub Actions job runs a basic Icarus-based smoke test.)
 - **QEMU PCIe stub**: use `sim/tests/qemu_stub/hydra_pci.c` as a QEMU PCIe device with Hydra vendor/device IDs and a synthetic BAR0 backed by RAM. In a Linux guest, use libhydra/drivers to exercise IOCTLs (RD/WR/DMA/blit) against it; optional CI job `qemu-smoke` runs `sim/tests/qemu_stub/qemu_hydra_smoke.sh` when `HYDRA_QEMU_GUEST_URL` (GitHub secret) or `HYDRA_QEMU_GUEST_IMG` is configured.
-- **Loopback DMA test in sim**: implemented as `sim/tests/rtl/test_dma_loopback.sv` and runnable via `sim/tests/run_rtl_tests.sh`.
+- **Loopback DMA test in sim**: implemented as `sim/tests/rtl/test_dma_loopback.sv` and runnable via `sim/tests/run_rtl_tests.sh`. This is the minimal gate for the on-chip DMA CSR/interrupt path (INT_STATUS + irq_out) and must stay green for 0.0.5.
+- **LitePCIe/LiteDMA FPGA smoke (planned)**: once the Nexys Video shell is wired, add a hardware DMA loop that copies a pattern through LitePCIe/LiteDMA + LiteDRAM and checks it from the host; treat this as a 0.0.5 bring-up milestone (not necessarily CI-gated).
 - **HDMI path check**: implemented as `sim/tests/rtl/test_hdmi_crc_golden.sv` (checks `hdmi_crc_last` against a golden for a fixed camera/config) and runnable via `sim/tests/run_rtl_tests.sh`.
 - **DRM smoke on render node**: once DRM IOCTLs solidify, run a tiny userspace tool to create a dumb buffer and query DRM-Hydra info (using the new ioctl); for CI, build-only until a QEMU device is present.
 

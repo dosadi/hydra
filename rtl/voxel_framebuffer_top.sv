@@ -12,6 +12,9 @@ module voxel_framebuffer_top #(
     parameter VOXEL_GRID_SIZE = 64,
     parameter COORD_WIDTH     = 16,
     parameter FRAC_BITS       = 8,
+    // Max ray steps and step size for core; default matches original behavior.
+    parameter integer MAX_RAY_STEPS   = 128,
+    parameter integer RAY_STEP_SHIFT  = FRAC_BITS-1,
     // Test-only: force world_ready to 1 after reset for benches
     parameter TEST_FORCE_WORLD_READY = 0,
     // Allow benches to disable auto-run and require host start pulses.
@@ -26,6 +29,7 @@ module voxel_framebuffer_top #(
     output wire [31:0]  pixel_word0,
     output wire [31:0]  pixel_word1,
     output wire [31:0]  pixel_word2,
+    output wire [31:0]  pixel_reemissure,
 
     // Frame done pulse
     output wire         frame_done,
@@ -118,6 +122,12 @@ module voxel_framebuffer_top #(
     // Expose cursor/regs to Verilator (they are regs/wires in this scope)
     // (No extra ports needed; Verilator can access internal regs/wires.)
 
+    // Memory utilization counters (visible to Verilator)
+    reg [63:0] mem_cycle_count;
+    reg [63:0] mem_read_cycles;
+    reg [63:0] mem_write_cycles;
+    reg [63:0] mem_readwrite_cycles;
+
     // Simple init
     initial begin
         cam_x  <= 16'sd10 <<< FRAC_BITS;
@@ -188,7 +198,9 @@ module voxel_framebuffer_top #(
         .SCREEN_HEIGHT   (SCREEN_HEIGHT),
         .VOXEL_GRID_SIZE (VOXEL_GRID_SIZE),
         .COORD_WIDTH     (COORD_WIDTH),
-        .FRAC_BITS       (FRAC_BITS)
+        .FRAC_BITS       (FRAC_BITS),
+        .MAX_RAY_STEPS   (MAX_RAY_STEPS),
+        .RAY_STEP_SHIFT  (RAY_STEP_SHIFT)
     ) core (
         .clk                (clk),
         .rst_n              (rst_n),
@@ -219,6 +231,7 @@ module voxel_framebuffer_top #(
         .pixel_word0        (pixel_word0),
         .pixel_word1        (pixel_word1),
         .pixel_word2        (pixel_word2),
+        .pixel_sidecar      (pixel_reemissure),
         .pixel_addr         (pixel_addr),
         .pixel_write_en     (pixel_write_en),
 
@@ -346,6 +359,24 @@ module voxel_framebuffer_top #(
                 dbg_write_addr <= dbg_ext_write_addr;
                 dbg_write_data <= dbg_ext_write_data;
             end
+        end
+    end
+
+    // Memory utilization tracking
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n || soft_reset_ext) begin
+            mem_cycle_count      <= 64'd0;
+            mem_read_cycles      <= 64'd0;
+            mem_write_cycles     <= 64'd0;
+            mem_readwrite_cycles <= 64'd0;
+        end else begin
+            mem_cycle_count <= mem_cycle_count + 64'd1;
+            if (geom_rd_en)
+                mem_read_cycles <= mem_read_cycles + 64'd1;
+            if (mem_write_en)
+                mem_write_cycles <= mem_write_cycles + 64'd1;
+            if (geom_rd_en && mem_write_en)
+                mem_readwrite_cycles <= mem_readwrite_cycles + 64'd1;
         end
     end
 

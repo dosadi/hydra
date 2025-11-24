@@ -36,4 +36,9 @@ ${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_hdmi_crc_golden.vvp \
   sim/tests/rtl/test_hdmi_crc_golden.sv "${RTL_SOURCES[@]}"
 ${VVP_BIN} sim/tests/rtl/test_hdmi_crc_golden.vvp
 
+echo "[rtl-tests] Running BAR1 + DMA loopback bench..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_bar1_dma_loopback.vvp \
+  sim/tests/rtl/test_bar1_dma_loopback.sv "${RTL_SOURCES[@]}"
+${VVP_BIN} sim/tests/rtl/test_bar1_dma_loopback.vvp
+
 echo "[rtl-tests] All RTL benches passed."
