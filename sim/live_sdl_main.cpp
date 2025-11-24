@@ -389,6 +389,12 @@ int main(int argc, char** argv) {
                 SDL_Keycode keycode = ev.key.keysym.sym;
                 update_key_state(keys, sc, keycode, key_down);
 
+                // Debug: Log 'o' and 'O' keys specifically
+                if (key_down && (keycode == 'o' || keycode == 'O' || keycode == SDLK_o || sc == SDL_SCANCODE_O)) {
+                    std::fprintf(stderr, "[DEBUG] O key event: sc=%d kc=%d name=%s SDLK_o=%d\n",
+                                 (int)sc, (int)keycode, SDL_GetKeyName(keycode), (int)SDLK_o);
+                }
+
                 if (log_keys && log_keys_count < 200) {
                     std::fprintf(stderr, "key %s sc=%d kc=%d name=%s mod=0x%x\n",
                                  key_down ? "down" : "up",
@@ -430,6 +436,7 @@ int main(int argc, char** argv) {
                         case SDLK_o:
                             diag_slice = !diag_slice;
                             apply_flags_to_dut();
+                            std::fprintf(stderr, "[DEBUG] 'o' key pressed: diag_slice now = %d\n", diag_slice ? 1 : 0);
                             if (log_keys && log_keys_count < 200) {
                                 std::fprintf(stderr, "toggle diag_slice -> %d\n", diag_slice ? 1 : 0);
                                 ++log_keys_count;
