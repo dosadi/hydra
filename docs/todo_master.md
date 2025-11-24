@@ -65,6 +65,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a “camera jitter” noise option to stress anti-aliasing/perf stability.
 - TODO: Add a HUD overlay to show current seed and config file path when loaded.
 - TODO: Add an env/hotkey to zero the framebuffer at frame start to guarantee deterministic background.
+- TODO: Add an env/hotkey to disable mouse capture entirely (keyboard-only navigation) for kiosk/headless setups.
+- TODO: Add a “cursor highlight” toggle to show the selected voxel with a bright outline for clarity in recordings.
+- TODO: Add a “telemetry off” mode to skip HUD drawing for maximal render throughput in benchmarks.
 - TODO: Add a “demo mode” that runs a scripted camera path and toggles flags for capture reels.
 - TODO: Add per-axis inversion/sensitivity sliders (env/CLI) for finer camera tuning.
 - TODO: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds.
@@ -106,6 +109,12 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add coverpoints for MSI pulse generation on frame_done/dma_done/blit_done bits independently.
 - TODO: Add an assertion that dbg_write_en is single-cycle and deasserted on the following cycle.
 - TODO: Add an option to gate INT_STATUS/frame_done by start_frame so accidental asserts during reset are ignored.
+- TODO: Add a cover/metric on pixels_this_frame vs. TOTAL_PIXELS to flag partial frames in sim logs.
+- TODO: Add a lint/fail if VOXEL_GRID_SIZE is not a power of two (or document constraints).
+- TODO: Add a coverage check that diag_slice renders touch all quadrants over a few frames.
+- TODO: Add a formal/cover on FSM states for the raycaster pipeline to catch illegal transitions.
+- TODO: Add a simple assertion that fb_stride is a multiple of screen width (or document if not required).
+- TODO: Add an option to zero pixel outputs when rst_n is asserted mid-frame to avoid partial garbage.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
