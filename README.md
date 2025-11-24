@@ -104,6 +104,7 @@ Logging, debug, and tests:
 - `LOG_FRAMES=1 ./sim_voxel` – print per-frame stats (pixels written, nonzero pixels, hit count).
 - `LOG_KEYS=1 ./sim_voxel` – print key down/up events (for input debugging).
 - `FRAME_DUMP=frame.ppm AUTO_EXIT=1 ./sim_voxel` – non-interactive run that dumps a single frame as PPM and exits.
+- `HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN>` – request a specific backend (falls back to SDL if unavailable).
 - `make -C sim test_frame` – build the sim, dump a frame with a dummy SDL backend, and compare against `sim/tests/golden_frame.ppm` using `scripts/check_frame.py`.
 - `./scripts/hydra_dev_loop.sh` – convenience script that runs the sim build + frame regression, SDK build, and (optionally) RTL benches and QEMU smoke if tools/images are available.
 - HUD shows FPS, flags, and “Hits this frame” to confirm scene intersections.
