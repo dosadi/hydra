@@ -352,6 +352,7 @@ int main(int argc, char** argv) {
     float move_speed_fast = getenv_float("HYDRA_MOVE_SPEED_FAST", 0.35f);
     float turn_speed_keys = getenv_float("HYDRA_TURN_SPEED_KEYS", 0.04f);
     float mouse_sens      = getenv_float("HYDRA_MOUSE_SENS", 0.0025f);
+    bool invert_y_mouse   = (std::getenv("HYDRA_INVERT_Y") != nullptr);
 
     bool smooth_surfaces = true;
     bool curvature       = true;
@@ -582,7 +583,7 @@ int main(int argc, char** argv) {
                 int dx = ev.motion.xrel;
                 int dy = ev.motion.yrel;
                 yaw   += dx * mouse_sens;
-                pitch -= dy * mouse_sens;
+                pitch += (invert_y_mouse ? dy : -dy) * mouse_sens;
                 if (pitch >  1.50f) pitch =  1.50f;
                 if (pitch < -1.50f) pitch = -1.50f;
                 apply_camera_to_dut();
