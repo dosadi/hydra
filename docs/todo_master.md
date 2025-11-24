@@ -24,6 +24,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a hotkey to reset camera/flags to defaults (and print the defaults) for quick repro setups.
 - TODO: Add a screenshot hotkey (PPM/PNG with timestamp to `sim/`) that works in headless mode too.
 - TODO: Add a VSYNC toggle (hotkey/env) and reflect it in the HUD/backend startup log.
+- TODO: Add a grid/axis overlay toggle to help orientation inside the voxel volume.
+- TODO: Add joystick/gamepad input support (fallback to SDL game controller mappings).
+- TODO: Add a HUD indicator when selection is active and editable keys (C/X/Z/B) are available, to reduce guesswork.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -35,6 +38,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add an assertion or coverage point for `frame_done` cadence vs. expected pixel count to catch truncated frames in RTL.
 - TODO: Add reset-value checks for key CSRs (flags, selection, CTRL) to match the spec and fail sim if mismatched.
 - TODO: Add coverage/assertions that INT_MASK gates irq_out/msi_pulse correctly on each bit.
+- TODO: Add a lint-time check or assertion that camera/flag pulses are single-cycle to avoid missed updates.
+- TODO: Add a lightweight formal/cover for dbg write path (address range, pulse duration) to catch off-by-one errors.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -55,6 +60,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a self-test debugfs entry to trigger IRQ_TEST and report INT_STATUS to validate interrupts without user tooling.
 - TODO: Teach `hydra_dma_blit_demo` to skip cleanly (exit 77) when the device node is missing, for nicer CI gating.
 - TODO: Add a tiny `hydra_cam_reset` CLI that sets camera/flags/selection to defaults via libhydra (mirrors sim reset hotkey).
+- TODO: Add a simple DRM stub “modeset info” tool to enumerate any registered render node and dump its Hydra-specific props.
+- TODO: Add a kernel tracepoint or trace_printk path for IRQ/DMA events to aid debugging without extra printk noise.
+- TODO: Add udev rules example for creating `/dev/hydra_pcie` with group permissions for non-root access.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -74,6 +82,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a pre-commit config (hooks for format/lint) to keep local changes aligned with CI expectations.
 - TODO: Add a CI job that runs `make test_frame` with HYDRA_BACKEND=SDL and HYDRA_BACKEND=GL (when available) to catch backend regressions.
 - TODO: Add a nightly CI job to run cocotb smoke (`sim/tests/cocotb_hydra`) when tools are present, but mark non-blocking.
+- TODO: Add a CI artifact upload for failing frame dumps (PPM) to speed visual diffing.
+- TODO: Add a script/target to purge stale `sim/obj_dir` when Verilator version changes to avoid weird rebuilds.
+- TODO: Add a `make quick` target that just builds C++ harness without re-verilating (for fast HUD tweaks).
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -86,3 +97,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a brief “architecture at a glance” diagram or ASCII map linking RTL modules to sim components for onboarding.
 - TODO: Document the BAR0 CSR reset defaults and how drivers should validate them during probe.
 - TODO: Add a “backend compatibility matrix” note (which OS/flags are exercised in CI vs. untested).
+- TODO: Add a short “how to repro a frame” doc snippet (FRAME_DUMP/AUTO_EXIT usage with expected outputs).
+- TODO: Document cocotb smoke expectations and how to interpret failures/timeouts for `sim/tests/cocotb_hydra`.
