@@ -39,8 +39,9 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `0x00B4` `HDMI_FRAMES` (RO, sim): frame counter from AXI sink.
 - `0x00B8` `HDMI_LINE`   (RO, sim): last line count observed.
 - `0x00BC` `HDMI_PIX`    (RO, sim): last pixel-in-line counter.
-- `0x0100..` 3D blitter stub: CTRL/STATUS/SRC/DST/LEN/STRIDE, pixel read/write, object attribute table, FIFO data port.
-- Reserved: 0x0150..0xFFFF for future (surface extractor, perf counters).
+- `0x0100..` 3D blitter stub: CTRL/STATUS/SRC/DST/LEN/STRIDE, SURF_BASE/SURF_LEN/SURF_STATS for the surface extractor stub, pixel read/write, object attribute table, FIFO data port.
+- `0x0150..` Region-0 automatic extractor (experimental): REGION0_CFG/MIN/MAX/STATUS/SURF_STATS implement a fixed-function per-volume extraction pass that currently only synthesizes stats.
+- Reserved: 0x0170..0xFFFF for future (perf counters, extended extractor controls).
 
 ## Frame formats (current / planned)
 - RGBA32: 8 bits per channel, premultiplied alpha optional (current sim output path).

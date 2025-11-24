@@ -16,9 +16,39 @@ sim/build/
 scripts/hydra_blit_smoketest
 scripts/hydra_dma_blit_demo
 sim/tests/rtl/*.vvp
+*.vvp
 third_party/*
 !third_party/README.md
 !third_party/litepcie
 !third_party/litedram
 !third_party/liteiclink
 !third_party/litex
+
+# Python virtual environments
+.venv/
+venv/
+__pycache__/
+
+# Linux kernel module build artifacts
+drivers/linux/.*.cmd
+drivers/linux/*.ko
+drivers/linux/*.mod
+drivers/linux/*.mod.c
+drivers/linux/Module.symvers
+drivers/linux/modules.order
+
+# Cocotb test artifacts
+sim/tests/cocotb_hydra/sim_build/
+sim/tests/cocotb_hydra/results.xml
+
+# Profiling data
+*.perf.data
+perf.data
+perf.data.old
+
+# Temporary scripts
+patch_*.sh
+
+# GitHub automation status docs
+.github/AUTOMATION_COMPLETE.md
+.github/FULL_AUTOMATION_SUCCESS.md

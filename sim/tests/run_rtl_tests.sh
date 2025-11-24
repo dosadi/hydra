@@ -9,6 +9,7 @@ cd "${ROOT_DIR}"
 
 IVERILOG_BIN="${IVERILOG:-iverilog}"
 VVP_BIN="${VVP:-vvp}"
+VERILATOR_BIN="${VERILATOR:-verilator}"
 
 # Common RTL sources (shell + stubs + voxel core path)
 RTL_SOURCES=(

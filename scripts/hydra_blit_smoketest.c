@@ -1,6 +1,7 @@
 // Minimal user-space smoke test for the Hydra blitter stub.
 // Builds with: gcc -I drivers/linux/uapi -O2 -o hydra_blit_smoketest scripts/hydra_blit_smoketest.c
 
+#define _DEFAULT_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>

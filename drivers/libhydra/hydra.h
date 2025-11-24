@@ -18,6 +18,20 @@ int hydra_blit_fifo_push(struct hydra_handle* h, uint32_t word);
 int hydra_blit_kick_fifo(struct hydra_handle* h, uint32_t dst, uint32_t len_bytes);
 int hydra_wait_blit_done(struct hydra_handle* h, int timeout_ms, uint32_t* status_out);
 
+/* Surface extraction (stub): issues a SURFACE_EXTRACT blit and reads SURF_STATS. */
+int hydra_surface_extract_stub(struct hydra_handle* h,
+                               uint32_t surf_base,
+                               uint32_t surf_len_bytes,
+                               uint32_t blit_len_bytes,
+                               uint32_t* surf_stats_out);
+
+/* Automatic region-0 extractor (stub): kicks REGION0 and waits for STATUS.valid. */
+int hydra_region0_extract_stub(struct hydra_handle* h,
+                               uint32_t region_min,
+                               uint32_t region_max,
+                               uint32_t* status_out,
+                               uint32_t* surf_stats_out);
+
 /* DMA helper (stub): uses device DMA registers */
 int hydra_dma_copy(struct hydra_handle* h, uint64_t src, uint64_t dst, uint32_t len_bytes);
 

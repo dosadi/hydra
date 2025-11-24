@@ -135,7 +135,7 @@ module axi_sdram_stub #(
                 // Write with strobes
                 for (i = 0; i < STRB_WIDTH; i = i + 1) begin
                     if (s_axi_wstrb[i])
-                        mem[w_addr[ADDR_WIDTH-1:ADDR_WIDTH-$clog2(MEM_WORDS)]][8*i +: 8] <= s_axi_wdata[8*i +: 8];
+                        mem[w_addr[$clog2(MEM_WORDS)+2:3]][8*i +: 8] <= s_axi_wdata[8*i +: 8];
                 end
                 if (w_beats != 0)
                     w_beats <= w_beats - 1'b1;
@@ -185,15 +185,15 @@ module axi_sdram_stub #(
             dbg_rdata    <= {DATA_WIDTH{1'b0}};
         end else begin
             if (dbg_we) begin
-                mem[dbg_addr[ADDR_WIDTH-1:ADDR_WIDTH-$clog2(MEM_WORDS)]] <= dbg_wdata;
+                mem[dbg_addr[$clog2(MEM_WORDS)+2:3]] <= dbg_wdata;
             end
             if (dbg_re) begin
-                dbg_rdata <= mem[dbg_addr[ADDR_WIDTH-1:ADDR_WIDTH-$clog2(MEM_WORDS)]];
+                dbg_rdata <= mem[dbg_addr[$clog2(MEM_WORDS)+2:3]];
             end
 
             if (r_active && (!s_axi_rvalid || (s_axi_rvalid && s_axi_rready))) begin
                 s_axi_rid   <= r_id;
-                s_axi_rdata <= mem[r_addr[ADDR_WIDTH-1:ADDR_WIDTH-$clog2(MEM_WORDS)]];
+                s_axi_rdata <= mem[r_addr[$clog2(MEM_WORDS)+2:3]];
                 s_axi_rresp <= RESP_OKAY;
                 s_axi_rlast <= (r_beats == 0);
                 s_axi_rvalid<= 1'b1;

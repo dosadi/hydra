@@ -110,6 +110,7 @@ module axi_dma_stub #(
             case (state)
                 S_IDLE: begin
                     if (start) begin
+                        $display("DMA_STUB: start src=0x%0h dst=0x%0h len=%0d", src_addr, dst_addr, len_bytes);
                         busy      <= 1'b1;
                         cur_src   <= src_addr;
                         cur_dst   <= dst_addr;

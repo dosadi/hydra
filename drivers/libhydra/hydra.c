@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #include "hydra.h"
 
 #include <errno.h>
@@ -89,6 +90,81 @@ int hydra_blit_kick_fifo(struct hydra_handle* h, uint32_t dst, uint32_t len_byte
     ret = hydra_wr32(h, HYDRA_REG_BLIT_LEN, len_bytes);
     if (ret) return ret;
     return hydra_wr32(h, HYDRA_REG_BLIT_CTRL, BIT(0) | BIT(2));
+}
+
+int hydra_surface_extract_stub(struct hydra_handle* h,
+                               uint32_t surf_base,
+                               uint32_t surf_len_bytes,
+                               uint32_t blit_len_bytes,
+                               uint32_t* surf_stats_out)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+
+    int ret = 0;
+    uint32_t ctrl = 0;
+
+    ret = hydra_wr32(h, HYDRA_REG_SURF_BASE, surf_base);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_SURF_LEN, surf_len_bytes);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_BLIT_LEN, blit_len_bytes);
+    if (ret) return ret;
+
+    ctrl = (HYDRA_BLIT_OP_SURFACE_EXTRACT << HYDRA_BLIT_CTRL_OP_SHIFT) | BIT(0);
+    ret = hydra_wr32(h, HYDRA_REG_BLIT_CTRL, ctrl);
+    if (ret) return ret;
+
+    ret = hydra_wait_blit_done(h, 100, NULL);
+    if (ret)
+        return ret;
+
+    if (surf_stats_out)
+        return hydra_rd32(h, HYDRA_REG_SURF_STATS, surf_stats_out);
+    return 0;
+}
+
+int hydra_region0_extract_stub(struct hydra_handle* h,
+                               uint32_t region_min,
+                               uint32_t region_max,
+                               uint32_t* status_out,
+                               uint32_t* surf_stats_out)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+
+    int ret = 0;
+    uint32_t status = 0;
+
+    ret = hydra_wr32(h, HYDRA_REG_REGION0_MIN, region_min);
+    if (ret) return ret;
+    ret = hydra_wr32(h, HYDRA_REG_REGION0_MAX, region_max);
+    if (ret) return ret;
+
+    /* Enable + kick with lod_hint=0. */
+    ret = hydra_wr32(h, HYDRA_REG_REGION0_CFG, 0x3u);
+    if (ret) return ret;
+
+    /* Poll REGION0_STATUS.valid with a simple timeout. */
+    const int sleep_us = 1000;
+    int loops = 100;
+    while (loops-- > 0) {
+        ret = hydra_rd32(h, HYDRA_REG_REGION0_STATUS, &status);
+        if (ret)
+            return ret;
+        if (status & BIT(1))
+            break;
+        usleep(sleep_us);
+    }
+
+    if (!(status & BIT(1)))
+        return -ETIMEDOUT;
+
+    if (status_out)
+        *status_out = status;
+    if (surf_stats_out)
+        return hydra_rd32(h, HYDRA_REG_REGION0_SURF_STATS, surf_stats_out);
+    return 0;
 }
 
 int hydra_wait_blit_done(struct hydra_handle* h, int timeout_ms, uint32_t* status_out)
