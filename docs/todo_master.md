@@ -45,6 +45,11 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add keybind to dump current camera/flag/selection state to stdout for copy-paste into tests/docs.
 - TODO: Add optional gamma correction or tone-mapping toggle to make visuals more consistent across displays.
 - TODO: Add a “safe defaults” preset (lower speed/sensitivity, noclip-off) for new users via env/hotkey.
+- TODO: Add an invert-Y mouse option (env/hotkey) and persist it in the config preload.
+- TODO: Add HUD font size scaling knob (env) to improve readability on high-DPI displays.
+- TODO: Add a batch/headless mode to render N frames to numbered files for CI comparisons.
+- TODO: Add command-line flags (in addition to env) for backend, seed, camera, speeds, to ease scripted runs.
+- TODO: Add an on-screen indicator when mouse capture is off, with a hint to toggle.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -70,6 +75,10 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a parameter to disable diagnostic slice entirely for FPGA builds (synth-friendly switch).
 - TODO: Add a build-time flag to reduce MAX_RAY_STEPS for faster sims and verify behavior under short rays.
 - TODO: Add a simple checker that pixel_word0/1/2 are stable when pixel_write_en deasserts (no X propagation).
+- TODO: Add assertions that selection x/y/z remain within VOXEL_GRID_SIZE and are only latched on sel_load_pulse.
+- TODO: Add parameterized screen dims for non-480x360 builds and propagate to TOTAL_PIXELS checks.
+- TODO: Add a cover/check that dbg writes do not coincide with soft_reset/start_frame (or define behavior).
+- TODO: Add an assertion that frame_done clears core_busy within a bounded number of cycles.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -111,6 +120,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a basic perf test that times repeated HYDRA_IOCTL_RD32/WR32 calls to gauge BAR latency.
 - TODO: Add a small tool that writes/reads selection/camera via the driver to mirror sim controls (for HW parity).
 - TODO: Add an optional sysfs entry to expose BAR sizes/IDs (read-only) for quick inspection without debugfs.
+- TODO: Add DKMS packaging script or notes for the Linux driver for easier installs.
+- TODO: Add build-req documentation (kernel headers) and a quick `make -C drivers/linux help` target.
+- TODO: Add a libhydra convenience wrapper to set multiple flags/camera fields in one call to reduce ioctl churn.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -151,6 +163,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a CI job to build the Linux driver with `W=1` (sparse/extra warnings) to catch kernel API drift early.
 - TODO: Add a small script to check for trailing whitespace/tab damage in SV/C++ sources (pre-commit style).
 - TODO: Add a fast “docs-only” CI path that runs lint/spellcheck when only docs change.
+- TODO: Add a container/devcontainer or Dockerfile for a known-good toolchain (Verilator, SDL2, etc.).
+- TODO: Add a `make package` target to bundle sim binaries/tests/docs into an artifact tarball.
+- TODO: Add a minimal “host-only” CI job that just builds CMake preset without RTL to guard host tools.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -177,3 +192,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a brief note on expected memory footprint/frame times in sim for baseline hardware.
 - TODO: Add a small “perf tuning” doc for sim (env vars, pacing, disable HUD) for capturing reproducible metrics.
 - TODO: Add instructions for running cocotb tests with alternative simulators (icarus/vcs/etc.) if applicable.
+- TODO: Add a FAQ section capturing common setup/running errors and fixes.
+- TODO: Add a “first run” checklist (deps, make, test_frame, sim_voxel) for new contributors.
