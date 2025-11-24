@@ -1,0 +1,110 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in Hydra
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us diagnose the issue.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component is affected?
+      options:
+        - RTL (voxel core, raycaster, shell)
+        - Sim (Verilator+SDL viewer)
+        - Drivers (Linux/FreeBSD/Windows/macOS)
+        - Build system (Makefile/CMake)
+        - Documentation
+        - CI/CD
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear description of what went wrong
+      placeholder: When I run X, Y happens instead of Z...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the issue
+      placeholder: |
+        1. Run `make -C sim`
+        2. Execute `./sim_voxel`
+        3. Press 'F' to select voxel
+        4. Observe crash/error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include error messages, logs, or screenshots.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which OS are you using?
+      options:
+        - Linux (Debian/Ubuntu)
+        - Linux (other)
+        - FreeBSD
+        - Windows (WSL2)
+        - Windows (native)
+        - macOS
+      multiple: true
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Relevant version information
+      placeholder: |
+        - Verilator version: 5.028
+        - GCC/Clang version: gcc 12.2.0
+        - SDL2 version: 2.28.5
+        - Kernel version (for driver issues): 6.1.0
+        - Commit hash: abc1234
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Output
+      description: Paste relevant logs, terminal output, or compilation errors
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other information that might help diagnose the issue
+    validations:
+      required: false

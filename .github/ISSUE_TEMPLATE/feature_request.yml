@@ -1,0 +1,102 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for Hydra
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe what you'd like to see added or improved.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component would this feature affect?
+      options:
+        - RTL (voxel core, raycaster, shell)
+        - Sim (Verilator+SDL viewer)
+        - Drivers (Linux/FreeBSD/Windows/macOS)
+        - Build system (Makefile/CMake)
+        - Documentation
+        - Testing infrastructure
+        - Platform backends (GL/Vulkan/Wayland/X11)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem would this feature solve? Is your feature request related to a limitation or pain point?
+      placeholder: Currently, when working with X, it's difficult to Y because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature or enhancement you'd like to see
+      placeholder: Add support for X by implementing Y...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Describe specific scenarios where this feature would be valuable
+      placeholder: |
+        1. When debugging RTL changes, developers could...
+        2. For FPGA integration, users could...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Critical (blocking current work)
+        - High (would significantly improve workflow)
+        - Medium (nice to have)
+        - Low (minor improvement)
+    validations:
+      required: false
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Ideas
+      description: If you have thoughts on how to implement this, share them here
+      placeholder: This could be implemented by adding a new register at BAR0 offset 0xXXX...
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information, links, or references
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I'm willing to submit a pull request for this feature
+          required: false

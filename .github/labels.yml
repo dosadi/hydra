@@ -1,0 +1,132 @@
+# GitHub Labels Configuration
+# This file documents the recommended label structure for issue/PR management
+# Apply these labels manually via GitHub UI or use a label sync tool
+#
+# To apply automatically, use: github.com/Financial-Times/github-label-sync
+# Example: github-label-sync --access-token $GITHUB_TOKEN owner/repo .github/labels.yml
+
+# Type labels
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "New feature or request"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "refactoring"
+  color: "fbca04"
+  description: "Code improvements without functional changes"
+
+# Component labels
+- name: "rtl"
+  color: "1d76db"
+  description: "RTL (voxel core, raycaster, AXI shell)"
+
+- name: "sim"
+  color: "5319e7"
+  description: "Verilator+SDL simulation harness"
+
+- name: "driver"
+  color: "0e8a16"
+  description: "OS drivers (Linux/FreeBSD/Windows/macOS)"
+
+- name: "build-system"
+  color: "d4c5f9"
+  description: "Makefile, CMake, or build infrastructure"
+
+- name: "ci"
+  color: "ededed"
+  description: "Continuous integration and testing"
+
+- name: "testing"
+  color: "bfd4f2"
+  description: "Test infrastructure and coverage"
+
+- name: "platform-backend"
+  color: "c2e0c6"
+  description: "SDL/GL/Vulkan/Wayland/X11 backends"
+
+# Priority labels
+- name: "priority: critical"
+  color: "b60205"
+  description: "Critical priority - blocking issue"
+
+- name: "priority: high"
+  color: "d93f0b"
+  description: "High priority"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Medium priority"
+
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Low priority"
+
+# Status labels
+- name: "status: blocked"
+  color: "d73a4a"
+  description: "Blocked by another issue or external dependency"
+
+- name: "status: in-progress"
+  color: "yellow"
+  description: "Currently being worked on"
+
+- name: "status: needs-review"
+  color: "fbca04"
+  description: "Needs code review"
+
+- name: "status: needs-testing"
+  color: "d4c5f9"
+  description: "Needs testing or validation"
+
+- name: "status: wontfix"
+  color: "ffffff"
+  description: "This will not be worked on"
+
+# Effort labels
+- name: "effort: small"
+  color: "c2e0c6"
+  description: "Small effort (< 1 day)"
+
+- name: "effort: medium"
+  color: "bfd4f2"
+  description: "Medium effort (1-3 days)"
+
+- name: "effort: large"
+  color: "5319e7"
+  description: "Large effort (> 3 days)"
+
+# Special labels
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+- name: "breaking change"
+  color: "d73a4a"
+  description: "Introduces breaking changes"
+
+- name: "dependencies"
+  color: "0366d6"
+  description: "Pull requests that update dependencies"
+
+- name: "performance"
+  color: "d4c5f9"
+  description: "Performance improvements"
+
+- name: "hardware"
+  color: "1d76db"
+  description: "Requires hardware testing or FPGA validation"
+
+- name: "alpha-limitation"
+  color: "fbca04"
+  description: "Known limitation in alpha release"

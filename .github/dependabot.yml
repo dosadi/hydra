@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
+
+  # Python dependencies (for cocotb and scripts)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps"
+    # Only update if there's a requirements.txt or similar
+    # If not present, this won't do anything
+
+  # Note: Native dependencies (Verilator, SDL2, etc.) are managed by OS package managers
+  # and should be updated manually. Version constraints are documented in:
+  # - README.md (minimum versions)
+  # - .github/workflows/ci.yml (CI versions)
+  # - CONTRIBUTING.md (development environment)

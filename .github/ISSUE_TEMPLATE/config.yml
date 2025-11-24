@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/anthropics/hydra/blob/main/README.md
+    about: Check the README and docs/ directory for guides and specifications
+  - name: Contributing Guide
+    url: https://github.com/anthropics/hydra/blob/main/CONTRIBUTING.md
+    about: Read the contributing guide before submitting pull requests

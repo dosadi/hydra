@@ -1,0 +1,69 @@
+# CODEOWNERS - Automatic review assignment
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Each line is a file pattern followed by one or more owners (GitHub usernames or team names).
+# Owners will be automatically requested for review when someone opens a pull request that modifies matching files.
+#
+# Format: path/to/files @username @org/team-name
+
+# Default owners for everything (fallback)
+*       @dosadi
+
+# RTL and core voxel engine
+/rtl/                                   @dosadi
+/rtl/voxel_*.sv                         @dosadi
+/rtl/*raycaster*.sv                     @dosadi
+
+# AXI/PCIe integration and register map
+/rtl/*axil*.sv                          @dosadi
+/rtl/axi_*.sv                           @dosadi
+/docs/hydra_spec.md                     @dosadi
+
+# Simulation harness and platform backends
+/sim/                                   @dosadi
+/sim/platform/                          @dosadi
+/sim/live_sdl_main.cpp                  @dosadi
+
+# Build system
+/Makefile                               @dosadi
+/sim/Makefile                           @dosadi
+CMakeLists.txt                          @dosadi
+/cmake/                                 @dosadi
+
+# Linux driver and UAPI
+/drivers/linux/                         @dosadi
+/drivers/linux/uapi/hydra_regs.h        @dosadi
+/drivers/libhydra/                      @dosadi
+
+# FreeBSD driver
+/drivers/bsd/                           @dosadi
+
+# Windows/macOS driver placeholders
+/drivers/windows/                       @dosadi
+/drivers/macos/                         @dosadi
+
+# Testing infrastructure
+/sim/tests/                             @dosadi
+/scripts/check_frame.py                 @dosadi
+/scripts/*_test*.sh                     @dosadi
+/scripts/hydra_dev_loop.sh              @dosadi
+
+# CI/CD
+/.github/workflows/                     @dosadi
+/scripts/ci_*.sh                        @dosadi
+/scripts/rtl_ci_wrapper.sh              @dosadi
+
+# Documentation
+/docs/                                  @dosadi
+/README.md                              @dosadi
+/CONTRIBUTING.md                        @dosadi
+/CLAUDE.md                              @dosadi
+
+# Third-party IP integration
+/third_party/                           @dosadi
+/scripts/fetch_ip.sh                    @dosadi
+/docs/ip_integration.md                 @dosadi
+
+# Release management
+RELEASE_NOTES*.md                       @dosadi
+/docs/release_*.md                      @dosadi
