@@ -584,8 +584,8 @@ int main(int argc, char** argv) {
                 int dy = ev.motion.yrel;
                 yaw   += dx * mouse_sens;
                 pitch += (invert_y_mouse ? dy : -dy) * mouse_sens;
-                if (pitch >  1.50f) pitch =  1.50f;
-                if (pitch < -1.50f) pitch = -1.50f;
+    if (pitch >  1.50f) pitch =  1.50f;
+    if (pitch < -1.50f) pitch = -1.50f;
                 apply_camera_to_dut();
             }
         }
