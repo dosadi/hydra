@@ -118,3 +118,6 @@ help:
 	@echo "  LOG_FRAMES=1    - Print per-frame stats"
 	@echo "  LOG_KEYS=1      - Print keyboard events"
 	@echo "  FRAME_DUMP=file.ppm AUTO_EXIT=1 - Non-interactive frame dump"
+	@echo "  HYDRA_FRAME_BASE=frame HYDRA_MAX_FRAME_DUMPS=N - Numbered frame dumps"
+	@echo "  HYDRA_CAM_POS=x,y,z HYDRA_CAM_ANG=yaw,pitch - Set initial camera"
+	@echo "  HYDRA_MOVE_SPEED, HYDRA_MOUSE_SENS, HYDRA_FPS_TARGET, HYDRA_CLEAR_COLOR, HYDRA_FONT, HYDRA_FONT_SCALE"
