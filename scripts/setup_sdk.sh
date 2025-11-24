@@ -24,6 +24,10 @@ echo "[hydra] Building libhydra-based DMA+blit demo"
 gcc -I "${ROOT_DIR}/drivers/linux/uapi" -I "${ROOT_DIR}/drivers/libhydra" -O2 -o "${ROOT_DIR}/scripts/hydra_dma_blit_demo" \
   "${ROOT_DIR}/scripts/hydra_dma_blit_demo.c" "${ROOT_DIR}/drivers/libhydra/hydra.c"
 
+echo "[hydra] Building IRQ test helper"
+gcc -I "${ROOT_DIR}/drivers/linux/uapi" -O2 -o "${ROOT_DIR}/scripts/hydra_irq_test" \
+  "${ROOT_DIR}/scripts/hydra_irq_test.c"
+
 if command -v pkg-config >/dev/null && pkg-config --exists libdrm; then
   echo "[hydra] Building DRM info tool"
   if ! gcc -I "${ROOT_DIR}/drivers/linux/uapi" $(pkg-config --cflags libdrm) \

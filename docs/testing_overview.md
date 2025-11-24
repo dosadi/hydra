@@ -87,6 +87,7 @@ This builds:
 - `drivers/libhydra/libhydra.a` – userspace helper library for IOCTLs.
 - `scripts/hydra_blit_smoketest` – raw BAR0/INT/blitter FIFO smoketest.
 - `scripts/hydra_dma_blit_demo` – libhydra-based DMA + blitter demo.
+- `scripts/hydra_irq_test` – triggers IRQ_TEST, dumps INT_STATUS/INT_MASK.
 
 ### Linux driver bring-up (requires Linux kernel headers and a hydra_pcie device)
 
