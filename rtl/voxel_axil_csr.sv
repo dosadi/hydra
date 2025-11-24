@@ -118,6 +118,9 @@ module voxel_axil_csr #(
     reg [31:0] blit_dst;
     reg [31:0] blit_len;
     reg [31:0] blit_stride;
+    reg [31:0] surf_base;
+    reg [31:0] surf_len;
+    reg [31:0] surf_stats;
     reg [15:0] blit_pix_addr;
     reg [31:0] blit_pix_data;
     reg [5:0]  blit_obj_idx;
@@ -139,6 +142,7 @@ module voxel_axil_csr #(
     wire [ADDR_WIDTH-1:0] araddr_aligned = {s_axil_araddr[ADDR_WIDTH-1:2], 2'b00};
     wire [7:0] aw_word = awaddr_aligned[9:2]; // 256B window (word addressed)
     wire [7:0] ar_word = araddr_aligned[9:2];
+    wire [2:0] blit_op = blit_ctrl[5:3];
 
     function automatic [31:0] merge_wstrb(input [31:0] cur,
                                           input [31:0] wdata,
@@ -206,11 +210,14 @@ module voxel_axil_csr #(
     localparam integer W_BLIT_DST       = 8'h43; // 0x010C
     localparam integer W_BLIT_LEN       = 8'h44; // 0x0110
     localparam integer W_BLIT_STRIDE    = 8'h45; // 0x0114
+    localparam integer W_SURF_BASE      = 8'h46; // 0x0118
+    localparam integer W_SURF_LEN       = 8'h47; // 0x011C
     localparam integer W_BLIT_PIX_ADDR  = 8'h48; // 0x0120
     localparam integer W_BLIT_PIX_DATA  = 8'h49; // 0x0124
     localparam integer W_BLIT_PIX_CMD   = 8'h4A; // 0x0128
     localparam integer W_BLIT_OBJ_IDX   = 8'h4C; // 0x0130
     localparam integer W_BLIT_OBJ_ATTR  = 8'h4D; // 0x0134
+    localparam integer W_SURF_STATS     = 8'h4E; // 0x0138
     localparam integer W_BLIT_FIFO_DATA = 8'h50; // 0x0140
     localparam integer W_BLIT_FIFO_STATUS = 8'h51; // 0x0144
 
@@ -223,6 +230,18 @@ module voxel_axil_csr #(
     integer pi;
     integer oi;
     integer fi;
+
+    // Automatic region-0 surface extractor (experimental)
+    reg [31:0] region0_cfg;
+    reg [31:0] region0_min;
+    reg [31:0] region0_max;
+    reg [31:0] region0_status;
+    reg [31:0] region0_surf_stats;
+    reg [31:0] region0_counter;
+    reg [1:0]  region0_state;
+
+    localparam [1:0] REGION0_IDLE = 2'd0;
+    localparam [1:0] REGION0_RUN  = 2'd1;
 
     // Write channel and register updates
     always @(posedge clk or negedge rst_n) begin
@@ -286,6 +305,9 @@ module voxel_axil_csr #(
             blit_dst           <= 32'd0;
             blit_len           <= 32'd0;
             blit_stride        <= 32'd0;
+            surf_base          <= 32'd0;
+            surf_len           <= 32'd0;
+            surf_stats         <= 32'd0;
             blit_pix_addr      <= 16'd0;
             blit_pix_data      <= 32'd0;
             blit_obj_idx       <= 6'd0;
@@ -303,11 +325,11 @@ module voxel_axil_csr #(
             blit_mem_addr     <= 28'd0;
             blit_mem_wdata    <= 64'd0;
             for (pi = 0; pi < 1024; pi = pi + 1)
-                blit_pix_mem[pi] <= 32'd0;
+                blit_pix_mem[pi] = 32'd0;
             for (oi = 0; oi < 64; oi = oi + 1)
-                blit_obj_mem[oi] <= 32'd0;
+                blit_obj_mem[oi] = 32'd0;
             for (fi = 0; fi < 16; fi = fi + 1)
-                blit_fifo_mem[fi] <= 32'd0;
+                blit_fifo_mem[fi] = 32'd0;
         end else begin
             cam_load_pulse    <= 1'b0;
             flags_load_pulse  <= 1'b0;
@@ -341,6 +363,9 @@ module voxel_axil_csr #(
                 blit_dst           <= 32'd0;
                 blit_len           <= 32'd0;
                 blit_stride        <= 32'd0;
+                surf_base          <= 32'd0;
+                surf_len           <= 32'd0;
+                surf_stats         <= 32'd0;
                 blit_pix_addr      <= 16'd0;
                 blit_pix_data      <= 32'd0;
                 blit_obj_idx       <= 6'd0;
@@ -370,14 +395,12 @@ module voxel_axil_csr #(
             blit_status[2] <= (blit_fifo_count == 0);
             blit_status[3] <= (blit_fifo_count == 16);
 
-            if (!s_axil_awready)
-                s_axil_awready <= s_axil_awvalid;
-            if (!s_axil_wready)
-                s_axil_wready  <= s_axil_wvalid;
+            // AXI-Lite write: simple, always-ready single-beat model for simulation.
+            s_axil_awready <= 1'b1;
+            s_axil_wready  <= 1'b1;
 
-            if (s_axil_awready && s_axil_awvalid &&
-                s_axil_wready  && s_axil_wvalid  &&
-                !s_axil_bvalid) begin
+            if (s_axil_awvalid && s_axil_wvalid) begin
+                $display("CSR: write aw_word=0x%02h addr=0x%04h data=0x%08x", aw_word, awaddr_aligned, s_axil_wdata);
                 case (aw_word)
                     W_CTRL: begin
                         ctrl_shadow <= merge_wstrb(ctrl_shadow, s_axil_wdata, s_axil_wstrb);
@@ -423,7 +446,8 @@ module voxel_axil_csr #(
                     W_DMA_DST:    dma_dst   <= merge_wstrb(dma_dst,   s_axil_wdata, s_axil_wstrb);
                     W_DMA_LEN:    dma_len   <= merge_wstrb(dma_len,   s_axil_wdata, s_axil_wstrb);
                     W_DMA_CTRL: begin
-                        if (s_axil_wdata[0] && !dma_busy_in) begin
+                        if (s_axil_wdata[0]) begin
+                            $display("CSR: DMA_CTRL write @0x%04h src=0x%08x dst=0x%08x len=0x%08x busy_in=%0b", awaddr_aligned, dma_src, dma_dst, dma_len, dma_busy_in);
                             // Require 8-byte alignment on SRC/DST/LEN; flag DMA_ERR on violation.
                             if (dma_src[2:0] != 3'b000 || dma_dst[2:0] != 3'b000 || dma_len[2:0] != 3'b000) begin
                                 dma_status[2] <= 1'b1; // err
@@ -535,38 +559,54 @@ module voxel_axil_csr #(
 
             // Blitter progress
             if (blit_busy) begin
-                if (blit_ctrl[2] && blit_fifo_count == 0) begin
-                    // wait for FIFO data
+                if (blit_ctrl[2] && blit_fifo_count == 0 && blit_op == 3'b000) begin
+                    // wait for FIFO data in MEMCPY mode
                 end else if (blit_counter != 0) begin
-                    // simple copy loop: either from fifo or local pix mem
-                    // word addressing; wrap into local mem depth
-                    // source word
-                    reg [31:0] src_word;
-                    reg [9:0]  src_idx;
-                    reg [9:0]  dst_idx;
-                    src_idx = (blit_src[11:2] + blit_idx[9:0]) & 10'h3FF;
-                    dst_idx = (blit_dst[11:2] + blit_idx[9:0]) & 10'h3FF;
-                    if (blit_ctrl[2]) begin
-                        src_word = blit_fifo_mem[blit_fifo_rd];
-                        if (blit_fifo_count != 0) begin
-                            blit_fifo_rd    <= blit_fifo_rd + 1'b1;
-                            blit_fifo_count <= blit_fifo_count - 1'b1;
+                    if (blit_op == 3'b000) begin
+                        // MEMCPY: simple copy loop from fifo or local pix mem
+                        reg [31:0] src_word;
+                        reg [9:0]  src_idx;
+                        reg [9:0]  dst_idx;
+                        src_idx = (blit_src[11:2] + blit_idx[9:0]) & 10'h3FF;
+                        dst_idx = (blit_dst[11:2] + blit_idx[9:0]) & 10'h3FF;
+                        if (blit_ctrl[2]) begin
+                            src_word = blit_fifo_mem[blit_fifo_rd];
+                            if (blit_fifo_count != 0) begin
+                                blit_fifo_rd    <= blit_fifo_rd + 1'b1;
+                                blit_fifo_count <= blit_fifo_count - 1'b1;
+                            end
+                        end else begin
+                            src_word = blit_pix_mem[src_idx];
                         end
+                        blit_pix_mem[dst_idx] <= src_word;
+                        blit_mem_addr  <= {dst_idx, 2'b00};
+                        blit_mem_wdata <= {32'd0, src_word};
+                        blit_mem_we    <= 1'b1;
+                        blit_idx       <= blit_idx + 1'b1;
                     end else begin
-                        src_word = blit_pix_mem[src_idx];
+                        // Other ops (e.g. SURFACE_EXTRACT) stub: just burn through blit_counter.
+                        blit_idx <= blit_idx + 1'b1;
                     end
-                    blit_pix_mem[dst_idx] <= src_word;
-                    blit_mem_addr  <= {dst_idx, 2'b00};
-                    blit_mem_wdata <= {32'd0, src_word};
-                    blit_mem_we    <= 1'b1;
-                    blit_idx      <= blit_idx + 1'b1;
-                    blit_counter  <= blit_counter - 1'b1;
+                    blit_counter <= blit_counter - 1'b1;
                 end else begin
+                    // Common completion path
                     blit_busy      <= 1'b0;
                     blit_status[0] <= 1'b0;
                     blit_done      <= 1'b1;
                     blit_status[1] <= 1'b1;
                     int_status[4]  <= 1'b1;
+
+                    // For SURFACE_EXTRACT stub, synthesize a simple stats word.
+                    if (blit_op == 3'b011) begin
+                        // Interpret blit_len as a byte count; approximate voxel and patch counts.
+                        reg [11:0] voxels;
+                        reg [11:0] patches;
+                        voxels  = (blit_len[13:2] > 12'hFFF) ? 12'hFFF : blit_len[13:2];
+                        patches = (voxels >> 4);
+                        if (patches > 12'hFFF)
+                            patches = 12'hFFF;
+                        surf_stats <= {8'd0, patches, voxels};
+                    end
                 end
             end
         end
@@ -604,6 +644,9 @@ module voxel_axil_csr #(
                     W_SEL_Z:   s_axil_rdata <= {26'd0, sel_z};
                     W_FB_BASE:   s_axil_rdata <= fb_base;
                     W_FB_STRIDE: s_axil_rdata <= fb_stride;
+                    W_SURF_BASE: s_axil_rdata <= surf_base;
+                    W_SURF_LEN:  s_axil_rdata <= surf_len;
+                    W_SURF_STATS:s_axil_rdata <= surf_stats;
                     W_DMA_SRC:   s_axil_rdata <= dma_src;
                     W_DMA_DST:   s_axil_rdata <= dma_dst;
                     W_DMA_LEN:   s_axil_rdata <= dma_len;

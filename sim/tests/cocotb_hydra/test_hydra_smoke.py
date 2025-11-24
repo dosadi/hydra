@@ -16,17 +16,35 @@ IRQ_TEST    = 0x0088
 HDMI_CRC    = 0x00B0
 
 # Blitter (0x0100 region)
-BLIT_CTRL       = 0x0100
-BLIT_STATUS     = 0x0104
-BLIT_SRC        = 0x0108
-BLIT_DST        = 0x010C
-BLIT_LEN        = 0x0110
-BLIT_STRIDE     = 0x0114
-BLIT_PIX_ADDR   = 0x0120
-BLIT_PIX_DATA   = 0x0124
-BLIT_PIX_CMD    = 0x0128
-BLIT_FIFO_DATA  = 0x0140
+BLIT_CTRL        = 0x0100
+BLIT_STATUS      = 0x0104
+BLIT_SRC         = 0x0108
+BLIT_DST         = 0x010C
+BLIT_LEN         = 0x0110
+BLIT_STRIDE      = 0x0114
+SURF_BASE        = 0x0118
+SURF_LEN         = 0x011C
+BLIT_PIX_ADDR    = 0x0120
+BLIT_PIX_DATA    = 0x0124
+BLIT_PIX_CMD     = 0x0128
+BLIT_OBJ_IDX     = 0x0130
+BLIT_OBJ_ATTR    = 0x0134
+SURF_STATS       = 0x0138
+BLIT_FIFO_DATA   = 0x0140
 BLIT_FIFO_STATUS = 0x0144
+
+BLIT_OP_SHIFT            = 3
+BLIT_OP_MEMCPY           = 0
+BLIT_OP_DRAW_OBJECT      = 1
+BLIT_OP_MOVE_OBJECT      = 2
+BLIT_OP_SURFACE_EXTRACT  = 3
+
+# Automatic region 0 extractor (matches HYDRA_REG_REGION0_*)
+REGION0_CFG        = 0x0150
+REGION0_MIN        = 0x0154
+REGION0_MAX        = 0x0158
+REGION0_STATUS     = 0x015C
+REGION0_SURF_STATS = 0x0160
 
 # BAR1 SDRAM window base (must match voxel_axil_shell)
 BAR1_BASE  = 0x1000000
@@ -323,3 +341,60 @@ async def blitter_basic_copy(dut):
         assert got == expected, (
             f"BLIT copy mismatch at dst idx {dst_idx}: got 0x{got:08x}, expected 0x{expected:08x}"
         )
+
+
+@cocotb.test()
+async def region0_auto_extractor_stub(dut):
+    """Exercise REGION0_* CSRs and automatic extractor stub.
+
+    Kicks the region-0 FSM via REGION0_CFG, waits for STATUS.valid and
+    REGION0_SURF_STATS to become non-zero, and checks INT_STATUS[REGION0_DONE].
+    """
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+
+    # Drive AXI-Lite defaults
+    dut.s_axil_awvalid.value = 0
+    dut.s_axil_wvalid.value = 0
+    dut.s_axil_bready.value = 0
+    dut.s_axil_arvalid.value = 0
+    dut.s_axil_rready.value = 0
+
+    # Reset
+    dut.rst_n.value = 0
+    for _ in range(5):
+        await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    for _ in range(5):
+        await RisingEdge(dut.clk)
+
+    # Program a dummy region AABB; layout is TBD, so keep it opaque for now.
+    await axil_write(dut, REGION0_MIN, 0x00000000)
+    await axil_write(dut, REGION0_MAX, 0x00000000)
+
+    # Enable only REGION0_DONE interrupt (bit5).
+    await axil_write(dut, INT_MASK, 1 << 5)
+
+    # CFG[0]=enable, CFG[1]=kick, lod_hint=0.
+    await axil_write(dut, REGION0_CFG, 0x3)
+
+    # Wait for STATUS.valid and INT_STATUS[5].
+    valid_seen = False
+    for _ in range(5000):
+        status = await axil_read(dut, REGION0_STATUS)
+        if status & (1 << 1):
+            valid_seen = True
+            break
+        await RisingEdge(dut.clk)
+
+    assert valid_seen, "Expected REGION0_STATUS.valid to assert"
+
+    int_val = await axil_read(dut, INT_STATUS)
+    assert int_val & (1 << 5), "Expected REGION0_DONE interrupt bit set in INT_STATUS"
+
+    # Read back REGION0_SURF_STATS and ensure we see non-zero voxels/patches.
+    surf_stats = await axil_read(dut, REGION0_SURF_STATS)
+    voxels = surf_stats & 0xFFF
+    patches = (surf_stats >> 12) & 0xFFF
+    cocotb.log.info(f"REGION0_SURF_STATS=0x{surf_stats:08x} voxels={voxels} patches={patches}")
+    assert voxels > 0, "Expected non-zero voxel count in REGION0_SURF_STATS stub"
+    assert patches > 0, "Expected non-zero patch count in REGION0_SURF_STATS stub"

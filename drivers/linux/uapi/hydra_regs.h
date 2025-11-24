@@ -67,16 +67,34 @@
 #define HYDRA_REG_HDMI_PIX      0x00BC  /* RO: last pixel-in-line (sim) */
 
 /* 3D blitter stub (0x0100 region) */
-#define HYDRA_REG_BLIT_CTRL       0x0100  /* [0]=start, [1]=dir(readback), [2]=use_fifo */
+#define HYDRA_REG_BLIT_CTRL       0x0100  /* [0]=start, [1]=dir(readback), [2]=use_fifo, [5:3]=op */
 #define HYDRA_REG_BLIT_STATUS     0x0104  /* [0]=busy, [1]=done, [2]=fifo_empty, [3]=fifo_full */
 #define HYDRA_REG_BLIT_SRC        0x0108  /* src address */
 #define HYDRA_REG_BLIT_DST        0x010C  /* dst address */
 #define HYDRA_REG_BLIT_LEN        0x0110  /* bytes */
 #define HYDRA_REG_BLIT_STRIDE     0x0114  /* bytes per line */
+#define HYDRA_REG_SURF_BASE       0x0118  /* surface output base (SDRAM byte addr) */
+#define HYDRA_REG_SURF_LEN        0x011C  /* max surface bytes to write */
 #define HYDRA_REG_BLIT_PIX_ADDR   0x0120  /* pixel index */
 #define HYDRA_REG_BLIT_PIX_DATA   0x0124  /* pixel payload */
 #define HYDRA_REG_BLIT_PIX_CMD    0x0128  /* [0]=write, [1]=read */
 #define HYDRA_REG_BLIT_OBJ_IDX    0x0130  /* object index */
 #define HYDRA_REG_BLIT_OBJ_ATTR   0x0134  /* object attribute rw */
+#define HYDRA_REG_SURF_STATS      0x0138  /* [31:24]=status,[23:12]=patches,[11:0]=voxels */
 #define HYDRA_REG_BLIT_FIFO_DATA  0x0140  /* push/pop data */
 #define HYDRA_REG_BLIT_FIFO_STATUS 0x0144 /* depth/flags */
+
+/* Automatic region extractor (experimental, region 0 only) */
+#define HYDRA_REG_REGION0_CFG       0x0150  /* [0]=enable, [1]=kick, [7:4]=lod_hint */
+#define HYDRA_REG_REGION0_MIN       0x0154  /* packed voxel-space min XYZ (layout TBD) */
+#define HYDRA_REG_REGION0_MAX       0x0158  /* packed voxel-space max XYZ (layout TBD) */
+#define HYDRA_REG_REGION0_STATUS    0x015C  /* [0]=busy, [1]=valid, [2]=err, [31:16]=version */
+#define HYDRA_REG_REGION0_SURF_STATS 0x0160 /* same layout as HYDRA_REG_SURF_STATS */
+
+#define HYDRA_BLIT_CTRL_OP_SHIFT  3
+#define HYDRA_BLIT_CTRL_OP_MASK   (0x7u << HYDRA_BLIT_CTRL_OP_SHIFT)
+#define HYDRA_BLIT_OP_MEMCPY         0u
+#define HYDRA_BLIT_OP_DRAW_OBJECT    1u
+#define HYDRA_BLIT_OP_MOVE_OBJECT    2u
+#define HYDRA_BLIT_OP_SURFACE_EXTRACT 3u
+#define HYDRA_INT_REGION0_DONE       BIT(5)
