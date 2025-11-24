@@ -62,6 +62,12 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a “demo mode” that runs a scripted camera path and toggles flags for capture reels.
 - TODO: Add per-axis inversion/sensitivity sliders (env/CLI) for finer camera tuning.
 - TODO: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds.
+- TODO: Add a “camera jitter” noise option to stress anti-aliasing/perf stability.
+- TODO: Add a HUD overlay to show current seed and config file path when loaded.
+- TODO: Add an env/hotkey to zero the framebuffer at frame start to guarantee deterministic background.
+- TODO: Add a “demo mode” that runs a scripted camera path and toggles flags for capture reels.
+- TODO: Add per-axis inversion/sensitivity sliders (env/CLI) for finer camera tuning.
+- TODO: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
