@@ -21,6 +21,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a small “record inputs to script” mode (log keys/mouse deltas with timestamps) and a “playback” mode for deterministic repros.
 - TODO: Emit a brief startup summary (backend, font path, env knobs in effect) to stderr to aid reproducibility in logs.
 - TODO: Offer a HUD toggle for memory/bandwidth counters exposed from RTL (mem_cycle/read/write) so perf data is visible without LOG_FRAMES spam.
+- TODO: Add a hotkey to reset camera/flags to defaults (and print the defaults) for quick repro setups.
+- TODO: Add a screenshot hotkey (PPM/PNG with timestamp to `sim/`) that works in headless mode too.
+- TODO: Add a VSYNC toggle (hotkey/env) and reflect it in the HUD/backend startup log.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -30,6 +33,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a lightweight SV testbench that drives AXI-Lite writes/reads over the BAR0 map to flag regressions when CSRs change.
 - TODO: Add compile-time parameters or CSRs for VOXEL_GRID_SIZE/SCREEN dims that propagate into the sim HUD for consistency.
 - TODO: Add an assertion or coverage point for `frame_done` cadence vs. expected pixel count to catch truncated frames in RTL.
+- TODO: Add reset-value checks for key CSRs (flags, selection, CTRL) to match the spec and fail sim if mismatched.
+- TODO: Add coverage/assertions that INT_MASK gates irq_out/msi_pulse correctly on each bit.
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -47,6 +52,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a debugfs knob in `hydra_pcie_drv` to toggle verbose IRQ logging without recompiling.
 - TODO: Package a pkg-config file for libhydra so external tools can find headers/libs without hardcoded paths.
 - TODO: Make the FreeBSD stub expose a `devctl`/sysctl readout similar to the Linux debugfs status for parity.
+- TODO: Add a self-test debugfs entry to trigger IRQ_TEST and report INT_STATUS to validate interrupts without user tooling.
+- TODO: Teach `hydra_dma_blit_demo` to skip cleanly (exit 77) when the device node is missing, for nicer CI gating.
+- TODO: Add a tiny `hydra_cam_reset` CLI that sets camera/flags/selection to defaults via libhydra (mirrors sim reset hotkey).
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -63,6 +71,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add formatting checks (clang-format for C/C++, verible/svformat for SV) to keep diffs clean.
 - TODO: Provide a minimal `requirements.txt` for Python scripts used in CI (`check_frame.py`, etc.) to document versions.
 - TODO: Add a top-level `make docs-lint` that scans docs for stale file references and missing anchors.
+- TODO: Add a pre-commit config (hooks for format/lint) to keep local changes aligned with CI expectations.
+- TODO: Add a CI job that runs `make test_frame` with HYDRA_BACKEND=SDL and HYDRA_BACKEND=GL (when available) to catch backend regressions.
+- TODO: Add a nightly CI job to run cocotb smoke (`sim/tests/cocotb_hydra`) when tools are present, but mark non-blocking.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -73,3 +84,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Expand `docs/testing_overview.md` with example commands for negative tests (bad IOCTLs, headless frame dump).
 - TODO: Document keybindings and editing shortcuts in a dedicated sim controls doc to reduce friction for new testers.
 - TODO: Add a brief “architecture at a glance” diagram or ASCII map linking RTL modules to sim components for onboarding.
+- TODO: Document the BAR0 CSR reset defaults and how drivers should validate them during probe.
+- TODO: Add a “backend compatibility matrix” note (which OS/flags are exercised in CI vs. untested).
