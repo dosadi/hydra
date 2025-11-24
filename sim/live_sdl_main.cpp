@@ -392,6 +392,8 @@ int main(int argc, char** argv) {
 
     const char* idle_env = std::getenv("HYDRA_SIM_IDLE_MS");
     const int idle_ms = idle_env ? std::max(0, std::atoi(idle_env)) : 0;
+    const char* fps_env = std::getenv("HYDRA_FPS_TARGET");
+    const float fps_target = fps_env ? std::max(0.0f, std::atof(fps_env)) : 0.0f;
 
     while (running && !Verilated::gotFinish()) {
         // Default: no debug write
@@ -685,6 +687,16 @@ int main(int argc, char** argv) {
 
             auto now = std::chrono::high_resolution_clock::now();
             float dt = std::chrono::duration<float>(now - last_frame_time).count();
+            if (fps_target > 0.0f) {
+                float target_dt = 1.0f / fps_target;
+                if (dt < target_dt) {
+                    int delay_ms = static_cast<int>((target_dt - dt) * 1000.0f);
+                    if (delay_ms > 0) {
+                        SDL_Delay(delay_ms);
+                        dt += static_cast<float>(delay_ms) / 1000.0f;
+                    }
+                }
+            }
             last_frame_time = now;
             if (dt > 0.0f) fps = 1.0f / dt;
 
