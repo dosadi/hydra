@@ -299,6 +299,7 @@ int main(int argc, char** argv) {
     const char* max_dump_env    = std::getenv("HYDRA_MAX_FRAME_DUMPS");
     int max_frame_dumps         = max_dump_env ? std::max(0, std::atoi(max_dump_env)) : 1;
     int frame_dumps_written     = 0;
+    const char* autosave_cfg    = std::getenv("HYDRA_AUTOSAVE_CFG");
     std::vector<uint32_t> framebuffer(NPIX, 0);
 
     // Reset sequence
@@ -688,6 +689,21 @@ int main(int argc, char** argv) {
                     if (max_frame_dumps > 0 && frame_dumps_written >= max_frame_dumps) {
                         std::fprintf(stderr, "Max frame dumps (%d) reached, disabling further FRAME_DUMP writes\n", max_frame_dumps);
                     }
+                }
+            }
+            if (autosave_cfg && autosave_cfg[0] != '\0') {
+                FILE* fcfg = std::fopen(autosave_cfg, "w");
+                if (!fcfg) {
+                    std::fprintf(stderr, "Failed to write HYDRA_AUTOSAVE_CFG to '%s'\n", autosave_cfg);
+                } else {
+                    std::fprintf(fcfg, "cam_pos=%.3f,%.3f,%.3f\n", pos_x, pos_y, pos_z);
+                    std::fprintf(fcfg, "cam_ang=%.3f,%.3f\n", yaw, pitch);
+                    std::fprintf(fcfg, "flags=%d,%d,%d,%d\n",
+                                 smooth_surfaces ? 1 : 0,
+                                 curvature ? 1 : 0,
+                                 extra_light ? 1 : 0,
+                                 diag_slice ? 1 : 0);
+                    std::fclose(fcfg);
                 }
             }
 
