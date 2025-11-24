@@ -23,7 +23,7 @@ CXX          ?= g++
 SDL_CONFIG   ?= sdl2-config
 # If sdl2-config is unavailable (e.g., MSYS2/MinGW), allow overriding SDL_CFLAGS/SDL_LIBS via env.
 SDL_CFLAGS   ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --cflags)
-SDL_LIBS     ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --libs) -LDFLAGS -lSDL2_ttf
+SDL_LIBS     ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --libs) -lSDL2_ttf
 
 WAYLAND      ?= 0
 WAYLAND_CFLAGS ?=
@@ -93,8 +93,28 @@ test_frame: $(CXX_EXE)
 	@rm -f $(TEST_FRAME)
 	cd $(SIM_DIR) && FRAME_DUMP="$(TEST_FRAME)" AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
 	cd $(PROJECT_ROOT) && python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm > sim/build/frame_diff.log 2>&1
+	@cat sim/build/frame_diff.log || true
 
 clean:
-	rm -rf obj_dir $(CXX_EXE)
+	rm -rf obj_dir $(CXX_EXE) $(TEST_BUILD_DIR)
 
-.PHONY: all clean
+.PHONY: all clean test_frame help
+
+help:
+	@echo "Sim Build System - Available Targets:"
+	@echo ""
+	@echo "  make all        - Build Verilator sim (default)"
+	@echo "  make test_frame - Build sim and run frame regression test"
+	@echo "  make clean      - Remove build artifacts"
+	@echo ""
+	@echo "Optional backend flags (build time):"
+	@echo "  make GL=1       - Enable OpenGL backend"
+	@echo "  make X11=1      - Enable X11 backend"
+	@echo "  make WAYLAND=1  - Enable Wayland backend"
+	@echo "  make VULKAN=1   - Enable Vulkan backend"
+	@echo ""
+	@echo "Runtime environment variables:"
+	@echo "  HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN|FBDEV|WIN32|MACOS>"
+	@echo "  LOG_FRAMES=1    - Print per-frame stats"
+	@echo "  LOG_KEYS=1      - Print keyboard events"
+	@echo "  FRAME_DUMP=file.ppm AUTO_EXIT=1 - Non-interactive frame dump"
