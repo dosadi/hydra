@@ -42,6 +42,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a “reset world” hotkey/env to re-run the procedural generator and reload into BRAM without restarting sim.
 - TODO: Add a toggle to visualize selection bounding box/normal in 3D (e.g., wireframe highlight).
 - TODO: Add a debug mode that shows cam vectors (dir/plane) as on-screen arrows for math sanity checks.
+- TODO: Add keybind to dump current camera/flag/selection state to stdout for copy-paste into tests/docs.
+- TODO: Add optional gamma correction or tone-mapping toggle to make visuals more consistent across displays.
+- TODO: Add a “safe defaults” preset (lower speed/sensitivity, noclip-off) for new users via env/hotkey.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -65,6 +68,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add coverage for diag_slice flag effects (ensuring expected pixel_write_en pattern changes when set).
 - TODO: Add a small SV covergroup on INT_STATUS bits to ensure each event is observed at least once in regression.
 - TODO: Add a parameter to disable diagnostic slice entirely for FPGA builds (synth-friendly switch).
+- TODO: Add a build-time flag to reduce MAX_RAY_STEPS for faster sims and verify behavior under short rays.
+- TODO: Add a simple checker that pixel_word0/1/2 are stable when pixel_write_en deasserts (no X propagation).
 
 ## Drivers / SDK / Tools
 - TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
@@ -103,6 +108,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a `hydra_dump_csrs` tool that dumps a CSR range to help compare against spec during bring-up.
 - TODO: Add per-arch cross-compile notes (e.g., aarch64 cross) for the driver and libhydra.
 - TODO: Add basic manpages or `--help` output for the userland tools (blit_smoketest, dma_blit_demo, drm_info).
+- TODO: Add a basic perf test that times repeated HYDRA_IOCTL_RD32/WR32 calls to gauge BAR latency.
+- TODO: Add a small tool that writes/reads selection/camera via the driver to mirror sim controls (for HW parity).
+- TODO: Add an optional sysfs entry to expose BAR sizes/IDs (read-only) for quick inspection without debugfs.
 
 ## Build / CI / Tooling
 - TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
@@ -140,6 +148,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a `make bench` target for any performance microbenchmarks or frame timing scripts.
 - TODO: Add a CI matrix that runs `make test_frame` with GL/Vulkan off/on (when supported) behind a feature flag.
 - TODO: Add a quick “lint-docs-links” script to fail if README references missing files.
+- TODO: Add a CI job to build the Linux driver with `W=1` (sparse/extra warnings) to catch kernel API drift early.
+- TODO: Add a small script to check for trailing whitespace/tab damage in SV/C++ sources (pre-commit style).
+- TODO: Add a fast “docs-only” CI path that runs lint/spellcheck when only docs change.
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -164,3 +175,5 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add notes about headless runs and FRAME_DUMP outputs (file size, format).
 - TODO: Add a short doc on SDL backends (Wayland/X11/GL/Vulkan) with build flags and runtime envs.
 - TODO: Add a brief note on expected memory footprint/frame times in sim for baseline hardware.
+- TODO: Add a small “perf tuning” doc for sim (env vars, pacing, disable HUD) for capturing reproducible metrics.
+- TODO: Add instructions for running cocotb tests with alternative simulators (icarus/vcs/etc.) if applicable.
