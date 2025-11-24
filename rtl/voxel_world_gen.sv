@@ -8,7 +8,7 @@
 `timescale 1ns/1ps
 
 module voxel_world_gen #(
-    parameter GRID_SIZE = 64
+    parameter integer GRID_SIZE = 64
 )(
     input  wire        clk,
     input  wire        rst_n,
@@ -40,6 +40,8 @@ module voxel_world_gen #(
     // Floor shading helpers
     reg  [7:0] floor_light;
     reg  [7:0] floor_r, floor_g, floor_b;
+    reg  [2:0] texture_noise;
+    reg  [5:0] xz_xor;
 
     localparam [5:0] SPH0_CX = 6'd32;
     localparam [5:0] SPH0_CY = 6'd32;
@@ -124,10 +126,18 @@ module voxel_world_gen #(
                             floor_light = 8'd110;
                         end
 
-                        // Subtle bluish gradient that shifts slightly with X.
-                        floor_r = 8'd64 + {5'd0, x[3:1]};
-                        floor_g = 8'd80 + {5'd0, x[3:1]};
-                        floor_b = 8'd96 + {5'd0, x[3:1]};
+                        // Concrete-like floor with subtle warmth and procedural texture variation.
+                        // XOR-based pseudo-noise adds micro-detail without costly computation.
+                        texture_noise = x[1:0] ^ y[2:1] ^ z[1:0];
+                        xz_xor = x ^ z;
+                        floor_r = 8'd92  + {5'd0, x[2:0]} + {5'd0, texture_noise};  // 92-107 (neutral warm)
+                        floor_g = 8'd88  + {5'd0, z[2:0]} + {5'd0, texture_noise};  // 88-103 (slightly cooler)
+                        floor_b = 8'd84  + {5'd0, xz_xor[2:0]} + {5'd0, texture_noise};  // 84-99 (desaturated)
+
+                        // Clamp to prevent overflow (stay in realistic concrete range)
+                        if (floor_r > 8'd110) floor_r = 8'd110;
+                        if (floor_g > 8'd106) floor_g = 8'd106;
+                        if (floor_b > 8'd102) floor_b = 8'd102;
 
                         write_addr <= {x, y, z};
                         write_data <= {
@@ -146,7 +156,7 @@ module voxel_world_gen #(
                             8'd255,    // emissive (acts as light source)
                             8'd255,    // alpha
                             8'd255,    // light
-                            8'hFF, 8'hD0, 8'hA0, // RGB (warm ceiling light)
+                            8'hFF, 8'hE8, 8'hC8, // RGB (soft incandescent - warm white, not orange)
                             4'd1, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;
@@ -178,7 +188,7 @@ module voxel_world_gen #(
                             8'd0,        // emissive
                             8'd255,      // alpha
                             8'd220,      // light
-                            8'h40, 8'hC0, 8'hFF, // RGB (bright cyan)
+                            8'h70, 8'hA8, 8'hB8, // RGB (matte teal ceramic - desaturated, natural)
                             4'd5, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;
@@ -210,7 +220,7 @@ module voxel_world_gen #(
                             8'd200,      // emissive
                             8'd255,      // alpha
                             8'd220,      // light
-                            8'hFF, 8'h40, 8'hFF, // RGB (magenta-ish)
+                            8'hFF, 8'hB0, 8'h60, // RGB (warm amber emissive - realistic light glow)
                             4'd1, 4'd0           // material_type, reserved
                         };
                         write_en <= 1'b1;
