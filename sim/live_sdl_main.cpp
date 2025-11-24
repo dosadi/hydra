@@ -268,11 +268,18 @@ int main(int argc, char** argv) {
     );
     if (!tex) die("Texture creation failed");
 
-    TTF_Font* font = TTF_OpenFont(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 11
-    );
+    const char* font_env = std::getenv("HYDRA_FONT");
+    const char* font_path = font_env ? font_env : "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+    TTF_Font* font = TTF_OpenFont(font_path, 11);
+    if (!font && font_env) {
+        // If an override was provided but failed, fall back to the default.
+        std::fprintf(stderr, "Warning: HYDRA_FONT='%s' failed: %s; falling back to default\n",
+                     font_path, TTF_GetError());
+        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+        font = TTF_OpenFont(font_path, 11);
+    }
     if (!font) {
-        std::fprintf(stderr, "Warning: could not open font, HUD text disabled\n");
+        std::fprintf(stderr, "Warning: could not open font (%s), HUD text disabled\n", font_path);
     }
 
     const size_t NPIX = size_t(SCREEN_WIDTH) * SCREEN_HEIGHT;
