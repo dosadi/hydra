@@ -7,18 +7,18 @@
 `timescale 1ns/1ps
 
 module voxel_framebuffer_top #(
-    parameter SCREEN_WIDTH    = 480,
-    parameter SCREEN_HEIGHT   = 360,
-    parameter VOXEL_GRID_SIZE = 64,
-    parameter COORD_WIDTH     = 16,
-    parameter FRAC_BITS       = 8,
+    parameter integer SCREEN_WIDTH    = 480,
+    parameter integer SCREEN_HEIGHT   = 360,
+    parameter integer VOXEL_GRID_SIZE = 64,
+    parameter integer COORD_WIDTH     = 16,
+    parameter integer FRAC_BITS       = 8,
     // Max ray steps and step size for core; default matches original behavior.
     parameter integer MAX_RAY_STEPS   = 128,
     parameter integer RAY_STEP_SHIFT  = FRAC_BITS-1,
     // Test-only: force world_ready to 1 after reset for benches
-    parameter TEST_FORCE_WORLD_READY = 0,
+    parameter integer TEST_FORCE_WORLD_READY = 0,
     // Allow benches to disable auto-run and require host start pulses.
-    parameter AUTO_START_FRAMES = 1
+    parameter integer AUTO_START_FRAMES = 1
 )(
     input  wire         clk,
     input  wire         rst_n,

@@ -1,10 +1,16 @@
-// surface_extractor.sv (stub)
+// ============================================================================
+// surface_extractor.sv
+// - Surface extraction stub for extracting normals and curvature from voxel data.
+// - Part of 3D blitter feature set (see docs/hydra_spec.md BAR0 0x0100+).
+// - Currently returns fixed placeholder values; full implementation pending.
+// ============================================================================
+
 `timescale 1ns/1ps
 
 module surface_extractor #(
-    parameter GRID_SIZE   = 64,
-    parameter COORD_WIDTH = 16,
-    parameter FRAC_BITS   = 8
+    parameter integer GRID_SIZE   = 64,
+    parameter integer COORD_WIDTH = 16,
+    parameter integer FRAC_BITS   = 8
 )(
     input  wire                   clk,
     input  wire                   rst_n,

@@ -12,11 +12,11 @@
 `timescale 1ns/1ps
 
 module voxel_raycaster_core_pipelined #(
-    parameter SCREEN_WIDTH    = 480,
-    parameter SCREEN_HEIGHT   = 360,
-    parameter VOXEL_GRID_SIZE = 64,
-    parameter COORD_WIDTH     = 16,
-    parameter FRAC_BITS       = 8,
+    parameter integer SCREEN_WIDTH    = 480,
+    parameter integer SCREEN_HEIGHT   = 360,
+    parameter integer VOXEL_GRID_SIZE = 64,
+    parameter integer COORD_WIDTH     = 16,
+    parameter integer FRAC_BITS       = 8,
     // Maximal ray steps per pixel in normal mode (sim can override for speed).
     parameter integer MAX_RAY_STEPS = 128,
     // Fixed-point step size along -X (1<<(FRAC_BITS-1) matches original half-voxel).

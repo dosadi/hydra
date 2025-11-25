@@ -168,6 +168,8 @@ module voxel_axil_csr #(
     localparam integer W_REV        = 8'h01; // 0x0004
     localparam integer W_CTRL       = 8'h04; // 0x0010
     localparam integer W_STATUS     = 8'h05; // 0x0014
+    localparam integer W_INT_STATUS = 8'h20; // 0x0080
+    localparam integer W_INT_MASK   = 8'h21; // 0x0084
     localparam integer W_CAM_X      = 8'h08; // 0x0020
     localparam integer W_CAM_Y      = 8'h09; // 0x0024
     localparam integer W_CAM_Z      = 8'h0A; // 0x0028
@@ -189,9 +191,6 @@ module voxel_axil_csr #(
     localparam integer W_DMA_LEN    = 8'h1A; // 0x0068
     localparam integer W_DMA_CTRL   = 8'h1B; // 0x006C
     localparam integer W_DMA_STATUS = 8'h1C; // 0x0070
-
-    localparam integer W_INT_STATUS = 8'h20; // 0x0080
-    localparam integer W_INT_MASK   = 8'h21; // 0x0084
     localparam integer W_IRQ_TEST   = 8'h22; // 0x0088
 
     localparam integer W_DBG_ADDR   = 8'h28; // 0x00A0
@@ -400,7 +399,9 @@ module voxel_axil_csr #(
             s_axil_wready  <= 1'b1;
 
             if (s_axil_awvalid && s_axil_wvalid) begin
-                $display("CSR: write aw_word=0x%02h addr=0x%04h data=0x%08x", aw_word, awaddr_aligned, s_axil_wdata);
+                `ifdef CSR_DEBUG
+                    $display("CSR: write aw_word=0x%02h addr=0x%04h data=0x%08x", aw_word, awaddr_aligned, s_axil_wdata);
+                `endif
                 case (aw_word)
                     W_CTRL: begin
                         ctrl_shadow <= merge_wstrb(ctrl_shadow, s_axil_wdata, s_axil_wstrb);
@@ -447,7 +448,9 @@ module voxel_axil_csr #(
                     W_DMA_LEN:    dma_len   <= merge_wstrb(dma_len,   s_axil_wdata, s_axil_wstrb);
                     W_DMA_CTRL: begin
                         if (s_axil_wdata[0]) begin
-                            $display("CSR: DMA_CTRL write @0x%04h src=0x%08x dst=0x%08x len=0x%08x busy_in=%0b", awaddr_aligned, dma_src, dma_dst, dma_len, dma_busy_in);
+                            `ifdef CSR_DEBUG
+                                $display("CSR: DMA_CTRL write @0x%04h src=0x%08x dst=0x%08x len=0x%08x busy_in=%0b", awaddr_aligned, dma_src, dma_dst, dma_len, dma_busy_in);
+                            `endif
                             // Require 8-byte alignment on SRC/DST/LEN; flag DMA_ERR on violation.
                             if (dma_src[2:0] != 3'b000 || dma_dst[2:0] != 3'b000 || dma_len[2:0] != 3'b000) begin
                                 dma_status[2] <= 1'b1; // err
