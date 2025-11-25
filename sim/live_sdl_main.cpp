@@ -55,6 +55,24 @@ static bool env_truthy(const char* key) {
     return false;
 }
 
+static void apply_cli_overrides(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const char* arg = argv[i];
+        if (!arg) continue;
+        if ((std::strcmp(arg, "--backend") == 0 || std::strcmp(arg, "-b") == 0) && i + 1 < argc) {
+            const char* val = argv[++i];
+            setenv("HYDRA_BACKEND", val, 1);
+            std::fprintf(stderr, "[hydra] CLI override: backend=%s\n", val);
+        } else if (std::strncmp(arg, "--backend=", 10) == 0) {
+            const char* val = arg + 10;
+            if (val && *val) {
+                setenv("HYDRA_BACKEND", val, 1);
+                std::fprintf(stderr, "[hydra] CLI override: backend=%s\n", val);
+            }
+        }
+    }
+}
+
 static std::string g_backend_info;
 
 static const char* backend_name(PlatformBackend b) {
@@ -235,6 +253,7 @@ static void draw_text_to_fb(std::vector<uint32_t>& fb, int fb_w, int fb_h,
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
+    apply_cli_overrides(argc, argv);
 
     Vvoxel_framebuffer_top* top = new Vvoxel_framebuffer_top;
     auto* root = top->rootp;  // Access internal regs exposed by Verilator

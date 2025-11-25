@@ -10,6 +10,7 @@ This document lists all environment variables recognized by the Hydra simulator 
 - **Default**: Auto-detected (prefers GPU backends when available, falls back to SDL)
 - **Description**: Selects the platform backend for rendering. Use `Headless` for CI/testing without a display server.
 - **Example**: `HYDRA_BACKEND=headless ./sim_voxel`
+- **CLI override**: `--backend <name>` (or `--backend=name`, `-b <name>`) sets this for a single run.
 
 ## Camera & Movement
 

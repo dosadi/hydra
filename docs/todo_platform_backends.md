@@ -12,7 +12,7 @@
 - DONE: Handle window resize events gracefully (recreate textures, clear framebuffer) across backends (SDL path recreates texture + clears fb on resize).
 - TODO: Add backend-specific error logs (e.g., missing SDL_ttf, GL init failures) with actionable hints.
 - TODO: Provide a “minimal backend smoke” target that builds/runs SDL-only for quick checks.
-- TODO: Add a backend selection CLI flag (in addition to env) for scripting.
+- DONE: Add a backend selection CLI flag (in addition to env) for scripting (`--backend`/`-b`).
 - TODO: Implement a backend preference order that prefers compiled GPU backends and falls back cleanly.
 - TODO: Add a platform capabilities dump (GPU/driver versions, SDL/GL/Vulkan availability) printed at startup.
 - TODO: Add resize handling tests (manual bench) to ensure backends recreate textures/buffers correctly.

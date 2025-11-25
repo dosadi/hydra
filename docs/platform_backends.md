@@ -13,6 +13,7 @@ Current state:
 - Vulkan: optional Vulkan backend gated by `make VULKAN=1` (needs Vulkan SDK headers/libs and SDL2 Vulkan helpers). Creates a Vulkan instance/surface via SDL, swapchain, staging buffer upload, and presents frames; without the flag it falls back to the stub.
 - Win32/macOS: temporarily reuse the SDL path on their respective platforms; elsewhere they compile as stubs. Replace with native Win32/Cocoa implementations when available.
 - Viewer integration: `sim/live_sdl_main.cpp` now consults `HYDRA_BACKEND` (via `select_default_backend`) and, when a non-SDL backend is selected and initialized, passes rendered frames through `present_backend` while still running the SDL HUD/window for input.
+- CLI override: `--backend <name>` (or `--backend=name`, `-b <name>`) sets `HYDRA_BACKEND` for a run without exporting env vars.
 - `platform_stub.cpp` still brokers backend selection and reports platform support (Wayland/X11/fbdev on Linux; Win32; macOS).
 - Other per-backend files (`backend_gl.cpp`, `backend_vulkan.cpp`, `backend_x11.cpp`) currently return stub ops; replace with real implementations as needed.
 - Makefile builds the platform layer alongside `live_sdl_main.cpp` so downstream code can include the header without link errors.

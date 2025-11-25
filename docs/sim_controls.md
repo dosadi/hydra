@@ -28,6 +28,7 @@ Quick reference for the SDL viewer (Verilator + SDL2) in `sim/`.
 - `H` – toggle HUD on/off
 - `R` – reset camera/flags/selection to defaults
 - `ESC` – exit
+- CLI: `--backend <name>` (or `--backend=name`, `-b <name>`) overrides `HYDRA_BACKEND` for the run.
 
 Notes:
 - HUD shows current flags, camera, selection, hits, and memory utilization counters.
