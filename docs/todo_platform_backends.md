@@ -9,7 +9,7 @@
 - TODO: Add better detection/logging of available backends (GL/Vulkan/X11/Wayland) with fallbacks noted.
 - TODO: Implement headless backend parity (frame dumps, HUD toggles) and add a CI smoke for it.
 - TODO: Add VSYNC toggle exposure in HUD/backends and ensure renderer flags reflect it.
-- TODO: Handle window resize events gracefully (recreate textures, clear framebuffer) across backends.
+- DONE: Handle window resize events gracefully (recreate textures, clear framebuffer) across backends (SDL path recreates texture + clears fb on resize).
 - TODO: Add backend-specific error logs (e.g., missing SDL_ttf, GL init failures) with actionable hints.
 - TODO: Provide a “minimal backend smoke” target that builds/runs SDL-only for quick checks.
 - TODO: Add a backend selection CLI flag (in addition to env) for scripting.

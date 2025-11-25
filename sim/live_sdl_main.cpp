@@ -359,6 +359,18 @@ int main(int argc, char** argv) {
     );
     if (!tex) die("Texture creation failed");
 
+    auto recreate_texture = [&]() {
+        if (tex) {
+            SDL_DestroyTexture(tex);
+            tex = nullptr;
+        }
+        tex = SDL_CreateTexture(
+            ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+            SCREEN_WIDTH, SCREEN_HEIGHT
+        );
+        if (!tex) die("Texture recreation failed");
+    };
+
     const char* font_env = std::getenv("HYDRA_FONT");
     const char* font_path = font_env ? font_env : "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
     const char* font_scale_env = std::getenv("HYDRA_FONT_SCALE");
@@ -401,6 +413,14 @@ int main(int argc, char** argv) {
         }
     }
     std::vector<uint32_t> framebuffer(NPIX, clear_color);
+
+    auto handle_resize = [&](int new_w, int new_h) {
+        (void)new_w; (void)new_h;
+        SDL_RenderSetLogicalSize(ren, SCREEN_WIDTH, SCREEN_HEIGHT);
+        recreate_texture();
+        std::fill(framebuffer.begin(), framebuffer.end(), clear_color);
+        std::fprintf(stderr, "[hydra] window resized, refreshed texture and cleared framebuffer\n");
+    };
 
     // Reset sequence
     for (int i = 0; i < 10; ++i) {
@@ -590,6 +610,9 @@ int main(int argc, char** argv) {
                     update_mouse_capture();
                 } else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
                     reset_key_state();
+                } else if (ev.window.event == SDL_WINDOWEVENT_RESIZED ||
+                           ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+                    handle_resize(ev.window.data1, ev.window.data2);
                 }
             } else if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {
                 bool key_down = (ev.type == SDL_KEYDOWN);

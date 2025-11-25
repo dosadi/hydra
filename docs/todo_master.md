@@ -16,7 +16,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don’t need a display server.
 - TODO: Surface an on-screen help overlay (keybind list) in the HUD, gated by a hotkey, to improve discoverability.
 - DONE: Clamp camera position to the voxel volume bounds (configurable) to avoid flying far outside the scene during demos (HYDRA_CAM_CLAMP + HYDRA_CAM_BOUNDS).
-- TODO: Handle SDL window resizes by adjusting the logical size/texture and clearing the framebuffer to avoid stretched/hung frames.
+- DONE: Handle SDL window resizes by adjusting the logical size/texture and clearing the framebuffer to avoid stretched/hung frames.
 - DONE: Add a simple frame pacing cap (sleep when FPS >> target) to make automated captures deterministic (HYDRA_FPS_TARGET).
 - TODO: Add a small “record inputs to script” mode (log keys/mouse deltas with timestamps) and a “playback” mode for deterministic repros.
 - DONE: Emit a brief startup summary (backend, font path, env knobs in effect) to stderr to aid reproducibility in logs.
