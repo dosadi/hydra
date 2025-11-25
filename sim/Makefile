@@ -19,11 +19,19 @@ CXX_EXE      := sim_voxel
 
 VERILATOR    ?= verilator
 CXX          ?= g++
+SANITIZE     ?= 0
 
 SDL_CONFIG   ?= sdl2-config
-# If sdl2-config is unavailable (e.g., MSYS2/MinGW), allow overriding SDL_CFLAGS/SDL_LIBS via env.
-SDL_CFLAGS   ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --cflags)
-SDL_LIBS     ?= $(shell which $(SDL_CONFIG) >/dev/null 2>&1 && $(SDL_CONFIG) --libs) -lSDL2_ttf
+SDL_CONFIG_AVAILABLE := $(shell command -v $(SDL_CONFIG) >/dev/null 2>&1 && echo 1 || echo 0)
+ifeq ($(SDL_CONFIG_AVAILABLE),1)
+  SDL_CFLAGS ?= $(shell $(SDL_CONFIG) --cflags)
+  SDL_LIBS   ?= $(shell $(SDL_CONFIG) --libs)
+else
+  # If sdl2-config is unavailable (e.g., MSYS2/MinGW), allow overriding SDL_CFLAGS/SDL_LIBS via env.
+  SDL_CFLAGS ?=
+  SDL_LIBS   ?= -lSDL2
+endif
+SDL_LIBS += -lSDL2_ttf
 
 WAYLAND      ?= 0
 WAYLAND_CFLAGS ?=
@@ -61,6 +69,11 @@ ifeq ($(VULKAN),1)
   EXTRA_LIBS   += $(VULKAN_LIBS)
 endif
 
+VERILATOR_LDFLAGS := $(SDL_LIBS) $(EXTRA_LIBS)
+ifeq ($(SANITIZE),1)
+  EXTRA_CFLAGS += -fsanitize=address,undefined -fno-omit-frame-pointer
+  VERILATOR_LDFLAGS += -fsanitize=address,undefined
+endif
 
 VERILATOR_FLAGS := \
     -Wall --Wno-fatal \
@@ -80,31 +93,64 @@ $(CXX_EXE): V$(TOP_MODULE)___024root.h
 	cp obj_dir/V$(TOP_MODULE) $(CXX_EXE)
 
 V$(TOP_MODULE)___024root.h: $(RTL_DIR)/*.sv $(SIM_DIR)/$(CXX_SRCS)
-	cd $(SIM_DIR) && $(VERILATOR) $(VERILATOR_FLAGS) -CFLAGS '$(SDL_CFLAGS) $(EXTRA_CFLAGS)' -LDFLAGS $(SDL_LIBS) $(patsubst %,-LDFLAGS %,$(EXTRA_LIBS))
+	cd $(SIM_DIR) && $(VERILATOR) $(VERILATOR_FLAGS) -CFLAGS '$(SDL_CFLAGS) $(EXTRA_CFLAGS)' -LDFLAGS '$(VERILATOR_LDFLAGS)'
+	@$(VERILATOR) --version | head -n1 > obj_dir/.verilator_version || true
 
 # Simple non-interactive frame test: dumps one frame and compares to golden.
 TEST_BUILD_DIR := $(SIM_DIR)/build
 TEST_FRAME     := $(TEST_BUILD_DIR)/frame_test.ppm
 GOLDEN_FRAME   := $(SIM_DIR)/tests/golden_frame.ppm
 
-.PHONY: test_frame
+.PHONY: test_frame smoke quick purge_obj_dir lint
 test_frame: $(CXX_EXE)
 	@mkdir -p $(TEST_BUILD_DIR)
-	@rm -f $(TEST_FRAME)
+	@rm -f $(TEST_FRAME) $(TEST_BUILD_DIR)/frame_diff.log
 	cd $(SIM_DIR) && FRAME_DUMP="$(TEST_FRAME)" AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
-	cd $(PROJECT_ROOT) && python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm > sim/build/frame_diff.log 2>&1
-	@cat sim/build/frame_diff.log || true
+	@cd $(PROJECT_ROOT) && { \
+		python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm > sim/build/frame_diff.log 2>&1; \
+		status=$$?; \
+		cat sim/build/frame_diff.log; \
+		exit $$status; \
+	}
+
+# Minimal build without optional backends; identical to default but handy for CI/debug messaging.
+smoke: $(CXX_EXE)
+	@echo "sim_voxel smoke build complete (no optional backends)"
+
+# Rebuild C++ harness only (skip re-Verilating). Requires existing obj_dir from a prior full build.
+quick:
+	@test -f obj_dir/V$(TOP_MODULE).mk || { echo "quick build requires existing obj_dir (run 'make' first)"; exit 1; }
+	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk
+	cp obj_dir/V$(TOP_MODULE) $(CXX_EXE)
+
+# Remove obj_dir if Verilator version changed (avoids stale builds).
+purge_obj_dir:
+	@$(PROJECT_ROOT)/scripts/purge_obj_dir.sh
+
+# Lint RTL and C++ harness (best-effort clang-tidy).
+lint:
+	@echo "[lint] Verilator lint on RTL..."
+	@$(VERILATOR) -Wall --Wno-fatal --lint-only -I$(RTL_DIR) $(RTL_DIR)/*.sv
+	@if command -v clang-tidy >/dev/null 2>&1; then \
+		echo "[lint] clang-tidy on sim C++ sources..."; \
+		clang-tidy $(CXX_SRCS) -- $(SDL_CFLAGS) $(EXTRA_CFLAGS) || exit $$?; \
+	else \
+		echo "[lint] clang-tidy not found; skipping C++ lint."; \
+	fi
 
 clean:
 	rm -rf obj_dir $(CXX_EXE) $(TEST_BUILD_DIR)
 
-.PHONY: all clean test_frame help
+.PHONY: all clean test_frame help smoke quick purge_obj_dir
 
 help:
 	@echo "Sim Build System - Available Targets:"
 	@echo ""
 	@echo "  make all        - Build Verilator sim (default)"
 	@echo "  make test_frame - Build sim and run frame regression test"
+	@echo "  make smoke      - Build sim with minimal defaults (no optional backends)"
+	@echo "  make quick      - Rebuild C++ harness only (requires existing obj_dir)"
+	@echo "  make purge_obj_dir - Delete obj_dir if Verilator version changed"
 	@echo "  make clean      - Remove build artifacts"
 	@echo ""
 	@echo "Optional backend flags (build time):"

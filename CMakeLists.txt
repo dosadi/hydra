@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(Hydra LANGUAGES C CXX)
+project(Hydra
+    VERSION 0.0.5
+    DESCRIPTION "Voxel-based 3D graphics accelerator with SystemVerilog raycaster core"
+    LANGUAGES C CXX
+)
 
 option(BUILD_LIBHYDRA "Build libhydra static library" ON)
 option(BUILD_POSIX_TOOLS "Build POSIX-only tools (blit_smoketest, drm_info)" ON)

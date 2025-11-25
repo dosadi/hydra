@@ -1,8 +1,51 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean sdk-setup dev-loop ip-fetch
+.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint diff-summary fmt package lint verilator-check
 
 all: sim
+
+# Display available targets
+help:
+	@echo "Hydra Build System - Available Targets:"
+	@echo ""
+	@echo "  make all           - Build Verilator sim (default)"
+	@echo "  make sim           - Build Verilator+SDL sim"
+	@echo "  make test          - Run frame regression test"
+	@echo "  make quick         - Rebuild sim C++ harness only (no re-Verilate; requires existing obj_dir)"
+	@echo "  make smoke         - Minimal sim build (default backends only)"
+	@echo "  make sanitize      - Build sim with ASan/UBSan enabled"
+	@echo "  make purge-obj-dir - Drop sim/obj_dir when Verilator version changes"
+	@echo "  make env-probe     - Print tool versions (verilator/gcc/sdl2-config/etc.)"
+	@echo "  make shellcheck    - Lint bash scripts if shellcheck is available"
+	@echo "  make whitespace    - Check for tabs/trailing whitespace in SV/C/C++ sources"
+	@echo "  make docs          - Run docs lint (local link check)"
+	@echo "  make docs-lint     - Same as docs (kept for clarity)"
+	@echo "  make diff-summary  - Summarize git diff stats and TODO touches (for PRs)"
+	@echo "  make fmt           - Format C/C++/SV sources (clang-format/verible if available)"
+	@echo "  make package       - Bundle sim binary/tests/docs into out/hydra-package.tar.gz"
+	@echo "  make lint          - Lint RTL and sim C++ (verilator --lint-only, clang-tidy if available)"
+	@echo "  make verilator-check - Ensure Verilator meets recommended major version"
+	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
+	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
+	@echo ""
+	@echo "  make libhydra      - Build libhydra.a static library"
+	@echo "  make blit-smoketest- Build user blit smoke test"
+	@echo "  make drm-info      - Build Hydra DRM info tool"
+	@echo "  make sdk-setup     - Build all SDK tools (libhydra + smoketests)"
+	@echo ""
+	@echo "  make driver-linux  - Build Linux PCIe driver (requires kernel headers)"
+	@echo "  make driver-freebsd- Build FreeBSD PCI driver stub"
+	@echo "  make drivers       - Build all drivers + libhydra"
+	@echo "  make cmake-linux   - Configure + build host libs/tools via CMake preset"
+	@echo ""
+	@echo "  make clean         - Clean build artifacts"
+	@echo "  make distclean     - Clean plus generated dumps/PPMs/objs (aggressive)"
+	@echo ""
+	@echo "For detailed instructions, see README.md and docs/testing_overview.md"
+
+# Run frame regression test
+test:
+	@$(MAKE) -C sim test_frame
 
 # One-shot dev loop (mirrors CI): sim build+frame test, SDK build, optional RTL/QEMU
 # Usage: make dev-loop
@@ -18,6 +61,22 @@ ip-fetch:
 
 sim:
 	@$(MAKE) -C sim
+
+# Rebuild sim harness quickly (no re-Verilation; requires existing obj_dir).
+quick:
+	@$(MAKE) -C sim quick
+
+# Minimal sim build, no optional backends toggled.
+smoke:
+	@$(MAKE) -C sim smoke
+
+# Build sim with sanitizers enabled (ASan/UBSan).
+sanitize:
+	@$(MAKE) -C sim SANITIZE=1
+
+# Drop obj_dir if Verilator version changed.
+purge-obj-dir:
+	@$(MAKE) -C sim purge_obj_dir
 
 # Optional: build the Linux PCIe driver stub (requires kernel headers)
 driver-linux:
@@ -49,5 +108,58 @@ sdk-setup:
 	@echo "Setting up Hydra SDK (libhydra + tools)"
 	@./scripts/setup_sdk.sh
 
+env-probe:
+	@./scripts/env_probe.sh
+
+shellcheck:
+	@if command -v shellcheck >/dev/null 2>&1; then \
+		echo "Running shellcheck..."; \
+		shellcheck scripts/hydra_dev_loop.sh scripts/fetch_ip.sh scripts/purge_obj_dir.sh || exit $$?; \
+	else \
+		echo "shellcheck not found; skipping."; \
+	fi
+
+whitespace:
+	@./scripts/check_whitespace.sh
+
+docs docs-lint:
+	@./scripts/docs_lint.py
+
+diff-summary:
+	@./scripts/diff_summary.sh
+
+fmt:
+	@./scripts/format_sources.sh
+
+package:
+	@test -x sim/sim_voxel || { echo "Build sim first (run 'make sim')"; exit 1; }
+	@mkdir -p out
+	@tar czf out/hydra-package.tar.gz sim/sim_voxel sim/tests docs README.md scripts/check_frame.py scripts/requirements.txt
+	@echo "Created out/hydra-package.tar.gz"
+
+lint:
+	@$(MAKE) -C sim lint
+	@$(MAKE) shellcheck
+	@$(MAKE) whitespace
+
+verilator-check:
+	@./scripts/verilator_check.sh
+
 clean:
 	@$(MAKE) -C sim clean || true
+	@rm -f drivers/libhydra/libhydra.a drivers/libhydra/*.o
+	@rm -f scripts/hydra_blit_smoketest scripts/hydra_dma_blit_demo scripts/hydra_drm_info
+	@rm -rf build build/linux
+	@rm -f drivers/linux/*.o drivers/linux/*.ko drivers/linux/*.mod.c drivers/linux/*.order drivers/linux/Module.symvers drivers/linux/modules.order
+
+distclean: clean
+	@rm -f out
+	@rm -f *.vvp *.vcd
+	@rm -f sim/test_*.ppm sim/*.ppm
+	@rm -f sim/tests/rtl/*.vvp sim/tests/rtl/*.vcd
+	@rm -rf sim/obj_dir sim/build
+
+# Configure + build host libs/tools using the CMake preset (Linux).
+cmake-linux:
+	cmake --preset linux-default
+	cmake --build build/linux
