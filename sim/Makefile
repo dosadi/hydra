@@ -150,16 +150,25 @@ bench: $(CXX_EXE)
 	@echo "[bench] Running sim_voxel with LOG_FRAMES=1 AUTO_EXIT=1"
 	cd $(SIM_DIR) && LOG_FRAMES=1 AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
 
+# Unit test for pixel96_to_argb conversion function
+test_pixel96:
+	@echo "[test] Building and running test_pixel96"
+	$(CXX) -o tests/test_pixel96 tests/test_pixel96.cpp -std=c++11
+	./tests/test_pixel96
+	@echo "[test] test_pixel96 PASSED"
+
 clean:
+	rm -f tests/test_pixel96
 	rm -rf obj_dir $(CXX_EXE) $(TEST_BUILD_DIR)
 
-.PHONY: all clean test_frame help smoke quick purge_obj_dir
+.PHONY: all clean test_frame test_pixel96 help smoke quick purge_obj_dir lint bench
 
 help:
 	@echo "Sim Build System - Available Targets:"
 	@echo ""
 	@echo "  make all        - Build Verilator sim (default)"
 	@echo "  make test_frame - Build sim and run frame regression test"
+	@echo "  make test_pixel96 - Build and run pixel96_to_argb unit test"
 	@echo "  make smoke      - Build sim with minimal defaults (no optional backends)"
 	@echo "  make quick      - Rebuild C++ harness only (requires existing obj_dir)"
 	@echo "  make purge_obj_dir - Delete obj_dir if Verilator version changed"
