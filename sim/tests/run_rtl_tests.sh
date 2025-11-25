@@ -11,9 +11,25 @@ IVERILOG_BIN="${IVERILOG:-iverilog}"
 VVP_BIN="${VVP:-vvp}"
 VERILATOR_BIN="${VERILATOR:-verilator}"
 
-# Common RTL sources (shell + stubs + voxel core path)
+# Optional SDRAM wait-state injection for the stub. Defaults to zero for speed.
+SDRAM_LATENCY="${SDRAM_LATENCY:-0}"
+SDRAM_JITTER="${SDRAM_JITTER:-0}"
+APPLY_LATENCY_DMA="${APPLY_LATENCY_DMA:-0}" # default: keep DMA benches fast/deterministic
+
+SDRAM_LATENCY_ARGS_HDMI=(
+  -P axi_sdram_stub.READ_LATENCY="$SDRAM_LATENCY"
+  -P axi_sdram_stub.WRITE_LATENCY="$SDRAM_LATENCY"
+  -P axi_sdram_stub.WAIT_JITTER="$SDRAM_JITTER"
+)
+
+if [ "$APPLY_LATENCY_DMA" = "1" ]; then
+  SDRAM_LATENCY_ARGS_DMA=("${SDRAM_LATENCY_ARGS_HDMI[@]}")
+else
+  SDRAM_LATENCY_ARGS_DMA=()
+fi
+
+# Common RTL sources (sim harness + stubs + voxel core path)
 RTL_SOURCES=(
-  rtl/axi_crossbar_stub.sv
   rtl/axi_sdram_stub.sv
   rtl/axi_dma_stub.sv
   rtl/axi_stream_sink_stub.sv
@@ -22,24 +38,39 @@ RTL_SOURCES=(
   rtl/voxel_raycaster_core_pipelined.sv
   rtl/voxel_framebuffer_top.sv
   rtl/voxel_axil_csr.sv
-  rtl/voxel_axil_shell.sv
+  rtl/voxel_sim_harness.sv
 )
 
 mkdir -p sim/tests/rtl
 
 echo "[rtl-tests] Running DMA loopback bench..."
 ${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_dma_loopback.vvp \
-  sim/tests/rtl/test_dma_loopback.sv "${RTL_SOURCES[@]}"
+  sim/tests/rtl/test_dma_loopback.sv "${SDRAM_LATENCY_ARGS_DMA[@]}" "${RTL_SOURCES[@]}"
 ${VVP_BIN} sim/tests/rtl/test_dma_loopback.vvp
 
 echo "[rtl-tests] Running HDMI CRC golden bench..."
 ${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_hdmi_crc_golden.vvp \
-  sim/tests/rtl/test_hdmi_crc_golden.sv "${RTL_SOURCES[@]}"
+  sim/tests/rtl/test_hdmi_crc_golden.sv "${SDRAM_LATENCY_ARGS_HDMI[@]}" "${RTL_SOURCES[@]}"
 ${VVP_BIN} sim/tests/rtl/test_hdmi_crc_golden.vvp
+
+echo "[rtl-tests] Running HDMI CRC full bench..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_hdmi_crc_full.vvp \
+  sim/tests/rtl/test_hdmi_crc_full.sv "${SDRAM_LATENCY_ARGS_HDMI[@]}" "${RTL_SOURCES[@]}"
+${VVP_BIN} sim/tests/rtl/test_hdmi_crc_full.vvp
+
+echo "[rtl-tests] Running HDMI CRC high-res bench..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_hdmi_crc_hr.vvp \
+  sim/tests/rtl/test_hdmi_crc_hr.sv "${SDRAM_LATENCY_ARGS_HDMI[@]}" "${RTL_SOURCES[@]}"
+${VVP_BIN} sim/tests/rtl/test_hdmi_crc_hr.vvp
 
 echo "[rtl-tests] Running BAR1 + DMA loopback bench..."
 ${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_bar1_dma_loopback.vvp \
-  sim/tests/rtl/test_bar1_dma_loopback.sv "${RTL_SOURCES[@]}"
+  sim/tests/rtl/test_bar1_dma_loopback.sv "${SDRAM_LATENCY_ARGS_DMA[@]}" "${RTL_SOURCES[@]}"
 ${VVP_BIN} sim/tests/rtl/test_bar1_dma_loopback.vvp
+
+echo "[rtl-tests] Running DMA stub direct test..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_dma_stub_direct.vvp \
+  sim/tests/rtl/test_dma_stub_direct.sv "${SDRAM_LATENCY_ARGS_DMA[@]}" rtl/axi_dma_stub.sv rtl/axi_sdram_stub.sv
+${VVP_BIN} sim/tests/rtl/test_dma_stub_direct.vvp
 
 echo "[rtl-tests] All RTL benches passed."

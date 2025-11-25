@@ -1,7 +1,7 @@
-// Simple SV bench: run a few frames and check HDMI CRC is nonzero and stable.
+// HDMI CRC bench (full pipeline) at 64x48. Runs one frame and checks CRC/CSR mirrors.
 `timescale 1ns/1ps
 
-module test_hdmi_crc_golden;
+module test_hdmi_crc_hr;
     reg clk = 0;
     reg rst_n = 0;
 
@@ -69,14 +69,14 @@ module test_hdmi_crc_golden;
     wire        irq_out;
     wire        msi_pulse;
 
-    localparam [31:0] GOLDEN_CRC = 32'h0001_0600;
-    localparam integer TOTAL_PIXELS = 16 * 12;
+    localparam [31:0] GOLDEN_CRC = 32'h0005_3F00;
+    localparam integer TOTAL_PIXELS = 64 * 48;
     reg [31:0] csr_crc;
     reg [31:0] csr_frames;
 
     voxel_sim_harness #(
-        .SCREEN_WIDTH(16),
-        .SCREEN_HEIGHT(12),
+        .SCREEN_WIDTH(64),
+        .SCREEN_HEIGHT(48),
         .TEST_FORCE_WORLD_READY(1),
         .AUTO_START_FRAMES(1),
         .FAST_HDMI_TEST(0)
@@ -146,32 +146,25 @@ module test_hdmi_crc_golden;
     always #5 clk = ~clk;
 
     integer to;
-    // (loop counters removed; fast HDMI stub completes quickly)
 
     initial begin
-        `ifdef HDMI_VCD
-            $dumpfile("hdmi_crc_golden.vcd");
-            $dumpvars(0, test_hdmi_crc_golden);
-        `endif
-        $display("Starting HDMI CRC golden test...");
+        $display("Starting HDMI CRC high-res bench (64x48)...");
         #20 rst_n = 1;
-        // Soft reset then start a frame (manual start required in this bench)
         axil_write(16'h04, 32'h0000_0001); // soft_reset
         axil_write(16'h04, 32'h0000_0000); // clear ctrl
         axil_write(16'h04, 32'h0000_0002); // CTRL start_frame
 
-        // Run until at least one frame completes or timeout.
-        to = 500000;
+        to = 5_000_000;
         while (hdmi_frame_count < 1 && to > 0) begin
             @(posedge clk);
             to = to - 1;
         end
 
-        // Read back CRC/frame count via CSRs to validate the register path.
         axil_read(csr_crc,    16'h00B0); // HDMI_CRC
         axil_read(csr_frames, 16'h00B4); // HDMI_FR
 
         $display("Frames: %0d, CRC: %h (csr=%h)", hdmi_frame_count, hdmi_crc_last, csr_crc);
+
         if (hdmi_frame_count < 1)
             $error("No frames rendered (crc=%h)", hdmi_crc_last);
         if (hdmi_crc_last === 32'd0)
@@ -209,7 +202,6 @@ module test_hdmi_crc_golden;
         s_axil_araddr  = word_addr;
         s_axil_arvalid = 1;
         s_axil_rready  = 1;
-        // Hold ARVALID until we observe RVALID to avoid one-cycle pulse races.
         while (!s_axil_rvalid) @(posedge clk);
         rdata = s_axil_rdata;
         s_axil_arvalid = 0;

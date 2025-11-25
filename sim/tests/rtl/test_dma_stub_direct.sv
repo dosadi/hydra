@@ -141,8 +141,8 @@ module test_dma_stub_direct;
         $dumpvars(0, test_dma_stub_direct);
 
         start     = 0;
-        src_addr  = 28'h0000_0000;
-        dst_addr  = 28'h0000_0100;
+        src_addr  = 28'h0;
+        dst_addr  = 28'h0100;
         len_bytes = 32'd64;
 
         #20 rst_n = 1;

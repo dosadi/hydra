@@ -1,4 +1,4 @@
-// Simple SystemVerilog testbench for DMA loopback in voxel_axil_shell.
+// Simple SystemVerilog testbench for DMA loopback in voxel_sim_harness.
 // Copies a pattern within the SDRAM stub and checks INT_STATUS and DMA_STATUS.
 `timescale 1ns/1ps
 
@@ -69,7 +69,7 @@ module test_dma_loopback;
     wire        irq_out;
     wire        msi_pulse;
 
-    voxel_axil_shell #(
+    voxel_sim_harness #(
         .SCREEN_WIDTH(32),
         .SCREEN_HEIGHT(24)
     ) dut (
@@ -139,9 +139,10 @@ module test_dma_loopback;
     always #5 clk = ~clk;
 
     // Simple DMA loopback: directly kick internal DMA stub, bypassing AXI-Lite CSRs.
-    localparam [27:0] DMA_SRC_ADDR  = 28'h0000_0100;
-    localparam [27:0] DMA_DST_ADDR  = 28'h0000_0200;
+    localparam [27:0] DMA_SRC_ADDR  = 28'h0100;
+    localparam [27:0] DMA_DST_ADDR  = 28'h0200;
     localparam [31:0] DMA_LEN_BYTES = 32'd64;
+    localparam integer DMA_TIMEOUT_CYCLES = 1_000_000; // allow SDRAM latency/jitter sweeps
 
     initial begin
         integer i;
@@ -161,7 +162,7 @@ module test_dma_loopback;
 
         // Poll internal dma_done instead of irq_out to avoid CSR/INT_MASK dependencies.
         dma_done_seen = 0;
-        for (i = 0; i < 100000; i = i + 1) begin
+        for (i = 0; i < DMA_TIMEOUT_CYCLES; i = i + 1) begin
             @(posedge clk);
             if (dut.dma_done && !dma_done_seen) begin
                 dma_done_seen = 1;
