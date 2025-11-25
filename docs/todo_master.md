@@ -195,7 +195,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a `make quick` target that just builds C++ harness without re-verilating (for fast HUD tweaks).
 - DONE: Add a small unit test for `scripts/check_frame.py` (golden vs shifted image) to lock thresholds.
 - TODO: Add caching/ccache setup for the C++ harness in CI to reduce rebuild times.
-- TODO: Add a GitHub issue template that links to `docs/todo_master.md` to keep work items centralized.
+- DONE: Add a GitHub issue template that links to `docs/todo_master.md` to keep work items centralized.
 - DONE: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
 - DONE: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
 - DONE: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
