@@ -201,7 +201,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
 - TODO: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
 - DONE: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
-- TODO: Add an automated spellcheck/lint for docs to keep wording clean.
+- DONE: Add an automated spellcheck/lint for docs to keep wording clean.
 - TODO: Add a CI badge/status note in README that mentions which jobs cover sim/host/driver to set expectations.
 - DONE: Add a small Python-based sanity check that verifies required files listed in README/docs actually exist.
 - TODO: Add a `make coverage` (if feasible) to gather line coverage from C++ sim tests, documented as experimental.

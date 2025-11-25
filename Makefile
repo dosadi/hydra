@@ -1,6 +1,6 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint diff-summary fmt package lint verilator-check files todo-unique bench
+.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint diff-summary fmt package lint verilator-check files todo-unique bench spellcheck
 
 all: sim
 
@@ -28,6 +28,7 @@ help:
 	@echo "  make files         - Verify required repo files exist"
 	@echo "  make todo-unique   - Ensure docs/todo_master.md has no duplicate TODO entries"
 	@echo "  make bench         - Quick sim benchmark (LOG_FRAMES=1 AUTO_EXIT=1)"
+	@echo "  make spellcheck    - Run codespell on docs (skips if tool missing)"
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
 	@echo ""
@@ -157,6 +158,9 @@ todo-unique:
 
 bench:
 	@$(MAKE) -C sim bench
+
+spellcheck:
+	@./scripts/spellcheck_docs.sh
 
 clean:
 	@$(MAKE) -C sim clean || true
