@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(Hydra
-    VERSION 0.0.5
+    VERSION 0.0.6
     DESCRIPTION "Voxel-based 3D graphics accelerator with SystemVerilog raycaster core"
     LANGUAGES C CXX
 )

@@ -160,7 +160,7 @@ This project is licensed under the BSD 3-Clause license (see `LICENSE`).
 
 ## Status
 
-**Current Version**: 0.0.5 (Alpha)
+**Current Version**: 0.0.6 (Alpha)
 
 **Maturity**: Early development - suitable for experimentation and research. Not production-ready.
 

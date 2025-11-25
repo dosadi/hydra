@@ -1,4 +1,4 @@
-# Hydra Component Status (0.0.5)
+# Hydra Component Status (0.0.6)
 
 Quick maturity snapshot to track what’s stubbed vs. operational.
 
@@ -7,7 +7,7 @@ Quick maturity snapshot to track what’s stubbed vs. operational.
 - Stubbed: external IP replacements (LitePCIe/LiteDRAM/LiteVideo) and board-level PCIe endpoint; core IRQ/INT/`msi_pulse` paths are implemented and exercised in sim but not yet wired into a physical card.
 
 ## Drivers/UAPI
-- Linux: misc PCIe + DRM render-only stubs, UAPI aligned to spec; libhydra + user tools build.
+- Linux: misc PCIe + DRM render-only stubs, UAPI aligned to spec; libhydra + user tools build. UAPI now exposes a version/struct-size query for compatibility checks.
 - FreeBSD: kmod stub with BAR0/1 map, INFO/RD32/WR32/DMA IOCTLs (DMA/INT emulated, INT_MASK honored for DMA). No real IRQ/DMA.
 - Windows/macOS: README notes only (no code).
 - UAPI headers: aligned to spec (HDMI regs, INT bits, DMA).

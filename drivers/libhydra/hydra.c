@@ -17,7 +17,7 @@
 
 const char* hydra_version_string(void)
 {
-    return "0.0.5";
+    return "0.0.6";
 }
 
 static int do_ioctl(int fd, unsigned long cmd, void* arg)
