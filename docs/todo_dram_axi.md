@@ -1,6 +1,6 @@
 # Hydra DRAM / AXI Path TODOs
 
-- TODO: Publish a DRAM/AXI integration note (clock/reset domains, address map, latency knobs) for FPGA bring-up.
+- DONE: Publish a DRAM/AXI integration note (clock/reset domains, address map, latency knobs) for FPGA bring-up (`docs/dram_axi_integration.md`).
 - TODO: Add a cocotb-based AXI protocol checker wrapper (or hook up axi-lite-bfm) to automate handshake validation.
 - TODO: Provide a “slow DRAM” preset (high latency/jitter) in benches and run it in CI to catch marginal timing.
 - TODO: Add a doc + test that cross-checks BAR1 size vs. AXI address width to avoid silent truncation.

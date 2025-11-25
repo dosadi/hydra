@@ -25,8 +25,8 @@
 - TODO: Add an example symbol + schematic template (with metadata block) to onboard new contributors quickly.
 - TODO: Provide a headless smoke test that runs xschem render on a tiny schematic and fails clearly if xschem/ngspice missing.
 - TODO: Add a simple Makefile include for xschem so `make xschem-*` hooks work from repo root.
-- TODO: Add `xschem/` directory with starter rc/config and symbol library for Hydra modules.
-- TODO: Add `scripts/xschem_render.sh` to batch-export schematics to PNG/PDF (headless Xschem usage).
+- DONE: Add `xschem/` directory with starter rc/config and symbol placeholders for Hydra modules (`xschem/README.md`, .gitkeep files).
+- DONE: Add `scripts/xschem_render.sh` to batch-export schematics to PNG/PDF (headless Xschem usage; exits 77 if xschem missing).
 - TODO: Add `scripts/xschem_netlist.sh` to generate Verilog/SPICE netlists and run lint (optional).
 - TODO: Pin/record Xschem version and dependencies (ngspice, imagemagick) in docs.
 - TODO: Create a sample schematic (e.g., voxel framebuffer block) and export artifacts into `docs/xschem/`.

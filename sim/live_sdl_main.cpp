@@ -55,6 +55,8 @@ static bool env_truthy(const char* key) {
     return false;
 }
 
+static std::string g_backend_info;
+
 static const char* backend_name(PlatformBackend b) {
     switch (b) {
         case PlatformBackend::SDL:    return "SDL";
@@ -337,6 +339,19 @@ int main(int argc, char** argv) {
     if (!ren) die("Renderer creation failed");
 
     SDL_RenderSetLogicalSize(ren, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    SDL_RendererInfo ren_info;
+    if (SDL_GetRendererInfo(ren, &ren_info) == 0) {
+        std::fprintf(stderr, "Renderer: %s\n", ren_info.name ? ren_info.name : "(unknown)");
+        const char* video_driver = SDL_GetCurrentVideoDriver();
+        char buf[160];
+        std::snprintf(buf, sizeof(buf), "Backend: %s (vsync %s) renderer=%s video=%s",
+                      backend_name(backend),
+                      g_vsync ? "on" : "off",
+                      ren_info.name ? ren_info.name : "(unknown)",
+                      video_driver ? video_driver : "(unknown)");
+        g_backend_info = buf;
+    }
 
     SDL_Texture* tex = SDL_CreateTexture(
         ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
@@ -1041,6 +1056,11 @@ int main(int argc, char** argv) {
                     last_mem_write_util * 100.0f);
                 draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
+
+                if (!g_backend_info.empty()) {
+                    draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, g_backend_info, 6, yoff, hud_text_color);
+                    yoff += 14;
+                }
 
                 if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
                     std::snprintf(buf, sizeof(buf),

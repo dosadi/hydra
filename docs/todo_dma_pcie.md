@@ -1,6 +1,6 @@
 # Hydra DMA / PCIe Path TODOs
 
-- TODO: Define a minimal DMA/PCIe bring-up checklist (BAR sizes, MSI on/off, kselftest run) and add to docs/README.
+- DONE: Define a minimal DMA/PCIe bring-up checklist (BAR sizes, MSI on/off, kselftest run) and add to docs/README (`docs/dma_pcie_bringup.md`).
 - TODO: Add an IOMMU/VT-d friendly path (dma_map/unmap helpers in driver) and document how to enable on distros.
 - TODO: Provide a cocotb test that mirrors driver MSI/legacy module params to ensure RTL reacts the same way (msi_pulse gating).
 - TODO: Add a BAR layout diagram (BAR0 CSRs vs. BAR1 framebuffer) to help debug address mismatches.
