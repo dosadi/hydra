@@ -1,36 +1,37 @@
 #!/usr/bin/env bash
+# Print toolchain versions for quick diagnostics (CI/local).
 set -euo pipefail
 
-# Simple tool version probe for CI/local sanity checks.
+echo "[env-probe] Repository root: $(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
-echo "[env] git rev-parse HEAD: $(git rev-parse --short HEAD 2>/dev/null || echo 'n/a')"
+print_version() {
+  local name="$1" bin="$2"
+  if command -v "$bin" >/dev/null 2>&1; then
+    echo "[env-probe] $name: $("$bin" --version | head -n1)"
+  else
+    echo "[env-probe] $name: not found (looked for '$bin')"
+  fi
+}
 
-if command -v verilator >/dev/null 2>&1; then
-  echo "[env] verilator: $(verilator --version | head -n1)"
-else
-  echo "[env] verilator: not found"
-fi
-
-if command -v g++ >/dev/null 2>&1; then
-  echo "[env] g++: $(g++ --version | head -n1)"
-else
-  echo "[env] g++: not found"
-fi
+print_version "verilator" "${VERILATOR:-verilator}"
+print_version "gcc" "${CC:-gcc}"
+print_version "g++" "${CXX:-g++}"
+print_version "python3" "${PYTHON:-python3}"
 
 if command -v sdl2-config >/dev/null 2>&1; then
-  echo "[env] sdl2-config: $(sdl2-config --version)"
+  echo "[env-probe] sdl2-config version: $(sdl2-config --version)"
 else
-  echo "[env] sdl2-config: not found"
+  echo "[env-probe] sdl2-config: not found"
 fi
 
-if command -v pkg-config >/dev/null 2>&1 && pkg-config --exists SDL2_ttf; then
-  echo "[env] SDL2_ttf: $(pkg-config --modversion SDL2_ttf)"
-else
-  echo "[env] SDL2_ttf: not found (pkg-config SDL2_ttf)"
+if command -v cmake >/dev/null 2>&1; then
+  echo "[env-probe] cmake: $(cmake --version | head -n1)"
 fi
 
-if command -v python3 >/dev/null 2>&1; then
-  echo "[env] python3: $(python3 --version 2>&1)"
-else
-  echo "[env] python3: not found"
+if command -v iverilog >/dev/null 2>&1; then
+  echo "[env-probe] iverilog: $(iverilog -V 2>/dev/null | head -n1)"
+fi
+
+if command -v vvp >/dev/null 2>&1; then
+  echo "[env-probe] vvp: $(vvp -V 2>/dev/null | head -n1)"
 fi

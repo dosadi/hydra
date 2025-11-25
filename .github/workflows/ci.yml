@@ -94,7 +94,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install cocotb
 
-      - name: Run cocotb smoke test (voxel_axil_shell)
+      - name: Run cocotb smoke test (voxel_sim_harness)
         run: |
           cd sim/tests/cocotb_hydra
           make SIM=icarus

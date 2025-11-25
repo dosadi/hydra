@@ -46,7 +46,7 @@ REGION0_MAX        = 0x0158
 REGION0_STATUS     = 0x015C
 REGION0_SURF_STATS = 0x0160
 
-# BAR1 SDRAM window base (must match voxel_axil_shell)
+# BAR1 SDRAM window base (must match voxel_sim_harness)
 BAR1_BASE  = 0x1000000
 SRC_ADDR   = 0x00000100
 DST_ADDR   = 0x00000200
