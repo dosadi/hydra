@@ -2,7 +2,7 @@
 """Nexys Video FPGA wrapper for the voxel engine using LiteX-family IP.
 
 This is *not* a traditional CPU SoC. It is a flat shell that:
-- exposes Hydra's voxel engine through HydraCore (AXI-Lite + AXI + AXI-Stream),
+- exposes Hydra's voxel engine through HydraCore (AXI-Lite + AXI4 + AXI-Stream),
 - terminates control on PCIe BAR0 (AXI-Lite),
 - maps bulk data moves over PCIe DMA into external DDR3,
 - and drives HDMI using LiteICLink/LiteVideo TMDS cores.
@@ -32,7 +32,7 @@ from litex.soc.integration.builder import Builder  # type: ignore
 from litex.soc.integration.soc import SoCRegion  # type: ignore
 from litex.soc.integration.soc_core import SoCCore  # type: ignore
 from litex.soc.interconnect.axi.axi_lite import AXILiteInterface  # type: ignore
-from litex.soc.interconnect.axi.axi_full import AXIInterface  # type: ignore
+from litex.soc.interconnect.axi.axi_full import AXIInterface, AXIInterconnectShared  # type: ignore
 
 # Board/platform: expect litex-boards to be available on PYTHONPATH.
 try:
@@ -86,7 +86,7 @@ class HydraNexysVideoSoC(SoCCore):
         self.add_cpu(None)
 
         # ------------------------------------------------------------------
-        # Hydra voxel shell (AXI-Lite + AXI + AXI-Stream)
+        # Hydra voxel shell (AXI-Lite + AXI4 + AXI-Stream)
         # ------------------------------------------------------------------
 
         self.submodules.hydra = HydraCore()
@@ -96,28 +96,42 @@ class HydraNexysVideoSoC(SoCCore):
             # litepcie exposes an AXI-Lite slave/bridge; use that as BAR0→Hydra.
             bar0_axil: AXILiteInterface = self.pcie_endpoint.bar0  # type: ignore[attr-defined]
             self.comb += [
-                bar0_axil.aw.connect(self.hydra.axil.aw),
-                bar0_axil.w.connect(self.hydra.axil.w),
-                self.hydra.axil.b.connect(bar0_axil.b),
-                bar0_axil.ar.connect(self.hydra.axil.ar),
-                self.hydra.axil.r.connect(bar0_axil.r),
+                bar0_axil.aw.connect(self.hydra.csr_bus.aw),
+                bar0_axil.w.connect(self.hydra.csr_bus.w),
+                self.hydra.csr_bus.b.connect(bar0_axil.b),
+                bar0_axil.ar.connect(self.hydra.csr_bus.ar),
+                self.hydra.csr_bus.r.connect(bar0_axil.r),
             ]
 
-        # Give Hydra a DRAM AXI port, carved out of LiteDRAM's main port.
-        if hasattr(self, "ddrphy") and hasattr(self, "axi_con" ):
-            # AXI crossbar connection: allocate a region and connect AXI buses.
-            hydra_axi = self.hydra.axi
-            self.add_axi_slave(
-                name="hydra_mem",
-                axi=hydra_axi,
-                region=SoCRegion(origin=0x4000_0000, size=0x1000_0000, cached=True),
+        # Connect Hydra's framebuffer AXI master into LiteDRAM via a simple shared AXI interconnect.
+        # If LitePCIe DMA is present, share the DRAM port between Hydra and the host DMA.
+        fb_masters = [self.hydra.fb_master]
+        pcie_dma_master = getattr(getattr(self, "pcie_endpoint", None), "dma", None)
+        if pcie_dma_master is not None and hasattr(pcie_dma_master, "master"):
+            fb_masters.append(pcie_dma_master.master)  # type: ignore[attr-defined]
+
+        fb_slave_port = None
+        if hasattr(self, "sdram") and hasattr(self.sdram, "crossbar"):
+            # LiteDRAM crossbar can hand out an AXI port; only connect if the type matches.
+            candidate_port = getattr(self.sdram.crossbar, "get_port", lambda: None)()
+            if isinstance(candidate_port, AXIInterface):
+                fb_slave_port = candidate_port
+
+        if fb_slave_port is not None:
+            self.submodules.hydra_fb_ic = AXIInterconnectShared(
+                masters=fb_masters,
+                slaves=[(lambda _: 1, fb_slave_port)],  # single flat DRAM region
+            )
+        else:
+            self.logger.info(
+                "Hydra fb_master not connected to DRAM (AXI port unavailable); see docs/litex_crossbar_integration.md"
             )
 
         # HDMI/TMDS path: feed Hydra's AXI-Stream video into LiteVideo.
         if with_hdmi and hasattr(self, "video" ):
             # self.video is a LiteVideo core with a sink endpoint; connect streams.
             self.comb += [
-                self.hydra.hdmi.connect(self.video.source),  # type: ignore[attr-defined]
+                self.hydra.video.connect(self.video.source),  # type: ignore[attr-defined]
             ]
 
 

@@ -15,7 +15,7 @@
 - Sim: `cd sim && make` (Verilator + SDL); optional backends via `make GL=1`, `WAYLAND=1`, `X11=1`, `VULKAN=1` when headers/libs are present.
 - Frame regression: `make -C sim test_frame` (uses `FRAME_DUMP` + `scripts/check_frame.py` vs `sim/tests/golden_frame.ppm`).
 - RTL benches: `chmod +x sim/tests/run_rtl_tests.sh && ./sim/tests/run_rtl_tests.sh` (requires iverilog/vvp) for DMA loopback, BAR1+DMA, and HDMI CRC golden.
-- Cocotb: `cd sim/tests/cocotb_hydra && make SIM=icarus` to run the IRQ/DMA/BLIT smoke tests on `voxel_axil_shell`.
+- Cocotb: `cd sim/tests/cocotb_hydra && make SIM=icarus` to run the IRQ/DMA/BLIT smoke tests on `voxel_sim_harness`.
 - Host libs/tools: `cmake --preset linux-default && cmake --build build/linux` or `./scripts/setup_sdk.sh`.
 - Linux drivers: `make -C drivers/linux` to build stubs; use `hydra_pcie_drv` with the QEMU stub device for PCIe/UAPI experiments.
 

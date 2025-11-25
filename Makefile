@@ -1,6 +1,6 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint diff-summary fmt package lint verilator-check
+.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint diff-summary fmt package lint verilator-check files todo-unique
 
 all: sim
 
@@ -25,6 +25,8 @@ help:
 	@echo "  make package       - Bundle sim binary/tests/docs into out/hydra-package.tar.gz"
 	@echo "  make lint          - Lint RTL and sim C++ (verilator --lint-only, clang-tidy if available)"
 	@echo "  make verilator-check - Ensure Verilator meets recommended major version"
+	@echo "  make files         - Verify required repo files exist"
+	@echo "  make todo-unique   - Ensure docs/todo_master.md has no duplicate TODO entries"
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
 	@echo ""
@@ -124,6 +126,7 @@ whitespace:
 
 docs docs-lint:
 	@./scripts/docs_lint.py
+	@./scripts/check_todo_unique.py
 
 diff-summary:
 	@./scripts/diff_summary.sh
@@ -144,6 +147,12 @@ lint:
 
 verilator-check:
 	@./scripts/verilator_check.sh
+
+files:
+	@./scripts/check_required_files.py
+
+todo-unique:
+	@./scripts/check_todo_unique.py
 
 clean:
 	@$(MAKE) -C sim clean || true

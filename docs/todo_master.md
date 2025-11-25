@@ -173,55 +173,55 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a small README for user tools describing expected outputs and exit codes.
 
 ## Build / CI / Tooling
-- TODO: Fix `SDL_LIBS` tokenization in `sim/Makefile` (drop the stray `-LDFLAGS`) and ensure `-lSDL2_ttf` is linked when `sdl2-config` is absent.
-- TODO: Extend `sim/clean` to remove `sim/build/` artifacts (frame_test.ppm, frame_diff.log).
-- TODO: Emit the contents of `sim/build/frame_diff.log` on `test_frame` failures to make CI output self-contained.
-- TODO: Broaden top-level `make clean` to drop libhydra objects, generated scripts binaries, and CMake `build/linux` outputs.
+- DONE: Fix `SDL_LIBS` tokenization in `sim/Makefile` (single LDFLAGS string, SDL2_ttf fallback when `sdl2-config` is absent).
+- DONE: Extend `sim/clean` to remove `sim/build/` artifacts (frame_test.ppm, frame_diff.log).
+- DONE: Emit the contents of `sim/build/frame_diff.log` on `test_frame` failures to make CI output self-contained.
+- DONE: Broaden top-level `make clean` to drop libhydra objects, generated scripts binaries, and CMake `build/linux` outputs.
 - TODO: Add PIC + install/export rules for libhydra in CMake for downstream consumers.
-- TODO: Add a `make lint` (or similar) target that runs `verilator --lint-only`/`clang-tidy` on the sim C++ and RTL for quick hygiene checks.
+- DONE: Add a `make lint` (or similar) target that runs `verilator --lint-only`/`clang-tidy` on the sim C++ and RTL for quick hygiene checks.
 - TODO: Teach CI to capture and publish `sim/build/frame_diff.log` and HUD screenshots on test failures for quicker triage.
-- TODO: Provide a preset or helper to run CMake host builds from the top-level `Makefile` (delegating to `cmake --preset linux-default`).
-- TODO: Add a `make docs` target to build/check that referenced doc files exist and link anchors (prevent doc rot).
+- DONE: Provide a preset or helper to run CMake host builds from the top-level `Makefile` (delegating to `cmake --preset linux-default`).
+- DONE: Add a `make docs` target to build/check that referenced doc files exist and link anchors (prevent doc rot).
 - TODO: Cache Verilator build artifacts between CI jobs (ccache or Verilator’s cache) to speed up repeated runs.
-- TODO: Add a quick “smoke” target that builds `sim_voxel` without optional backends to validate a minimal toolchain quickly.
+- DONE: Add a quick “smoke” target that builds `sim_voxel` without optional backends to validate a minimal toolchain quickly.
 - TODO: Add formatting checks (clang-format for C/C++, verible/svformat for SV) to keep diffs clean.
-- TODO: Provide a minimal `requirements.txt` for Python scripts used in CI (`check_frame.py`, etc.) to document versions.
-- TODO: Add a top-level `make docs-lint` that scans docs for stale file references and missing anchors.
+- DONE: Provide a minimal `requirements.txt` for Python scripts used in CI (`check_frame.py`, etc.) to document versions.
+- DONE: Add a top-level `make docs-lint` that scans docs for stale file references and missing anchors.
 - TODO: Add a pre-commit config (hooks for format/lint) to keep local changes aligned with CI expectations.
 - TODO: Add a CI job that runs `make test_frame` with HYDRA_BACKEND=SDL and HYDRA_BACKEND=GL (when available) to catch backend regressions.
 - TODO: Add a nightly CI job to run cocotb smoke (`sim/tests/cocotb_hydra`) when tools are present, but mark non-blocking.
 - TODO: Add a CI artifact upload for failing frame dumps (PPM) to speed visual diffing.
-- TODO: Add a script/target to purge stale `sim/obj_dir` when Verilator version changes to avoid weird rebuilds.
-- TODO: Add a `make quick` target that just builds C++ harness without re-verilating (for fast HUD tweaks).
-- TODO: Add a small unit test for `scripts/check_frame.py` (golden vs shifted image) to lock thresholds.
+- DONE: Add a script/target to purge stale `sim/obj_dir` when Verilator version changes to avoid weird rebuilds.
+- DONE: Add a `make quick` target that just builds C++ harness without re-verilating (for fast HUD tweaks).
+- DONE: Add a small unit test for `scripts/check_frame.py` (golden vs shifted image) to lock thresholds.
 - TODO: Add caching/ccache setup for the C++ harness in CI to reduce rebuild times.
 - TODO: Add a GitHub issue template that links to `docs/todo_master.md` to keep work items centralized.
-- TODO: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
-- TODO: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
-- TODO: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
+- DONE: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
+- DONE: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
+- DONE: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
 - TODO: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
-- TODO: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
+- DONE: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
 - TODO: Add an automated spellcheck/lint for docs to keep wording clean.
 - TODO: Add a CI badge/status note in README that mentions which jobs cover sim/host/driver to set expectations.
-- TODO: Add a small Python-based sanity check that verifies required files listed in README/docs actually exist.
+- DONE: Add a small Python-based sanity check that verifies required files listed in README/docs actually exist.
 - TODO: Add a `make coverage` (if feasible) to gather line coverage from C++ sim tests, documented as experimental.
 - TODO: Add a `make bench` target for any performance microbenchmarks or frame timing scripts.
 - TODO: Add a CI matrix that runs `make test_frame` with GL/Vulkan off/on (when supported) behind a feature flag.
 - TODO: Add a quick “lint-docs-links” script to fail if README references missing files.
 - TODO: Add a CI job to build the Linux driver with `W=1` (sparse/extra warnings) to catch kernel API drift early.
-- TODO: Add a small script to check for trailing whitespace/tab damage in SV/C++ sources (pre-commit style).
+- DONE: Add a small script to check for trailing whitespace/tab damage in SV/C++ sources (pre-commit style).
 - TODO: Add a fast “docs-only” CI path that runs lint/spellcheck when only docs change.
 - TODO: Add a container/devcontainer or Dockerfile for a known-good toolchain (Verilator, SDL2, etc.).
-- TODO: Add a `make package` target to bundle sim binaries/tests/docs into an artifact tarball.
+- DONE: Add a `make package` target to bundle sim binaries/tests/docs into an artifact tarball.
 - TODO: Add a minimal “host-only” CI job that just builds CMake preset without RTL to guard host tools.
 - TODO: Add a .clang-tidy/.verible config checked into the repo and referenced by lint targets.
-- TODO: Add a script to ensure `docs/todo_master.md` stays sorted/unique (no duplicate TODOs).
+- DONE: Add a script to ensure `docs/todo_master.md` stays sorted/unique (no duplicate TODOs).
 - TODO: Add a CI check that running `make clean` leaves the tree tidy (no staged changes).
 - TODO: Add CI to run Python linters (ruff/black-check) on scripts/ to catch style issues early.
-- TODO: Add a simple “env probe” script that prints tool versions (verilator, gcc, sdl2-config) in CI logs.
-- TODO: Add a `make sanitize` target to build sim with ASan/UBSan when available.
+- DONE: Add a simple “env probe” script that prints tool versions (verilator, gcc, sdl2-config) in CI logs.
+- DONE: Add a `make sanitize` target to build sim with ASan/UBSan when available.
 - TODO: Add a CI job that builds/runs `sim/tests/run_rtl_tests.sh` when iverilog/vvp are present, marking non-fatal otherwise.
-- TODO: Add a `make shellcheck` target to lint bash scripts (hydra_dev_loop.sh, fetch_ip.sh, etc.).
+- DONE: Add a `make shellcheck` target to lint bash scripts (hydra_dev_loop.sh, fetch_ip.sh, etc.).
 - TODO: Add a helper script to bump version numbers across README/CMake/RELEASE_NOTES consistently.
 - TODO: Add a CI job to run `scripts/hydra_dev_loop.sh` in best-effort mode to mirror developer flow.
 - TODO: Add a quick gate to warn when generated files are manually edited (if detectable).
