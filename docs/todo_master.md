@@ -182,7 +182,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Teach CI to capture and publish `sim/build/frame_diff.log` and HUD screenshots on test failures for quicker triage.
 - DONE: Provide a preset or helper to run CMake host builds from the top-level `Makefile` (delegating to `cmake --preset linux-default`).
 - DONE: Add a `make docs` target to build/check that referenced doc files exist and link anchors (prevent doc rot).
-- TODO: Cache Verilator build artifacts between CI jobs (ccache or Verilator’s cache) to speed up repeated runs.
+- DONE: Cache Verilator build artifacts between CI jobs (ccache or Verilator’s cache) to speed up repeated runs.
 - DONE: Add a quick “smoke” target that builds `sim_voxel` without optional backends to validate a minimal toolchain quickly.
 - TODO: Add formatting checks (clang-format for C/C++, verible/svformat for SV) to keep diffs clean.
 - DONE: Provide a minimal `requirements.txt` for Python scripts used in CI (`check_frame.py`, etc.) to document versions.
@@ -194,7 +194,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a script/target to purge stale `sim/obj_dir` when Verilator version changes to avoid weird rebuilds.
 - DONE: Add a `make quick` target that just builds C++ harness without re-verilating (for fast HUD tweaks).
 - DONE: Add a small unit test for `scripts/check_frame.py` (golden vs shifted image) to lock thresholds.
-- TODO: Add caching/ccache setup for the C++ harness in CI to reduce rebuild times.
+- DONE: Add caching/ccache setup for the C++ harness in CI to reduce rebuild times.
 - DONE: Add a GitHub issue template that links to `docs/todo_master.md` to keep work items centralized.
 - DONE: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
 - DONE: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
@@ -205,7 +205,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a CI badge/status note in README that mentions which jobs cover sim/host/driver to set expectations.
 - DONE: Add a small Python-based sanity check that verifies required files listed in README/docs actually exist.
 - TODO: Add a `make coverage` (if feasible) to gather line coverage from C++ sim tests, documented as experimental.
-- TODO: Add a `make bench` target for any performance microbenchmarks or frame timing scripts.
+- DONE: Add a `make bench` target for any performance microbenchmarks or frame timing scripts.
 - TODO: Add a CI matrix that runs `make test_frame` with GL/Vulkan off/on (when supported) behind a feature flag.
 - TODO: Add a quick “lint-docs-links” script to fail if README references missing files.
 - TODO: Add a CI job to build the Linux driver with `W=1` (sparse/extra warnings) to catch kernel API drift early.

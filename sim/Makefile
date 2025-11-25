@@ -20,6 +20,7 @@ CXX_EXE      := sim_voxel
 VERILATOR    ?= verilator
 CXX          ?= g++
 SANITIZE     ?= 0
+CCACHE       ?= 0
 
 SDL_CONFIG   ?= sdl2-config
 SDL_CONFIG_AVAILABLE := $(shell command -v $(SDL_CONFIG) >/dev/null 2>&1 && echo 1 || echo 0)
@@ -86,6 +87,11 @@ VERILATOR_FLAGS := \
     -O3 --exe $(CXX_SRCS) \
     -I$(RTL_DIR)
 
+ifeq ($(CCACHE),1)
+  VERILATOR_FLAGS += --ccache
+  CXX := ccache $(CXX)
+endif
+
 all: $(CXX_EXE)
 
 $(CXX_EXE): V$(TOP_MODULE)___024root.h
@@ -101,7 +107,7 @@ TEST_BUILD_DIR := $(SIM_DIR)/build
 TEST_FRAME     := $(TEST_BUILD_DIR)/frame_test.ppm
 GOLDEN_FRAME   := $(SIM_DIR)/tests/golden_frame.ppm
 
-.PHONY: test_frame smoke quick purge_obj_dir lint
+.PHONY: test_frame smoke quick purge_obj_dir lint bench
 test_frame: $(CXX_EXE)
 	@mkdir -p $(TEST_BUILD_DIR)
 	@rm -f $(TEST_FRAME) $(TEST_BUILD_DIR)/frame_diff.log
@@ -137,6 +143,11 @@ lint:
 	else \
 		echo "[lint] clang-tidy not found; skipping C++ lint."; \
 	fi
+
+# Simple benchmark: run one AUTO_EXIT frame with LOG_FRAMES=1.
+bench: $(CXX_EXE)
+	@echo "[bench] Running sim_voxel with LOG_FRAMES=1 AUTO_EXIT=1"
+	cd $(SIM_DIR) && LOG_FRAMES=1 AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
 
 clean:
 	rm -rf obj_dir $(CXX_EXE) $(TEST_BUILD_DIR)
