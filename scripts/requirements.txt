@@ -1,0 +1,2 @@
+# Minimal Python dependencies for Hydra helper scripts used in CI/local runs.
+# Current scripts rely only on the Python standard library.
