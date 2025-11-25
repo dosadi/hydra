@@ -1,0 +1,56 @@
+# Pre-commit hooks for Hydra repository
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(third_party/|sim/obj_dir/|build/|out/)
+      - id: end-of-file-fixer
+        exclude: ^(third_party/|sim/obj_dir/|build/|out/)
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  - repo: local
+    hooks:
+      - id: whitespace-check
+        name: Check tabs and trailing whitespace (SV/C/C++)
+        entry: ./scripts/check_whitespace.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+      - id: docs-lint
+        name: Check Markdown links
+        entry: ./scripts/docs_lint.py
+        language: script
+        pass_filenames: false
+        files: '\.md$'
+
+      - id: todo-unique
+        name: Check for duplicate TODOs
+        entry: ./scripts/check_todo_unique.py
+        language: script
+        pass_filenames: false
+        files: 'docs/todo_master\.md$'
+
+      - id: verilator-check
+        name: Verify Verilator version
+        entry: ./scripts/verilator_check.sh
+        language: script
+        pass_filenames: false
+        always_run: false
+        stages: [manual]
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        args: ['--skip=third_party,build,obj_dir,.git', '--quiet-level=2']
+        exclude: ^(third_party/|build/|sim/obj_dir/|out/)
