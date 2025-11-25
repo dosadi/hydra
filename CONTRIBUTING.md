@@ -1,7 +1,27 @@
 # Contributing to Hydra
 
 This document is a quick guide for people who want to work on this repo (core RTL, sim, drivers, or docs).
-It’s a summary of existing practices from `AGENTS.md` and the docs.
+It's a summary of existing practices from `AGENTS.md` and the docs.
+
+## Quick Start
+
+```bash
+# Install dependencies (Ubuntu/Debian)
+sudo apt-get install verilator libsdl2-dev libsdl2-ttf-dev build-essential cmake python3
+
+# Run full development cycle
+./scripts/hydra_dev_loop.sh
+
+# Or step by step:
+make sim              # Build Verilator sim
+make test             # Run frame regression test
+make sdk-setup        # Build SDK tools
+
+# See available targets:
+make help
+```
+
+For detailed instructions, continue reading below.
 
 ## Development workflow
 

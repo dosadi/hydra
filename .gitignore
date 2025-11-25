@@ -13,10 +13,12 @@ drivers/libhydra/libhydra.a
 # local artifacts and sim build outputs
 artifacts/
 sim/build/
+build/
 scripts/hydra_blit_smoketest
 scripts/hydra_dma_blit_demo
 sim/tests/rtl/*.vvp
 *.vvp
+sim/test_*.ppm
 third_party/*
 !third_party/README.md
 !third_party/litepcie
@@ -24,10 +26,14 @@ third_party/*
 !third_party/liteiclink
 !third_party/litex
 
-# Python virtual environments
+# Python virtual environments and artifacts
 .venv/
 venv/
 __pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
 
 # Linux kernel module build artifacts
 drivers/linux/.*.cmd
@@ -52,3 +58,17 @@ patch_*.sh
 # GitHub automation status docs
 .github/AUTOMATION_COMPLETE.md
 .github/FULL_AUTOMATION_SUCCESS.md
+
+# CMake build artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
