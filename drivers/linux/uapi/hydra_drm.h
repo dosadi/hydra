@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #pragma once
 
-#include <drm/drm.h>
+#include <libdrm/drm.h>
 #include <linux/types.h>
 
 #define DRM_HYDRA_IOCTL_INFO 0x00

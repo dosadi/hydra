@@ -29,6 +29,17 @@ if(BUILD_LIBHYDRA)
         drivers/libhydra
         drivers/linux/uapi
     )
+
+    include(GNUInstallDirs)
+    install(TARGETS libhydra
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(FILES drivers/libhydra/hydra.h drivers/linux/uapi/hydra_ioctl.h drivers/linux/uapi/hydra_regs.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    configure_file(drivers/libhydra/libhydra.pc.in libhydra.pc @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libhydra.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
 if(BUILD_POSIX_TOOLS AND UNIX)
@@ -41,7 +52,7 @@ if(BUILD_POSIX_TOOLS AND UNIX)
     endif()
     if(LIBDRM_FOUND)
         add_executable(hydra_drm_info scripts/hydra_drm_info.c)
-        target_include_directories(hydra_drm_info PRIVATE drivers/linux/uapi ${LIBDRM_INCLUDE_DIRS})
-        target_link_libraries(hydra_drm_info PRIVATE ${LIBDRM_LIBRARIES})
+        target_include_directories(hydra_drm_info PRIVATE drivers/linux/uapi drivers/libhydra ${LIBDRM_INCLUDE_DIRS})
+        target_link_libraries(hydra_drm_info PRIVATE libhydra ${LIBDRM_LIBRARIES})
     endif()
 endif()

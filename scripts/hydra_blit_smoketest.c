@@ -16,26 +16,7 @@
 #endif
 
 #include "hydra_regs.h"
-
-#define HYDRA_IOCTL_MAGIC 'h'
-
-struct hydra_reg_rw {
-    uint32_t offset;
-    uint32_t value;
-};
-
-struct hydra_info {
-    uint32_t vendor;
-    uint32_t device;
-    int32_t  irq;
-    uint64_t bar0_start;
-    uint64_t bar0_len;
-    uint64_t irq_count;
-};
-
-#define HYDRA_IOCTL_INFO _IOR(HYDRA_IOCTL_MAGIC, 0x00, struct hydra_info)
-#define HYDRA_IOCTL_RD32 _IOWR(HYDRA_IOCTL_MAGIC, 0x01, struct hydra_reg_rw)
-#define HYDRA_IOCTL_WR32 _IOW (HYDRA_IOCTL_MAGIC, 0x02, struct hydra_reg_rw)
+#include "hydra_ioctl.h"
 
 static int rd32(int fd, uint32_t off, uint32_t* out)
 {

@@ -75,3 +75,6 @@ CTestTestfile.cmake
 *.swp
 *.swo
 .DS_Store
+
+# Local output artifacts
+out

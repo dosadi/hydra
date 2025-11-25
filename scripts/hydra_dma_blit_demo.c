@@ -26,9 +26,14 @@ int main(int argc, char** argv)
     if (argc > 1)
         path = argv[1];
 
-    struct hydra_handle h;
-    if (hydra_open(&h, path) != 0)
+    struct hydra_handle h = HYDRA_HANDLE_INIT;
+    int ret = hydra_open(&h, path);
+    if (ret == -ENOENT || ret == -ENODEV) {
+        printf("[hydra_dma_blit_demo] device missing (%s), skipping (ret=77)\n", path);
+        return 77;
+    } else if (ret != 0) {
         die("hydra_open");
+    }
 
     struct hydra_info info = {0};
     if (hydra_info_query(&h, &info) != 0) {

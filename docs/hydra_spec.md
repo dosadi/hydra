@@ -51,6 +51,8 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 ## Interrupts (proposed)
 - Bits: [0]=frame_done, [1]=dma_done, [2]=dma_err (stub: not driven, reads 0), [3]=irq_test pulse, [4]=blit_done.
 - `INT_STATUS` is RW1C; `irq_out` is level-sensitive on `INT_STATUS & INT_MASK`. `STATUS.frame_done` latches until read or the next CTRL start/reset. `blit_done` asserts `INT_STATUS[4]` in the stub; `IRQ_TEST` pulses `INT_STATUS[3]`.
+- Masking: writing `INT_MASK` gates `irq_out`/`msi_pulse` but leaves `INT_STATUS` unchanged; userspace should clear `INT_STATUS` bits after handling.
+- Clear: write `INT_STATUS` with the bit(s) set to 1 to clear (RW1C). Reads return current latched bits regardless of mask.
 
 ## 3D blitter stub (bring-up shell)
 - Registers at 0x0100: `BLIT_CTRL` [0]=start, [1]=dir(readback flag), [2]=use_fifo; `BLIT_STATUS` [0]=busy, [1]=done, [2]=fifo_empty, [3]=fifo_full.

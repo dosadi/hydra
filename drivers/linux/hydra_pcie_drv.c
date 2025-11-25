@@ -41,6 +41,13 @@ static bool enable_msi = true;
 module_param(enable_msi, bool, 0444);
 MODULE_PARM_DESC(enable_msi, "Enable MSI/MSI-X if available (default: true)");
 
+static u16 hydra_vendor_id = HYDRA_VENDOR_ID_DEFAULT;
+static u16 hydra_device_id = HYDRA_DEVICE_ID_DEFAULT;
+module_param(hydra_vendor_id, ushort, 0444);
+module_param(hydra_device_id, ushort, 0444);
+MODULE_PARM_DESC(hydra_vendor_id, "Override PCI vendor ID for binding (default: 0x1BAD)");
+MODULE_PARM_DESC(hydra_device_id, "Override PCI device ID for binding (default: 0x2024)");
+
 static inline u32 hydra_bar0_rd32(struct hydra_dev *hdev, u32 off)
 {
     if (!hdev->bar0 || off + sizeof(u32) > hdev->bar0_len)
@@ -56,7 +63,8 @@ static inline void hydra_bar0_wr32(struct hydra_dev *hdev, u32 off, u32 v)
 }
 
 static const struct pci_device_id hydra_pci_ids[] = {
-    { PCI_DEVICE(HYDRA_VENDOR_ID_DEFAULT, HYDRA_DEVICE_ID_DEFAULT) },
+    { PCI_DEVICE(HYDRA_VENDOR_ID_DEFAULT, HYDRA_DEVICE_ID_DEFAULT), .driver_data = 0 },
+    { PCI_DEVICE(PCI_ANY_ID, PCI_ANY_ID), .driver_data = 1 }, /* gated by module params */
     { 0, }
 };
 MODULE_DEVICE_TABLE(pci, hydra_pci_ids);
@@ -142,6 +150,7 @@ static int hydra_mmap(struct file *file, struct vm_area_struct *vma)
     }
 
     vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+    vma->vm_flags |= VM_IO | VM_DONTDUMP | VM_DONTEXPAND;
     if (remap_pfn_range(vma, vma->vm_start, phys >> PAGE_SHIFT,
                         len, vma->vm_page_prot))
         return -EAGAIN;
@@ -201,7 +210,10 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         /* Stub: program BAR0 DMA registers and poll. */
         if (dma.len == 0 ||
             dma.src >= hdev->bar0_len ||
-            dma.dst >= hdev->bar0_len)
+            dma.dst >= hdev->bar0_len ||
+            dma.len > HYDRA_BAR0_SIZE ||
+            dma.src > (HYDRA_BAR0_SIZE - dma.len) ||
+            dma.dst > (HYDRA_BAR0_SIZE - dma.len))
             return -EINVAL;
         hydra_bar0_wr32(hdev, HYDRA_REG_DMA_SRC, (u32)dma.src);
         hydra_bar0_wr32(hdev, HYDRA_REG_DMA_DST, (u32)dma.dst);
@@ -241,8 +253,18 @@ static int hydra_probe(struct pci_dev *pdev, const struct pci_device_id *id)
     int irq = -1;
     struct hydra_dev *hdev;
 
-    dev_info(&pdev->dev, DRV_NAME ": probe vendor=0x%04x device=0x%04x\n",
-             pdev->vendor, pdev->device);
+    /* If module params are set, require a match when probing via the wildcard entry. */
+    if (id && id->driver_data) {
+        if (pdev->vendor != hydra_vendor_id || pdev->device != hydra_device_id) {
+            dev_info(&pdev->dev, DRV_NAME ": ignoring device (vendor=0x%04x device=0x%04x) "
+                     "due to module params vendor_id=0x%04x device_id=0x%04x\n",
+                     pdev->vendor, pdev->device, hydra_vendor_id, hydra_device_id);
+            return -ENODEV;
+        }
+    }
+
+    dev_info(&pdev->dev, DRV_NAME ": probe vendor=0x%04x device=0x%04x (params vendor=0x%04x device=0x%04x)\n",
+             pdev->vendor, pdev->device, hydra_vendor_id, hydra_device_id);
 
     hdev = devm_kzalloc(&pdev->dev, sizeof(*hdev), GFP_KERNEL);
     if (!hdev)
@@ -414,6 +436,6 @@ static struct pci_driver hydra_pci_driver = {
 
 module_pci_driver(hydra_pci_driver);
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Hydra Team");
 MODULE_DESCRIPTION("Hydra PCIe driver stub");

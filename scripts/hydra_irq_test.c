@@ -12,6 +12,7 @@
 
 #include "../drivers/linux/uapi/hydra_regs.h"
 #include "../drivers/linux/uapi/hydra_ioctl.h"
+#include "../drivers/libhydra/hydra.h"
 
 static int rd32(int fd, uint32_t off, uint32_t* out)
 {
@@ -46,7 +47,7 @@ int main(int argc, char** argv)
     int fd = open(dev, O_RDWR);
     if (fd < 0) {
         perror("open device");
-        return 1;
+        return 77; // skip if missing
     }
 
     struct hydra_info info = {0};
@@ -56,16 +57,14 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    printf("Device: %s vendor=0x%04x device=0x%04x irq=%d\n",
-           dev, info.vendor, info.device, info.irq);
+    printf("Device: %s vendor=0x%04x device=0x%04x irq=%d (libhydra %s)\n",
+           dev, info.vendor, info.device, info.irq, hydra_version_string());
 
     // Program mask and clear status.
-    if (wr32(fd, HYDRA_REG_INT_MASK, mask) != 0) {
-        perror("write INT_MASK");
-    }
-    if (wr32(fd, HYDRA_REG_INT_STATUS, 0xFFFFFFFFu) != 0) {
-        perror("clear INT_STATUS");
-    }
+    if (wr32(fd, HYDRA_REG_INT_MASK, mask) != 0)
+        die("write INT_MASK");
+    if (wr32(fd, HYDRA_REG_INT_STATUS, 0xFFFFFFFFu) != 0)
+        die("clear INT_STATUS");
 
     uint32_t st_before = 0, mask_read = 0;
     rd32(fd, HYDRA_REG_INT_STATUS, &st_before);

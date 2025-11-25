@@ -1,6 +1,6 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint diff-summary fmt package lint verilator-check files todo-unique bench spellcheck
+.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint docs-only diff-summary fmt package lint verilator-check files todo-unique bench spellcheck license-check pixel-test dma-negative cam-reset mmap-smoke cam-flags-demo
 
 all: sim
 
@@ -20,6 +20,7 @@ help:
 	@echo "  make whitespace    - Check for tabs/trailing whitespace in SV/C/C++ sources"
 	@echo "  make docs          - Run docs lint (local link check)"
 	@echo "  make docs-lint     - Same as docs (kept for clarity)"
+	@echo "  make docs-only     - Docs-only pass (docs-lint + spellcheck)"
 	@echo "  make diff-summary  - Summarize git diff stats and TODO touches (for PRs)"
 	@echo "  make fmt           - Format C/C++/SV sources (clang-format/verible if available)"
 	@echo "  make package       - Bundle sim binary/tests/docs into out/hydra-package.tar.gz"
@@ -29,6 +30,12 @@ help:
 	@echo "  make todo-unique   - Ensure docs/todo_master.md has no duplicate TODO entries"
 	@echo "  make bench         - Quick sim benchmark (LOG_FRAMES=1 AUTO_EXIT=1)"
 	@echo "  make spellcheck    - Run codespell on docs (skips if tool missing)"
+	@echo "  make license-check - Verify SPDX headers on source files"
+	@echo "  make pixel-test    - Run pixel96_to_argb unit test (sim/tests/test_pixel96.cpp)"
+	@echo "  make dma-negative  - Build/run negative DMA ioctl test (expects driver node)"
+	@echo "  make cam-reset     - Reset camera/flags/selection via libhydra (uses /dev/hydra_pcie)"
+	@echo "  make mmap-smoke    - Map BAR0 and dump ID/REV/STATUS (skips if missing)"
+	@echo "  make cam-flags-demo- Sample: set camera/flags/selection via libhydra"
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
 	@echo ""
@@ -130,6 +137,10 @@ docs docs-lint:
 	@./scripts/docs_lint.py
 	@./scripts/check_todo_unique.py
 
+docs-only:
+	@$(MAKE) docs
+	@$(MAKE) spellcheck
+
 diff-summary:
 	@./scripts/diff_summary.sh
 
@@ -162,6 +173,28 @@ bench:
 spellcheck:
 	@./scripts/spellcheck_docs.sh
 
+license-check:
+	@./scripts/check_license_headers.py
+
+pixel-test:
+	@c++ -std=c++17 -Wall -Wextra -O2 -o sim/tests/test_pixel96 sim/tests/test_pixel96.cpp
+	@sim/tests/test_pixel96
+
+dma-negative:
+	@cc -Wall -Wextra -O2 -o scripts/tests/test_hydra_dma_negative scripts/tests/test_hydra_dma_negative.c
+	@./scripts/tests/test_hydra_dma_negative || true
+
+cam-reset:
+	@cc -Wall -Wextra -O2 -I drivers/linux/uapi -I drivers/libhydra -o scripts/hydra_cam_reset scripts/hydra_cam_reset.c drivers/libhydra/hydra.c
+	@./scripts/hydra_cam_reset || true
+
+mmap-smoke:
+	@cc -Wall -Wextra -O2 -o scripts/hydra_mmap_smoke scripts/hydra_mmap_smoke.c
+	@./scripts/hydra_mmap_smoke || true
+
+cam-flags-demo:
+	@cc -Wall -Wextra -O2 -I drivers/linux/uapi -I drivers/libhydra -o scripts/hydra_cam_flags_demo scripts/hydra_cam_flags_demo.c drivers/libhydra/hydra.c
+	@./scripts/hydra_cam_flags_demo || true
 clean:
 	@$(MAKE) -C sim clean || true
 	@rm -f drivers/libhydra/libhydra.a drivers/libhydra/*.o

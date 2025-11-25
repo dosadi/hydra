@@ -15,6 +15,11 @@
 #define BIT(nr) (1UL << (nr))
 #endif
 
+const char* hydra_version_string(void)
+{
+    return "0.0.5";
+}
+
 static int do_ioctl(int fd, unsigned long cmd, void* arg)
 {
     int ret = ioctl(fd, cmd, arg);
@@ -64,6 +69,36 @@ int hydra_wr32(struct hydra_handle* h, uint32_t off, uint32_t val)
         return -EINVAL;
     struct hydra_reg_rw rw = { .offset = off, .value = val };
     return do_ioctl(h->fd, HYDRA_IOCTL_WR32, &rw);
+}
+
+int hydra_device_present(const char* path)
+{
+    struct hydra_handle h = HYDRA_HANDLE_INIT;
+    int ret = hydra_open(&h, path);
+    if (ret == 0)
+        hydra_close(&h);
+    return ret;
+}
+
+int hydra_get_int_status(struct hydra_handle* h, uint32_t* status)
+{
+    if (!h || h->fd < 0 || !status)
+        return -EINVAL;
+    return hydra_rd32(h, HYDRA_REG_INT_STATUS, status);
+}
+
+int hydra_get_int_mask(struct hydra_handle* h, uint32_t* mask)
+{
+    if (!h || h->fd < 0 || !mask)
+        return -EINVAL;
+    return hydra_rd32(h, HYDRA_REG_INT_MASK, mask);
+}
+
+int hydra_clear_int_status(struct hydra_handle* h, uint32_t bits)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+    return hydra_wr32(h, HYDRA_REG_INT_STATUS, bits);
 }
 
 int hydra_dma_copy(struct hydra_handle* h, uint64_t src, uint64_t dst, uint32_t len_bytes)
@@ -239,6 +274,32 @@ int hydra_set_selection(struct hydra_handle* h,
     ret = hydra_wr32(h, HYDRA_REG_SEL_Y, (uint32_t)(y & 0x3F));
     if (ret) return ret;
     return hydra_wr32(h, HYDRA_REG_SEL_Z, (uint32_t)(z & 0x3F));
+}
+
+int hydra_apply_state(struct hydra_handle* h,
+                      const struct hydra_camera_state* cam,
+                      const struct hydra_flags_state* flags,
+                      const struct hydra_selection_state* sel)
+{
+    if (!h || h->fd < 0)
+        return -EINVAL;
+    int ret = 0;
+    if (cam) {
+        ret = hydra_set_camera_raw(h,
+            cam->cam_x, cam->cam_y, cam->cam_z,
+            cam->dir_x, cam->dir_y, cam->dir_z,
+            cam->plane_x, cam->plane_y);
+        if (ret) return ret;
+    }
+    if (flags) {
+        ret = hydra_set_flags(h, flags->smooth, flags->curvature, flags->extra_light, flags->diag_slice);
+        if (ret) return ret;
+    }
+    if (sel) {
+        ret = hydra_set_selection(h, sel->active, sel->x, sel->y, sel->z);
+        if (ret) return ret;
+    }
+    return 0;
 }
 
 int hydra_soft_reset(struct hydra_handle* h)

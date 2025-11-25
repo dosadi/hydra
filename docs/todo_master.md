@@ -68,9 +68,6 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add an env/hotkey to disable mouse capture entirely (keyboard-only navigation) for kiosk/headless setups (HYDRA_MOUSE_CAPTURE=0).
 - TODO: Add a “cursor highlight” toggle to show the selected voxel with a bright outline for clarity in recordings.
 - TODO: Add a “telemetry off” mode to skip HUD drawing for maximal render throughput in benchmarks.
-- TODO: Add a “demo mode” that runs a scripted camera path and toggles flags for capture reels.
-- TODO: Add per-axis inversion/sensitivity sliders (env/CLI) for finer camera tuning.
-- TODO: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds.
 
 ## RTL Shell
 - TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
@@ -125,50 +122,50 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Switch `scripts/hydra_blit_smoketest.c` to shared UAPI headers instead of duplicating structs.
 - TODO: Flesh out the FreeBSD stub (`drivers/bsd/hydra_pci_stub.c`) to mirror the Linux ioctl map and BAR1 exposure instead of placeholder comments.
 - TODO: Make `scripts/hydra_drm_info.c` fail hard (non-zero) when DRM ioctls fail and print clearer error context.
-- TODO: Add a small libhydra sample that exercises camera/flags/selection APIs so new users can sanity-check BAR0 writes.
-- TODO: Allow overriding vendor/device IDs in the Linux driver via module params to ease bring-up on FPGA prototypes.
-- TODO: Add a tiny userspace test that issues `HYDRA_IOCTL_DMA` with bad offsets to confirm the driver rejects wraps (negative test).
+- DONE: Add a small libhydra sample that exercises camera/flags/selection APIs so new users can sanity-check BAR0 writes.
+- DONE: Allow overriding vendor/device IDs in the Linux driver via module params to ease bring-up on FPGA prototypes.
+- DONE: Add a tiny userspace test that issues `HYDRA_IOCTL_DMA` with bad offsets to confirm the driver rejects wraps (negative test).
 - TODO: Add uapi header versioning (struct size check) in userspace tools to catch mismatch with the kernel driver.
 - TODO: Add a debugfs knob in `hydra_pcie_drv` to toggle verbose IRQ logging without recompiling.
-- TODO: Package a pkg-config file for libhydra so external tools can find headers/libs without hardcoded paths.
+- DONE: Package a pkg-config file for libhydra so external tools can find headers/libs without hardcoded paths.
 - TODO: Make the FreeBSD stub expose a `devctl`/sysctl readout similar to the Linux debugfs status for parity.
 - TODO: Add a self-test debugfs entry to trigger IRQ_TEST and report INT_STATUS to validate interrupts without user tooling.
 - TODO: Teach `hydra_dma_blit_demo` to skip cleanly (exit 77) when the device node is missing, for nicer CI gating.
-- TODO: Add a tiny `hydra_cam_reset` CLI that sets camera/flags/selection to defaults via libhydra (mirrors sim reset hotkey).
+- DONE: Add a tiny `hydra_cam_reset` CLI that sets camera/flags/selection to defaults via libhydra (mirrors sim reset hotkey).
 - TODO: Add a simple DRM stub “modeset info” tool to enumerate any registered render node and dump its Hydra-specific props.
 - TODO: Add a kernel tracepoint or trace_printk path for IRQ/DMA events to aid debugging without extra printk noise.
-- TODO: Add udev rules example for creating `/dev/hydra_pcie` with group permissions for non-root access.
-- TODO: Add a module param to force-disable MSI (or force legacy) for platforms with broken MSI routing.
-- TODO: Add an automated userspace test that toggles INT_MASK bits and validates interrupt delivery counts.
-- TODO: Add an example systemd service that loads the driver and sets permissions for devnode on boot.
+- DONE: Add udev rules example for creating `/dev/hydra_pcie` with group permissions for non-root access.
+- DONE: Add a module param to force-disable MSI (or force legacy) for platforms with broken MSI routing.
+- DONE: Add an automated userspace test that toggles INT_MASK bits and validates interrupt delivery counts.
+- DONE: Add an example systemd service that loads the driver and sets permissions for devnode on boot.
 - TODO: Add a kselftest-style script in `scripts/` to exercise ioctl/mmap paths and report pass/fail.
-- TODO: Add a tiny `hydra_irq_test` userspace tool to pulse IRQ_TEST and poll INT_STATUS for quick sanity.
+- DONE: Add a tiny `hydra_irq_test` userspace tool to pulse IRQ_TEST and poll INT_STATUS for quick sanity.
 - TODO: Add a FreeBSD userspace sample matching the Linux ones (info + IRQ test) to validate that stub.
-- TODO: Add a libhydra API to read INT_MASK/INT_STATUS and clear bits to reduce boilerplate in tools.
-- TODO: Add a quick “device present?” helper in libhydra (returns ENODEV if node missing) to simplify app startup.
+- DONE: Add a libhydra API to read INT_MASK/INT_STATUS and clear bits to reduce boilerplate in tools.
+- DONE: Add a quick “device present?” helper in libhydra (returns ENODEV if node missing) to simplify app startup.
 - TODO: Add a debugfs entry that dumps recent IRQ timestamps/counts for profiling interrupt cadence.
-- TODO: Add a simple mmap smoke test in libhydra (map BAR0/BAR1, read ID regs) for bring-up scripts.
+- DONE: Add a simple mmap smoke test in libhydra (map BAR0/BAR1, read ID regs) for bring-up scripts.
 - TODO: Add a “no-op” ioctl in kernel driver for compatibility/version probing (returns driver version/build).
 - TODO: Add a CLI wrapper to run the kselftest suite and summarize results (pass/fail counts).
 - TODO: Add a `hydra_dump_csrs` tool that dumps a CSR range to help compare against spec during bring-up.
-- TODO: Add per-arch cross-compile notes (e.g., aarch64 cross) for the driver and libhydra.
+- DONE: Add per-arch cross-compile notes (e.g., aarch64 cross) for the driver and libhydra.
 - TODO: Add basic manpages or `--help` output for the userland tools (blit_smoketest, dma_blit_demo, drm_info).
 - TODO: Add a basic perf test that times repeated HYDRA_IOCTL_RD32/WR32 calls to gauge BAR latency.
 - TODO: Add a small tool that writes/reads selection/camera via the driver to mirror sim controls (for HW parity).
 - TODO: Add an optional sysfs entry to expose BAR sizes/IDs (read-only) for quick inspection without debugfs.
 - TODO: Add DKMS packaging script or notes for the Linux driver for easier installs.
-- TODO: Add build-req documentation (kernel headers) and a quick `make -C drivers/linux help` target.
-- TODO: Add a libhydra convenience wrapper to set multiple flags/camera fields in one call to reduce ioctl churn.
+- DONE: Add build-req documentation (kernel headers) and a quick `make -C drivers/linux help` target.
+- DONE: Add a libhydra convenience wrapper to set multiple flags/camera fields in one call to reduce ioctl churn.
 - TODO: Add a module param to disable debugfs creation for locked-down environments.
 - TODO: Add a tiny tool to map BAR1 (when present) and hexdump a small range for sanity.
 - TODO: Add a DRM stub ioctl negative test to ensure proper error codes on bad args.
 - TODO: Add a helper script to load/unload the driver with module params (MSI, IDs) for quick iteration.
 - TODO: Add a CI-friendly script to run all userland tools with `--help` to ensure they parse options.
-- TODO: Add a libhydra version getter and expose it in tools for troubleshooting.
+- DONE: Add a libhydra version getter and expose it in tools for troubleshooting.
 - TODO: Add a kselftest case that exercises unaligned IOCTL offsets to ensure -EINVAL is returned.
 - TODO: Add a libhydra call to fetch BAR sizes/info (mirrors HYDRA_IOCTL_INFO) for convenience.
 - TODO: Add CI smoke that runs libhydra samples under strace to confirm IOCTL sequences look sane.
-- TODO: Add a tiny tool to toggle INT_MASK bits and poll INT_STATUS to validate IRQ masking from userspace.
+- DONE: Add a tiny tool to toggle INT_MASK bits and poll INT_STATUS to validate IRQ masking from userspace.
 - TODO: Add a FreeBSD Makefile target to build/install the stub (mirroring Linux make help).
 - DONE: Add a small README for user tools describing expected outputs and exit codes.
 
@@ -199,7 +196,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
 - DONE: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
 - DONE: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
-- TODO: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
+- DONE: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
 - DONE: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
 - DONE: Add an automated spellcheck/lint for docs to keep wording clean.
 - DONE: Add a CI badge/status note in README that mentions which jobs cover sim/host/driver to set expectations.
@@ -256,9 +253,9 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a “first run” checklist (deps, make, test_frame, sim_voxel) for new contributors.
 - TODO: Add a release-notes template snippet (what changed/how validated) for future versions.
 - TODO: Add a short doc on integrating Hydra RTL into other projects (AXI shell expectations).
-- TODO: Add a short “how to file a good bug” blurb (logs to attach, FRAME_DUMP, LOG_KEYS/LOG_FRAMES).
+- DONE: Add a short “how to file a good bug” blurb (logs to attach, FRAME_DUMP, LOG_KEYS/LOG_FRAMES).
 - TODO: Add a glossary of module names/prefixes (cam_/cfg_/sel_/dbg_) for newcomers.
 - TODO: Add a short doc showing example outputs from libhydra tools (info/irq_test) to set expectations.
-- TODO: Add a section on how to interpret INT_STATUS/INT_MASK bits in the docs/hydra_spec.md narrative.
+- DONE: Add a section on how to interpret INT_STATUS/INT_MASK bits in the docs/hydra_spec.md narrative.
 - TODO: Add a “developer workflow” doc tying together dev_loop, test_frame, cocotb, and TODO tracker updates.
 - TODO: Add sample PR descriptions/commit message examples that align with repo guidance.

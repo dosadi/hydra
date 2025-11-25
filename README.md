@@ -1,6 +1,7 @@
 # Voxel-Based 3D Graphics Accelerator (Alpha)
 
 This repo contains a **voxel raycaster core in SystemVerilog** plus a **Verilator + SDL2** interactive viewer.
+Licensed under BSD-3-Clause (see `LICENSE`).
 
 ## Quickstart (Linux)
 
@@ -61,13 +62,16 @@ Optional backends (opt-in at build time):
 - `make X11=1` – enable X11 backend (needs Xlib headers/libs).
 - `make WAYLAND=1` – enable Wayland backend (needs wayland-client headers/libs).
 - `make VULKAN=1` – enable Vulkan backend (needs Vulkan SDK headers/libs + SDL2 Vulkan helpers).
-- Use `HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN|FBDEV|WIN32|MACOS>` at runtime to request a compiled backend; falls back to SDL if unavailable and still uses the SDL window/HUD for input.
+- Use `HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN|FBDEV|WIN32|MACOS|HEADLESS>` at runtime to request a compiled backend; falls back to SDL if unavailable and still uses the SDL window/HUD for input.
+- Headless mode: set `HYDRA_BACKEND=HEADLESS` to force the dummy SDL driver (no window/display server needed). Combine with `FRAME_DUMP=frame.ppm AUTO_EXIT=1` for CI-friendly frame dumps; files are raw binary PPMs (P6).
 
 ### Windows / Visual Studio (libhydra and tools)
 
 For contributor notes and a more detailed development workflow, see `CONTRIBUTING.md`.
 
 This repo ships a minimal CMake build for host-side components (libhydra and optional POSIX tools).
+
+Open work items live in `docs/todo_master.md` (shared tracker). Please skim it before filing issues or PRs so we stay aligned.
 
 ```
 cmake --preset windows-msvc
@@ -82,6 +86,11 @@ cmake --build build/linux
 ```
 
 The cocotb/Verilator/SDL sim flow remains Makefile-driven; the CMake path is for host-side libs/tools only.
+CI coverage (main): sim build/frame test, cocotb smoke (when tools present), and host CMake builds. Drivers are stubbed; hardware bring-up is manual for now.
+User-space tools: see `docs/user_tools.md` for `hydra_blit_smoketest`, `hydra_dma_blit_demo`, `hydra_drm_info`, and `hydra_irq_test` usage/exit codes.
+Udev rule example: `docs/udev_rules_example.md` shows how to set permissions for `/dev/hydra_pcie`.
+Cross-compile notes: see `docs/cross_compile.md` for aarch64 driver/libhydra examples.
+Systemd example: see `docs/systemd_service_example.md` for auto-loading the driver and setting devnode permissions.
 
 #### MSYS2/MinGW
 - Install SDL2/SDL2_ttf via pacman (e.g., `pacman -S mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-SDL2_ttf`).

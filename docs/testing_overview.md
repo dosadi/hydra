@@ -68,10 +68,10 @@ In CI, these are run best-effort via `scripts/rtl_ci_wrapper.sh` and logged to `
 ### Headless / batch frame dumps
 
 - Single frame: `FRAME_DUMP=frame.ppm AUTO_EXIT=1 ./sim_voxel` (480x360 PPM ≈ 520 KiB).
-- Multiple frames: `for i in $(seq 1 5); do FRAME_DUMP=frame_$i.ppm AUTO_EXIT=1 ./sim_voxel; done`
-- If a display server is unavailable (CI), stick to the SDL backend (`HYDRA_BACKEND=SDL`) and use `AUTO_EXIT=1`; a full headless backend toggle is tracked in `docs/todo_master.md`.
+- Multiple frames: `HYDRA_FRAME_BASE=frame HYDRA_MAX_FRAME_DUMPS=10 FRAME_DUMP=ignored AUTO_EXIT=1 HYDRA_BACKEND=HEADLESS ./sim_voxel`
+- Headless backend: set `HYDRA_BACKEND=HEADLESS` to force SDL's dummy driver (no display server needed). Pairs well with `AUTO_EXIT=1` for CI.
 - Numbered dumps: set `HYDRA_FRAME_BASE=frame` and `HYDRA_MAX_FRAME_DUMPS=N` to emit `frame_0.ppm...frame_(N-1).ppm`.
-- Other useful envs: `HYDRA_CLEAR_COLOR=r,g,b` to init the framebuffer; `HYDRA_CAM_POS=x,y,z` / `HYDRA_CAM_ANG=yaw,pitch` for initial pose; `HYDRA_MOVE_SPEED`, `HYDRA_MOVE_SPEED_FAST`, `HYDRA_TURN_SPEED_KEYS`, `HYDRA_MOUSE_SENS`, `HYDRA_INVERT_Y`, `HYDRA_MOUSE_CAPTURE` for movement feel; `HYDRA_FONT` / `HYDRA_FONT_SCALE` for HUD font; `HYDRA_FPS_TARGET` to pace frames.
+- Other useful envs: `HYDRA_CLEAR_COLOR=r,g,b` to init the framebuffer; `HYDRA_CAM_POS=x,y,z` / `HYDRA_CAM_ANG=yaw,pitch` for initial pose; `HYDRA_MOVE_SPEED`, `HYDRA_MOVE_SPEED_FAST`, `HYDRA_TURN_SPEED_KEYS`, `HYDRA_MOUSE_SENS`, `HYDRA_INVERT_Y`, `HYDRA_MOUSE_CAPTURE` for movement feel; `HYDRA_FONT` / `HYDRA_FONT_SCALE` for HUD font; `HYDRA_VSYNC` to toggle vsync; `HYDRA_FPS_TARGET` to pace frames (if implemented in your build).
 
 ## 3. SDK + Linux driver loop
 
@@ -131,3 +131,11 @@ This script:
 - Optionally runs the QEMU PCI stub smoke (if configured).
 
 Artifacts from CI runs (frame images, frame diff, SDK build log, RTL logs, QEMU console) are collected under `artifacts/` and uploaded when CI fails, to help debug regressions.
+
+## Filing good bug reports (what to include)
+
+- Command used and commit hash (or describe local changes).
+- Logs: `LOG_FRAMES=1` / `LOG_KEYS=1` output if relevant; `HYDRA_BACKEND`, `HYDRA_VSYNC`, `HYDRA_FRAME_BASE` settings; note if running headless (`HYDRA_BACKEND=HEADLESS`).
+- Frame dumps: attach `FRAME_DUMP` PPMs (or numbered `HYDRA_FRAME_BASE` sequence) for visual issues.
+- Env: tool versions (`make env-probe`), OS/display server, SDL backend hints.
+- For driver issues: INT_STATUS/INT_MASK values, DMA/BLIT params, and user tool outputs (`hydra_blit_smoketest`, `hydra_dma_blit_demo`, `hydra_irq_test`).
