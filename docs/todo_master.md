@@ -117,12 +117,12 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add an option to zero pixel outputs when rst_n is asserted mid-frame to avoid partial garbage.
 
 ## Drivers / SDK / Tools
-- TODO: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
-- TODO: Add `.owner = THIS_MODULE` to `hydra_misc_fops` in `drivers/linux/hydra_pcie_drv.c` to block unload while open.
-- TODO: Bounds-check `HYDRA_IOCTL_DMA` (`src+len`/`dst+len`) in `drivers/linux/hydra_pcie_drv.c` to prevent MMIO wrap.
-- TODO: Mark BAR mmaps with `VM_IO|VM_DONTDUMP|VM_DONTEXPAND` in `drivers/linux/hydra_pcie_drv.c`.
+- DONE: Align `drivers/linux/hydra_pcie_drv.c` license tag with the BSD-3-Clause SPDX header (currently `MODULE_LICENSE("GPL")`).
+- DONE: Add `.owner = THIS_MODULE` to `hydra_misc_fops` in `drivers/linux/hydra_pcie_drv.c` to block unload while open.
+- DONE: Bounds-check `HYDRA_IOCTL_DMA` (`src+len`/`dst+len`) in `drivers/linux/hydra_pcie_drv.c` to prevent MMIO wrap.
+- DONE: Mark BAR mmaps with `VM_IO|VM_DONTDUMP|VM_DONTEXPAND` in `drivers/linux/hydra_pcie_drv.c`.
 - TODO: Strengthen parameter/error guards in `drivers/libhydra/hydra.c` (null/closed handles, ioctl failures) and provide an `HYDRA_HANDLE_INIT` helper.
-- TODO: Switch `scripts/hydra_blit_smoketest.c` to shared UAPI headers instead of duplicating structs.
+- DONE: Switch `scripts/hydra_blit_smoketest.c` to shared UAPI headers instead of duplicating structs.
 - TODO: Flesh out the FreeBSD stub (`drivers/bsd/hydra_pci_stub.c`) to mirror the Linux ioctl map and BAR1 exposure instead of placeholder comments.
 - TODO: Make `scripts/hydra_drm_info.c` fail hard (non-zero) when DRM ioctls fail and print clearer error context.
 - TODO: Add a small libhydra sample that exercises camera/flags/selection APIs so new users can sanity-check BAR0 writes.
