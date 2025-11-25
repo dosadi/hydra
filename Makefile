@@ -1,6 +1,6 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint docs-only diff-summary fmt package lint verilator-check files todo-unique bench spellcheck license-check pixel-test dma-negative cam-reset mmap-smoke cam-flags-demo
+.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint docs-only diff-summary fmt package lint verilator-check files todo-unique bench spellcheck license-check pixel-test dma-negative cam-reset mmap-smoke cam-flags-demo bar1-hexdump backend-probe
 
 all: sim
 
@@ -35,7 +35,9 @@ help:
 	@echo "  make dma-negative  - Build/run negative DMA ioctl test (expects driver node)"
 	@echo "  make cam-reset     - Reset camera/flags/selection via libhydra (uses /dev/hydra_pcie)"
 	@echo "  make mmap-smoke    - Map BAR0 and dump ID/REV/STATUS (skips if missing)"
+	@echo "  make bar1-hexdump  - Map BAR1 and hexdump a small range (skips if missing)"
 	@echo "  make cam-flags-demo- Sample: set camera/flags/selection via libhydra"
+	@echo "  make backend-probe - Probe SDL backends (best effort; skips if SDL missing)"
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
 	@echo ""
@@ -195,6 +197,13 @@ mmap-smoke:
 cam-flags-demo:
 	@cc -Wall -Wextra -O2 -I drivers/linux/uapi -I drivers/libhydra -o scripts/hydra_cam_flags_demo scripts/hydra_cam_flags_demo.c drivers/libhydra/hydra.c
 	@./scripts/hydra_cam_flags_demo || true
+
+bar1-hexdump:
+	@cc -Wall -Wextra -O2 -I drivers/linux/uapi -o scripts/hydra_bar1_hexdump scripts/hydra_bar1_hexdump.c
+	@./scripts/hydra_bar1_hexdump || true
+
+backend-probe:
+	@./scripts/check_backends.sh
 clean:
 	@$(MAKE) -C sim clean || true
 	@rm -f drivers/libhydra/libhydra.a drivers/libhydra/*.o

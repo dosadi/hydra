@@ -32,7 +32,7 @@
 - TODO: Expose DMA configuration (alignment requirements, BAR sizes) in README/driver docs for users.
 - TODO: Add a driver module param to disable DMA entirely (fall back to stubbed behavior) for debugging.
 - TODO: Add CI to run DMA negative tests (wrap/misaligned) best-effort and report results.
-- TODO: Provide a BAR1 hexdump tool (userspace) for sanity-checking mapped memory contents.
+- DONE: Provide a BAR1 hexdump tool (userspace) for sanity-checking mapped memory contents (`scripts/hydra_bar1_hexdump`, `make bar1-hexdump`).
 - TODO: Add a BAR1 window size check/assert in RTL benches to catch mismatches vs. driver expectations.
 - DONE: Add a driver ioctl/version struct size check to detect userspace/kernel mismatches early (`HYDRA_IOCTL_VERSION` + hydra_mmap_smoke guard).
 - TODO: Provide a minimal UAPI version query (no-op ioctl) for compatibility probing.

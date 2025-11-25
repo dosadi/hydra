@@ -9,6 +9,7 @@ Small helper binaries built from `scripts/` and `drivers/libhydra`. These are pr
 - `hydra_cam_reset` (C/libhydra): Resets camera, flags, and selection to defaults on `/dev/hydra_pcie` (argv override). Exits `0` on success, `77` if device missing, or `1` on error.
 - `hydra_mmap_smoke` (C/ioctl+mmap): Checks ABI/version/struct sizes via `HYDRA_IOCTL_VERSION`, maps BAR0, reads ID/REV/STATUS registers, prints them. Exits `0` on success, `77` if device missing, non-zero on ABI mismatch.
 - `hydra_cam_flags_demo` (C/libhydra): Sample that sets camera/flags/selection and reads INT_STATUS; exits `0` on success, `77` if device missing.
+- `hydra_bar1_hexdump` (C/ioctl+mmap): Maps BAR1 (if present) and hexdumps a small range (default 256 bytes, offset 0). Exits `0` on success, `77` if BAR1 absent/device missing.
 
 Build targets:
 - `make blit-smoketest` → `scripts/hydra_blit_smoketest`
@@ -16,5 +17,7 @@ Build targets:
 - `make cam-reset` → builds and runs `scripts/hydra_cam_reset` (requires driver node present)
 - `make mmap-smoke` → builds and runs `scripts/hydra_mmap_smoke`
 - `make cam-flags-demo` → builds and runs `scripts/hydra_cam_flags_demo`
+- `make bar1-hexdump` → builds and runs `scripts/hydra_bar1_hexdump`
+- `make backend-probe` → runs `scripts/check_backends.sh` (skips if SDL missing)
 
 Dependencies: Linux PCIe stub driver (`/dev/hydra_pcie`), libhydra for the lib-based tools, DRM headers/libs for `hydra_drm_info`.
