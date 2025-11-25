@@ -7,7 +7,7 @@ Small helper binaries built from `scripts/` and `drivers/libhydra`. These are pr
 - `hydra_drm_info` (C/DRM): Opens render node `/dev/dri/renderD128` by default, issues `DRM_IOCTL_HYDRA_INFO` and `DRM_IOCTL_HYDRA_CSROUT` for STATUS/INT_STATUS. Exit `0` on success; non-zero if ioctls fail.
 - `hydra_irq_test` (C/ioctl): Opens `/dev/hydra_pcie` (argv override), programs INT_MASK (argv `mask=`), clears INT_STATUS, triggers IRQ_TEST, prints INT_STATUS before/after, clears it, exits `0` on success or `1` on failure.
 - `hydra_cam_reset` (C/libhydra): Resets camera, flags, and selection to defaults on `/dev/hydra_pcie` (argv override). Exits `0` on success, `77` if device missing, or `1` on error.
-- `hydra_mmap_smoke` (C/ioctl+mmap): Maps BAR0, reads ID/REV/STATUS registers, prints them. Exits `0` on success, `77` if device missing.
+- `hydra_mmap_smoke` (C/ioctl+mmap): Checks ABI/version/struct sizes via `HYDRA_IOCTL_VERSION`, maps BAR0, reads ID/REV/STATUS registers, prints them. Exits `0` on success, `77` if device missing, non-zero on ABI mismatch.
 - `hydra_cam_flags_demo` (C/libhydra): Sample that sets camera/flags/selection and reads INT_STATUS; exits `0` on success, `77` if device missing.
 
 Build targets:

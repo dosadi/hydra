@@ -34,7 +34,7 @@
 - TODO: Add CI to run DMA negative tests (wrap/misaligned) best-effort and report results.
 - TODO: Provide a BAR1 hexdump tool (userspace) for sanity-checking mapped memory contents.
 - TODO: Add a BAR1 window size check/assert in RTL benches to catch mismatches vs. driver expectations.
-- TODO: Add a driver ioctl/version struct size check to detect userspace/kernel mismatches early.
+- DONE: Add a driver ioctl/version struct size check to detect userspace/kernel mismatches early (`HYDRA_IOCTL_VERSION` + hydra_mmap_smoke guard).
 - TODO: Provide a minimal UAPI version query (no-op ioctl) for compatibility probing.
 - TODO: Add a kselftest that toggles INT_MASK bits and counts interrupts for DMA_DONE vs. BLIT_DONE.
 - TODO: Capture DMA_ERR propagation (stub + driver) and assert it clears correctly after RW1C.

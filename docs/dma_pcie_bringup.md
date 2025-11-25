@@ -14,6 +14,7 @@ Quick steps to validate BARs, DMA, and interrupts on new platforms.
 - Run `hydra_irq_test` to confirm INT_STATUS clears and IRQ_TEST pulses.
 - Run `hydra_mmap_smoke` to map BAR0/BAR1 and read ID/version registers.
 - Run `hydra_dma_negative` to verify misaligned/wrap DMA is rejected.
+  - `hydra_mmap_smoke` now fails fast on ABI/struct-size mismatches via `HYDRA_IOCTL_VERSION`.
 
 4) DMA functional smoke
 - Use `hydra_dma_blit_demo` (or upcoming kselftest) with small transfers; expect DMA_DONE and no DMA_ERR.

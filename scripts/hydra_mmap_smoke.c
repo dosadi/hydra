@@ -28,6 +28,30 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    struct hydra_version ver = {0};
+    if (ioctl(fd, HYDRA_IOCTL_VERSION, &ver) != 0) {
+        perror("HYDRA_IOCTL_VERSION");
+        close(fd);
+        return 1;
+    }
+
+    if (ver.abi_major != HYDRA_ABI_MAJOR) {
+        fprintf(stderr, "[hydra_mmap_smoke] ABI mismatch: kernel %u.%u, user %u.%u\n",
+                ver.abi_major, ver.abi_minor, HYDRA_ABI_MAJOR, HYDRA_ABI_MINOR);
+        close(fd);
+        return 1;
+    }
+
+    if (ver.sizeof_info != sizeof(struct hydra_info) ||
+        ver.sizeof_dma_req != sizeof(struct hydra_dma_req) ||
+        ver.sizeof_reg_rw  != sizeof(struct hydra_reg_rw)) {
+        fprintf(stderr, "[hydra_mmap_smoke] struct size mismatch: kernel info=%u dma=%u reg_rw=%u, user info=%zu dma=%zu reg_rw=%zu\n",
+                ver.sizeof_info, ver.sizeof_dma_req, ver.sizeof_reg_rw,
+                sizeof(struct hydra_info), sizeof(struct hydra_dma_req), sizeof(struct hydra_reg_rw));
+        close(fd);
+        return 1;
+    }
+
     size_t map_len = (size_t)info.bar0_len;
     if (map_len == 0 || map_len > HYDRA_BAR0_SIZE)
         map_len = HYDRA_BAR0_SIZE;

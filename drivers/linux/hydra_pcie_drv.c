@@ -164,6 +164,7 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     struct hydra_reg_rw reg;
     struct hydra_info info;
     struct hydra_dma_req dma;
+    struct hydra_version ver;
 
     if (!hdev->bar0)
         return -ENODEV;
@@ -231,6 +232,15 @@ static long hydra_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
                 udelay(10);
             }
         }
+        return 0;
+    case HYDRA_IOCTL_VERSION:
+        ver.abi_major      = HYDRA_ABI_MAJOR;
+        ver.abi_minor      = HYDRA_ABI_MINOR;
+        ver.sizeof_info    = sizeof(struct hydra_info);
+        ver.sizeof_dma_req = sizeof(struct hydra_dma_req);
+        ver.sizeof_reg_rw  = sizeof(struct hydra_reg_rw);
+        if (copy_to_user((void __user *)arg, &ver, sizeof(ver)))
+            return -EFAULT;
         return 0;
     default:
         return -ENOTTY;

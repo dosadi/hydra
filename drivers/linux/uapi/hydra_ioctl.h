@@ -5,16 +5,27 @@
 #include <linux/types.h>
 
 #define HYDRA_IOCTL_MAGIC 'h'
+#define HYDRA_ABI_MAJOR 1
+#define HYDRA_ABI_MINOR 0
 
 struct hydra_reg_rw {
 	__u32 offset;
 	__u32 value;
 };
 
+struct hydra_version {
+	__u32 abi_major;
+	__u32 abi_minor;
+	__u32 sizeof_info;
+	__u32 sizeof_dma_req;
+	__u32 sizeof_reg_rw;
+};
+
 #define HYDRA_IOCTL_INFO _IOR(HYDRA_IOCTL_MAGIC, 0x00, struct hydra_info)
 #define HYDRA_IOCTL_RD32 _IOWR(HYDRA_IOCTL_MAGIC, 0x01, struct hydra_reg_rw)
 #define HYDRA_IOCTL_WR32 _IOW (HYDRA_IOCTL_MAGIC, 0x02, struct hydra_reg_rw)
 #define HYDRA_IOCTL_DMA  _IOW (HYDRA_IOCTL_MAGIC, 0x03, struct hydra_dma_req)
+#define HYDRA_IOCTL_VERSION _IOR(HYDRA_IOCTL_MAGIC, 0x04, struct hydra_version)
 
 struct hydra_info {
 	__u32 vendor;
