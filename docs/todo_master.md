@@ -34,7 +34,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add input-device detection log (mouse/keyboard/gamepad) at startup to aid repro of input bugs.
 - TODO: Add a latency/profiling overlay (ms/frame breakdown) toggled by a hotkey for perf debugging.
 - TODO: Add a toggle to freeze camera but keep rendering (to inspect static scenes) and another to pause rendering ticks.
-- TODO: Add a “noclip off” mode that keeps the camera inside the voxel bounds for guided demos.
+- DONE: Add a "noclip off" mode that keeps the camera inside the voxel bounds for guided demos (HYDRA_CAM_CLAMP provides this functionality).
 - DONE: Add a minimal unit test for `pixel96_to_argb` to guard the packing assumptions.
 - TODO: Add a “single-step frame” hotkey (advance one frame) for debugging frame_done and HUD rendering.
 - DONE: Add an FPS target env var (default 60) that controls frame pacing and is shown in HUD/logs (HYDRA_FPS_TARGET shown in HUD and startup summary).
@@ -64,8 +64,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds (T hotkey for theme toggle).
 - TODO: Add a "camera jitter" noise option to stress anti-aliasing/perf stability.
 - TODO: Add a HUD overlay to show current seed and config file path when loaded.
-- TODO: Add an env/hotkey to zero the framebuffer at frame start to guarantee deterministic background.
-- TODO: Add an env/hotkey to disable mouse capture entirely (keyboard-only navigation) for kiosk/headless setups.
+- DONE: Add an env/hotkey to zero the framebuffer at frame start to guarantee deterministic background (HYDRA_CLEAR_EACH_FRAME + HYDRA_CLEAR_COLOR).
+- DONE: Add an env/hotkey to disable mouse capture entirely (keyboard-only navigation) for kiosk/headless setups (HYDRA_MOUSE_CAPTURE=0).
 - TODO: Add a “cursor highlight” toggle to show the selected voxel with a bright outline for clarity in recordings.
 - TODO: Add a “telemetry off” mode to skip HUD drawing for maximal render throughput in benchmarks.
 - TODO: Add a “demo mode” that runs a scripted camera path and toggles flags for capture reels.
