@@ -1,0 +1,73 @@
+# Hydra Rendering Quality TODOs
+
+- TODO: Depth fog pass (distance-based alpha/attenuation) with tunable color/curve; expose env + HUD indicator.
+- TODO: Ambient occlusion approximation (screen-space or raystep heuristic) with strength/threshold knobs.
+- TODO: Wire pixel_reemissure sideband into framebuffer/HUD for debugging emissive contributions.
+- TODO: Tone mapping/gamma correction toggle to normalize brightness across displays/captures.
+- TODO: Highlight selected voxel with an outline/glow in the framebuffer (configurable color/intensity).
+- TODO: Add an on-screen overlay for keybinds/render toggles (demo-friendly).
+- TODO: Add per-channel saturation/contrast sliders (env/hotkey) for quick color grading.
+- TODO: Implement a “safe defaults” preset (reduced speed/sensitivity, VSYNC on, fog mild) for recordings.
+- TODO: Expose render timing overlay (ms/frame breakdown: raycast, HUD, memcpy) to spot bottlenecks.
+- TODO: Add a camera jitter/noise option to stress AA/perf stability and measure flicker.
+- TODO: Add a seed-controlled procedural lighting variant (warm/cool mixes) for A/B visual comparisons.
+- TODO: Support screenshot/export with optional tonemap/LUT baked in (PNG output alongside PPM).
+- TODO: Add simple bloom/bright-pass filter to emphasize emissive elements (toggle + intensity).
+- TODO: Provide a HUD toggle to visualize normal vectors/depth as debug buffers.
+- TODO: Add a “freeze render” mode to inspect a single frame while moving the HUD overlays.
+- TODO: Make fog/AA settings hot-reloadable via env/HUD to speed iteration during demos.
+- TODO: Add a colorblind-friendly palette preset (reduce red/green ambiguity).
+- TODO: Integrate per-voxel material presets (metal/wood/stone) with quick cycle hotkeys for demos.
+- TODO: Add a “cinematic” camera path player (loads simple JSON of waypoints/durations) for capture reels.
+- TODO: Expose ray step/max-step parameters at runtime (hotkey/env) for perf/quality sweeps.
+- TODO: Add per-material roughness/specular sliders to tweak shading response in demo scenes.
+- TODO: Implement soft shadows or shadow blur to reduce hard edges from emissive ceiling.
+- TODO: Add a “noise dither” pass to hide banding in fog/sky gradients.
+- TODO: Support adjustable render resolution scaling (internal res < UI res) for perf/quality tradeoffs.
+- TODO: Add HUD readouts for average ray depth and occlusion hits to guide tuning.
+- TODO: Implement a simple temporal accumulation option to smooth noisy frames (with reset on motion).
+- TODO: Add a per-material emissive falloff curve to control glow decay vs. distance.
+- TODO: Provide LUT-based color grading hooks (loadable from file) for quick style swaps.
+- TODO: Add a “photographic” preset (soft contrast, mild bloom, warm fog) and a “flat” preset for debugging.
+- TODO: Implement screen-space reflections (SSR-lite) using existing buffers for shiny surfaces.
+- TODO: Add a grid/axis overlay toggle to improve orientation for captures.
+- TODO: Add a per-channel histogram overlay to monitor exposure and clipping during captures.
+- TODO: Support motion blur (camera velocity-based) for cinematic shots.
+- TODO: Add anti-aliasing options (FXAA-like) toggled via HUD/hotkey for edge smoothing.
+- TODO: Provide a debug heatmap for raystep count to spot performance hotspots.
+- TODO: Expose a “detail bias” slider to trade voxel detail vs. performance (LOD-style).
+- TODO: Implement depth-of-field (focus distance + aperture) for portrait/scene shots.
+- TODO: Add volumetric light shafts for emissive ceiling when fog is enabled.
+- TODO: Provide a “night mode” preset (cool palette, lower emissive, stronger fog) and “day mode” preset.
+- TODO: Add camera roll control (keyboard/env) for stylistic tilts in captures.
+- TODO: Support saving/loading render presets (JSON) to quickly switch quality modes.
+- TODO: Add a vignette effect with adjustable strength/radius for cinematic framing.
+- TODO: Implement per-material anisotropy flag (simplified) to change highlight shape.
+- TODO: Add a “wireframe overlay” mode to visualize voxel boundaries on top of shaded output.
+- TODO: Provide a light direction override (env/HUD) to rotate the emissive ceiling for demos.
+- TODO: Add per-voxel debug coloring for materials/emissive levels to spot composition issues.
+- TODO: Add a “probes” overlay to display sampled ambient light at key points in the scene.
+- TODO: Support LUT cycling via hotkey to quickly audition looks during recordings.
+- TODO: Add per-material metallic/roughness presets and a quick “randomize materials” demo button.
+- TODO: Implement SSAO-lite toggle using depth buffer for quick ambient occlusion approximation.
+- TODO: Provide a “mono”/grayscale mode for stylistic captures and debugging contrast.
+- TODO: Add per-eye/render stereo hooks (left/right) to experiment with 3D capture.
+- TODO: Implement a “trail”/afterimage effect for moving objects for stylized motion.
+- TODO: Add a HUD toggle to display framebuffer max/min luminance values per frame.
+- TODO: Provide a “snapshot compare” mode to A/B two frames with wipe/overlay.
+- TODO: Add per-axis color grading to separate horizontal/vertical palette tweaks (experimental).
+- TODO: Add a lightweight film grain layer with adjustable intensity for stylized captures.
+- TODO: Implement a chromatic aberration effect (subtle) with hotkey toggle.
+- TODO: Add an “exposure lock” control to hold brightness across camera moves for consistent captures.
+- TODO: Provide a “focus peaking” overlay to highlight high-contrast edges in depth-of-field mode.
+- TODO: Add per-channel clamp controls to tame overbright emissive colors without crushing darks.
+- TODO: Add a HUD toggle to display current render preset name and key parameters (fog, AO, AA, bloom).
+- TODO: Implement a per-scene LUT cache to avoid reloading color grades on each toggle.
+- TODO: Add a “white balance” control (temp/tint) to quickly shift scene mood.
+- TODO: Support side-by-side split view (original vs. graded/bloom/AA) for quick comparisons.
+- TODO: Add a “motion trails” visualization for moving voxels (debugging motion paths).
+- TODO: Add a camera dolly/zoom control with easing curves for smoother capture moves.
+- TODO: Implement HDR histogram logging to file for render quality analysis across runs.
+- TODO: Provide a “despeckle” filter to remove isolated bright pixels from noisy frames.
+- TODO: Add an “edge sharpening” pass with adjustable strength to counteract resolution scaling blur.
+- TODO: Expose a “dynamic exposure” mode with user-set min/max EV and responsiveness.

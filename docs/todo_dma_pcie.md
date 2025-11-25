@@ -1,0 +1,41 @@
+# Hydra DMA / PCIe Path TODOs
+
+- TODO: Add bounds/stride assertions in RTL DMA path (src/dst+len within BAR window) beyond current stub checks.
+- TODO: Implement DMA busy/err behavior in RTL stubs to mirror driver expectations (set/clear on violations).
+- TODO: Add an RTL cover/assert that INT_STATUS.DMA_DONE only sets after DMA completes and clears on RW1C.
+- TODO: Provide BAR1/BAR0 address window parameters in RTL for synthesis-time sizing and driver alignment.
+- TODO: Add AXI burst support or stubbed burst handling in the DMA engine (currently single-beat).
+- TODO: Add backpressure handling on AXI write channel in DMA path (stall/queue when awready/wready deassert).
+- TODO: Extend cocotb/RTL benches with negative DMA cases (wrap, misaligned, overlap) to validate guards.
+- TODO: Add MSI pulse coverpoints for DMA_DONE/ERR bits independent of frame_done.
+- TODO: Implement a simple readback/checker in benches to verify DMA copied data correctly under wait-states.
+- TODO: Add a module param to force-disable MSI (use legacy INT) for platforms with broken MSI (mirror driver param).
+- TODO: Provide a libhydra DMA test helper that exercises aligned/unaligned/overflow cases and checks driver return codes.
+- TODO: Add driver debugfs entry to dump last DMA request/offsets/status for debugging wrap issues.
+- TODO: Integrate a BAR1 mmap smoke test into CI (map/read/write small ranges) to catch regressions.
+- TODO: Add AXI-lite SVAs around DMA CSRs (alignment, busy gating, RW1C) to flag protocol violations.
+- TODO: Add a driver module param to force legacy INTx even when MSI is available (for broken platforms).
+- TODO: Expose DMA statistics (bytes moved, errors) via debugfs for postmortem analysis.
+- TODO: Add a kselftest script to exercise DMA IOCTLs (good/bad offsets) and verify return codes.
+- TODO: Implement DMA timeout handling in driver (reset/err) and add a regression test.
+- TODO: Add BAR0/BAR1 size reporting via driver ioctl or debugfs for bring-up sanity.
+- TODO: Implement MSI-X support with separate vectors for frame/DMA/blit if hardware permits.
+- TODO: Add alignment checks and helpful -EINVAL logging in driver for misaligned DMA SRC/DST/LEN.
+- TODO: Add a driver tracepoint for DMA start/done events (trace_printk or tracepoints) for lightweight tracing.
+- TODO: Provide a userspace perf microbenchmark (ioctl loop) to measure DMA latency/throughput.
+- TODO: Add AXI backpressure stress test bench (inject waitstates) to ensure DMA stubs behave under stalls.
+- TODO: Expose DMA configuration (alignment requirements, BAR sizes) in README/driver docs for users.
+- TODO: Add a driver module param to disable DMA entirely (fall back to stubbed behavior) for debugging.
+- TODO: Add CI to run DMA negative tests (wrap/misaligned) best-effort and report results.
+- TODO: Provide a BAR1 hexdump tool (userspace) for sanity-checking mapped memory contents.
+- TODO: Add a BAR1 window size check/assert in RTL benches to catch mismatches vs. driver expectations.
+- TODO: Add a driver ioctl/version struct size check to detect userspace/kernel mismatches early.
+- TODO: Provide a minimal UAPI version query (no-op ioctl) for compatibility probing.
+- TODO: Add a kselftest that toggles INT_MASK bits and counts interrupts for DMA_DONE vs. BLIT_DONE.
+- TODO: Capture DMA_ERR propagation (stub + driver) and assert it clears correctly after RW1C.
+- TODO: Add build docs for required kernel headers/config options to enable PCIe/MSI paths.
+- TODO: Implement a debugfs toggle for verbose DMA logging (addresses/len/status) at runtime.
+- TODO: Add a “DMA dry-run” ioctl flag (no write) to validate parameters without executing.
+- TODO: Provide a PCI capability dump in driver probe logs (MSI/MSI-X/PCIe caps) for bring-up.
+- TODO: Add a CI artifact to capture dmesg snippets on DMA test failures for quicker triage.
+- TODO: Integrate DMA blit/IRQ tests into a single userspace harness for consolidated reporting.
