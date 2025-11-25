@@ -20,6 +20,8 @@ scripts/hydra_dma_blit_demo
 sim/tests/rtl/*.vvp
 *.vvp
 sim/test_*.ppm
+sim/screenshot_*.ppm
+sim/tests/test_pixel96
 third_party/*
 !third_party/README.md
 !third_party/litepcie
