@@ -1,23 +1,4 @@
-# Verible SystemVerilog formatter configuration
-# Run: verible-verilog-format --inplace rtl/*.sv
-
-# Use 4-space indentation (project standard)
---indentation_spaces=4
-
-# Preserve original column alignment where possible
---try_wrap_long_lines=true
---column_limit=100
-
-# Port and parameter formatting
---port_declarations_alignment=align
---named_parameter_alignment=align
---named_port_alignment=align
-
-# Assignment alignment
---assignment_statement_alignment=align
-
-# Case statement formatting
---case_items_alignment=align
-
-# Preserve blank lines between sections
---preserve_vertical_space=true
+based_on_style: google
+indentation_spaces: 4
+column_limit: 100
+wrap_spaces: 4

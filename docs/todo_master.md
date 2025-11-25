@@ -7,10 +7,10 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Phase 1 visual quality improvements (commit 2e7d710) - desaturated scene colors, added procedural floor texture. See `docs/phase1_implementation_notes.md`.
 - TODO: Phase 2 visual quality - add depth fog and ambient occlusion approximation (depends on Phase 1 validation).
 - TODO: Phase 3 visual quality - wire up `pixel_reemissure` sidecar to framebuffer output and viewer.
-- TODO: Guard `FRAME_DUMP` handling in `sim/live_sdl_main.cpp` so only the first frame (or a bounded count) writes a PPM to avoid runaway disk writes.
-- TODO: Clear the framebuffer each frame in `sim/live_sdl_main.cpp` (or when fewer than NPIX pixels are produced) to prevent stale pixels if the RTL stalls early.
-- TODO: Add env/CLI overrides for initial camera pos/yaw/pitch, move speed, and mouse sensitivity in `sim/live_sdl_main.cpp` for scriptable demos/regressions.
-- TODO: Allow font path override (env) in `sim/live_sdl_main.cpp` to avoid silent HUD loss when DejaVuSans is absent.
+- DONE: Guard `FRAME_DUMP` handling in `sim/live_sdl_main.cpp` so only the first frame (or a bounded count) writes a PPM to avoid runaway disk writes (HYDRA_MAX_FRAME_DUMPS, default=1).
+- DONE: Clear the framebuffer each frame in `sim/live_sdl_main.cpp` (or when fewer than NPIX pixels are produced) to prevent stale pixels if the RTL stalls early (HYDRA_CLEAR_EACH_FRAME, HYDRA_CLEAR_COLOR).
+- DONE: Add env/CLI overrides for initial camera pos/yaw/pitch, move speed, and mouse sensitivity in `sim/live_sdl_main.cpp` for scriptable demos/regressions (HYDRA_CAM_POS, HYDRA_CAM_ANG, HYDRA_MOVE_SPEED, HYDRA_MOUSE_SENS).
+- DONE: Allow font path override (env) in `sim/live_sdl_main.cpp` to avoid silent HUD loss when DejaVuSans is absent (HYDRA_FONT).
 - TODO: Expose a debug/HUD toggle to visualize the 96-bit pixel sidebands (`pixel_word0/2`) instead of dropping them in `pixel96_to_argb`.
 - TODO: Relax/case-fold `HYDRA_BACKEND` parsing and prefer compiled GPU backends ahead of SDL in `sim/platform/backend_selector.cpp`.
 - TODO: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don’t need a display server.
@@ -45,15 +45,15 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add keybind to dump current camera/flag/selection state to stdout for copy-paste into tests/docs.
 - TODO: Add optional gamma correction or tone-mapping toggle to make visuals more consistent across displays.
 - TODO: Add a “safe defaults” preset (lower speed/sensitivity, noclip-off) for new users via env/hotkey.
-- TODO: Add an invert-Y mouse option (env/hotkey) and persist it in the config preload.
-- TODO: Add HUD font size scaling knob (env) to improve readability on high-DPI displays.
+- DONE: Add an invert-Y mouse option (env/hotkey) and persist it in the config preload (HYDRA_INVERT_Y).
+- DONE: Add HUD font size scaling knob (env) to improve readability on high-DPI displays (HYDRA_FONT_SCALE).
 - TODO: Add a batch/headless mode to render N frames to numbered files for CI comparisons.
 - TODO: Add command-line flags (in addition to env) for backend, seed, camera, speeds, to ease scripted runs.
 - TODO: Add an on-screen indicator when mouse capture is off, with a hint to toggle.
 - TODO: Add an env/hotkey to choose mouse smoothing vs. raw input (helpful for touchpads).
 - TODO: Add a HUD toggle to briefly display keybinds on startup and when pressed.
-- TODO: Add an env to auto-exit after N frames (with optional rotating FRAME_DUMP names) for CI captures.
-- TODO: Add an option to persist camera/selection/flags to a small config file and reload on startup.
+- DONE: Add an env to auto-exit after N frames (with optional rotating FRAME_DUMP names) for CI captures (HYDRA_MAX_FRAME_DUMPS + HYDRA_FRAME_BASE, AUTO_EXIT).
+- DONE: Add an option to persist camera/selection/flags to a small config file and reload on startup (HYDRA_AUTOSAVE_CFG).
 - TODO: Add a HUD toggle to flash when selection write fails (e.g., cursor miss) to aid debugging.
 - TODO: Add a “safe capture” mode that disables input and keeps camera fixed while dumping frames.
 - TODO: Add a hotkey/env to toggle cursor ray visualization (line to hit point) for debugging aiming/selection.
@@ -61,8 +61,8 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a seed/randomize hotkey to quickly flip worlds without restarting the sim.
 - TODO: Add a “demo mode” that runs a scripted camera path and toggles flags for capture reels.
 - TODO: Add per-axis inversion/sensitivity sliders (env/CLI) for finer camera tuning.
-- TODO: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds.
-- TODO: Add a “camera jitter” noise option to stress anti-aliasing/perf stability.
+- DONE: Add a HUD color theme toggle (light/dark) to improve readability on different backgrounds (T hotkey for theme toggle).
+- TODO: Add a "camera jitter" noise option to stress anti-aliasing/perf stability.
 - TODO: Add a HUD overlay to show current seed and config file path when loaded.
 - TODO: Add an env/hotkey to zero the framebuffer at frame start to guarantee deterministic background.
 - TODO: Add an env/hotkey to disable mouse capture entirely (keyboard-only navigation) for kiosk/headless setups.
@@ -170,7 +170,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add CI smoke that runs libhydra samples under strace to confirm IOCTL sequences look sane.
 - TODO: Add a tiny tool to toggle INT_MASK bits and poll INT_STATUS to validate IRQ masking from userspace.
 - TODO: Add a FreeBSD Makefile target to build/install the stub (mirroring Linux make help).
-- TODO: Add a small README for user tools describing expected outputs and exit codes.
+- DONE: Add a small README for user tools describing expected outputs and exit codes.
 
 ## Build / CI / Tooling
 - DONE: Fix `SDL_LIBS` tokenization in `sim/Makefile` (single LDFLAGS string, SDL2_ttf fallback when `sdl2-config` is absent).
@@ -187,7 +187,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add formatting checks (clang-format for C/C++, verible/svformat for SV) to keep diffs clean.
 - DONE: Provide a minimal `requirements.txt` for Python scripts used in CI (`check_frame.py`, etc.) to document versions.
 - DONE: Add a top-level `make docs-lint` that scans docs for stale file references and missing anchors.
-- TODO: Add a pre-commit config (hooks for format/lint) to keep local changes aligned with CI expectations.
+- DONE: Add a pre-commit config (hooks for format/lint) to keep local changes aligned with CI expectations (.pre-commit-config.yaml).
 - TODO: Add a CI job that runs `make test_frame` with HYDRA_BACKEND=SDL and HYDRA_BACKEND=GL (when available) to catch backend regressions.
 - TODO: Add a nightly CI job to run cocotb smoke (`sim/tests/cocotb_hydra`) when tools are present, but mark non-blocking.
 - TODO: Add a CI artifact upload for failing frame dumps (PPM) to speed visual diffing.
@@ -202,19 +202,19 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
 - DONE: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
 - DONE: Add an automated spellcheck/lint for docs to keep wording clean.
-- TODO: Add a CI badge/status note in README that mentions which jobs cover sim/host/driver to set expectations.
+- DONE: Add a CI badge/status note in README that mentions which jobs cover sim/host/driver to set expectations.
 - DONE: Add a small Python-based sanity check that verifies required files listed in README/docs actually exist.
 - TODO: Add a `make coverage` (if feasible) to gather line coverage from C++ sim tests, documented as experimental.
 - DONE: Add a `make bench` target for any performance microbenchmarks or frame timing scripts.
 - TODO: Add a CI matrix that runs `make test_frame` with GL/Vulkan off/on (when supported) behind a feature flag.
-- TODO: Add a quick “lint-docs-links” script to fail if README references missing files.
+- DONE: Add a quick “lint-docs-links” script to fail if README references missing files.
 - TODO: Add a CI job to build the Linux driver with `W=1` (sparse/extra warnings) to catch kernel API drift early.
 - DONE: Add a small script to check for trailing whitespace/tab damage in SV/C++ sources (pre-commit style).
-- TODO: Add a fast “docs-only” CI path that runs lint/spellcheck when only docs change.
+- DONE: Add a fast “docs-only” CI path that runs lint/spellcheck when only docs change.
 - TODO: Add a container/devcontainer or Dockerfile for a known-good toolchain (Verilator, SDL2, etc.).
 - DONE: Add a `make package` target to bundle sim binaries/tests/docs into an artifact tarball.
 - TODO: Add a minimal “host-only” CI job that just builds CMake preset without RTL to guard host tools.
-- TODO: Add a .clang-tidy/.verible config checked into the repo and referenced by lint targets.
+- DONE: Add a .clang-tidy/.verible config checked into the repo and referenced by lint targets (.clang-tidy, .verible-format).
 - DONE: Add a script to ensure `docs/todo_master.md` stays sorted/unique (no duplicate TODOs).
 - TODO: Add a CI check that running `make clean` leaves the tree tidy (no staged changes).
 - TODO: Add CI to run Python linters (ruff/black-check) on scripts/ to catch style issues early.
@@ -225,7 +225,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a helper script to bump version numbers across README/CMake/RELEASE_NOTES consistently.
 - TODO: Add a CI job to run `scripts/hydra_dev_loop.sh` in best-effort mode to mirror developer flow.
 - TODO: Add a quick gate to warn when generated files are manually edited (if detectable).
-- TODO: Add a LICENSE header checker for new files.
+- DONE: Add a LICENSE header checker for new files (scripts/check_license_headers.py).
 
 ## Docs
 - TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
@@ -245,7 +245,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a driver bring-up checklist (Linux/FreeBSD) with expected dmesg/debugfs/sysctl outputs.
 - TODO: Add a short primer on interpreting HUD perf counters and mem utilization readings.
 - TODO: Add a short “troubleshooting sim build” section (missing SDL_ttf, Verilator version mismatches).
-- TODO: Add doc pointers in README to the new TODO tracker so contributors can pick items easily.
+- DONE: Add doc pointers in README to the new TODO tracker so contributors can pick items easily.
 - TODO: Add a doc snippet on using LOG_KEYS/LOG_FRAMES and expected sample logs for sanity.
 - TODO: Add notes about headless runs and FRAME_DUMP outputs (file size, format).
 - TODO: Add a short doc on SDL backends (Wayland/X11/GL/Vulkan) with build flags and runtime envs.

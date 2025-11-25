@@ -1,80 +1,48 @@
 #!/usr/bin/env python3
-"""Check that source files have appropriate license headers."""
+"""Check that source files contain a SPDX license header."""
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import Iterable
 
-# Expected SPDX identifier or license comment patterns
-EXPECTED_PATTERNS = [
-    re.compile(r"SPDX-License-Identifier:\s*BSD-3-Clause", re.IGNORECASE),
-    re.compile(r"BSD.*3.*Clause", re.IGNORECASE),
-    re.compile(r"Copyright.*Hydra", re.IGNORECASE),
-]
+LICENSE_TAG = "SPDX-License-Identifier: BSD-3-Clause"
 
-# File extensions to check
-EXTENSIONS = {".sv", ".svh", ".v", ".c", ".cpp", ".cc", ".h", ".hpp", ".py"}
-
-# Skip patterns
-SKIP_PATTERNS = [
-    "third_party",
-    "build",
-    "obj_dir",
-    ".git",
-    "out",
-    "sim/build",
-    ".venv",
-    "venv",
-    "__pycache__",
-]
+SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".sv", ".svh", ".v"}
+SKIP_DIRS = {"third_party", "build", "sim/obj_dir", "out", ".git"}
 
 
-def should_skip(path: Path) -> bool:
-    """Check if file should be skipped."""
-    path_str = str(path)
-    return any(skip in path_str for skip in SKIP_PATTERNS)
-
-
-def check_header(file_path: Path) -> bool:
-    """Check if file has expected license header in first 20 lines."""
-    try:
-        lines = file_path.read_text(encoding="utf-8", errors="ignore").splitlines()[:20]
-        text = "\n".join(lines)
-        return any(pattern.search(text) for pattern in EXPECTED_PATTERNS)
-    except Exception:
-        return True  # Skip files we can't read
-
-
-def find_source_files(root: Path) -> List[Path]:
-    """Find all source files to check."""
-    files = []
-    for ext in EXTENSIONS:
-        for path in root.rglob(f"*{ext}"):
-            if not should_skip(path):
-                files.append(path)
-    return files
+def iter_sources(root: Path) -> Iterable[Path]:
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix not in SUFFIXES:
+            continue
+        if any(part in SKIP_DIRS for part in path.parts):
+            continue
+        yield path
 
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
-    files = find_source_files(root)
-
-    missing: List[Tuple[Path, str]] = []
-    for file_path in files:
-        rel_path = file_path.relative_to(root)
-        if not check_header(file_path):
-            missing.append((rel_path, file_path.suffix))
+    missing = []
+    for src in iter_sources(root):
+        try:
+            with open(src, "r", encoding="utf-8", errors="ignore") as f:
+                head = f.read(512)
+        except OSError:
+            continue
+        if LICENSE_TAG not in head:
+            missing.append(src)
 
     if missing:
-        print(f"[license-check] {len(missing)} files missing license headers:")
-        for rel_path, ext in sorted(missing):
-            print(f"  - {rel_path}")
+        print("[license-check] Missing SPDX header in:")
+        for path in missing:
+            print(f"  - {path}")
         return 1
 
-    print(f"[license-check] OK: all {len(files)} source files have license headers.")
+    print("[license-check] OK: all files contain SPDX header.")
     return 0
 
 
