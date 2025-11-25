@@ -12,18 +12,18 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add env/CLI overrides for initial camera pos/yaw/pitch, move speed, and mouse sensitivity in `sim/live_sdl_main.cpp` for scriptable demos/regressions (HYDRA_CAM_POS, HYDRA_CAM_ANG, HYDRA_MOVE_SPEED, HYDRA_MOUSE_SENS).
 - DONE: Allow font path override (env) in `sim/live_sdl_main.cpp` to avoid silent HUD loss when DejaVuSans is absent (HYDRA_FONT).
 - TODO: Expose a debug/HUD toggle to visualize the 96-bit pixel sidebands (`pixel_word0/2`) instead of dropping them in `pixel96_to_argb`.
-- TODO: Relax/case-fold `HYDRA_BACKEND` parsing and prefer compiled GPU backends ahead of SDL in `sim/platform/backend_selector.cpp`.
-- TODO: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don’t need a display server.
+- DONE: Relax/case-fold `HYDRA_BACKEND` parsing and prefer compiled GPU backends ahead of SDL in `sim/platform/backend_selector.cpp` (uses strcasecmp for case-insensitive matching).
+- DONE: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don’t need a display server.
 - TODO: Surface an on-screen help overlay (keybind list) in the HUD, gated by a hotkey, to improve discoverability.
-- TODO: Clamp camera position to the voxel volume bounds (configurable) to avoid flying far outside the scene during demos.
+- DONE: Clamp camera position to the voxel volume bounds (configurable) to avoid flying far outside the scene during demos (HYDRA_CAM_CLAMP + HYDRA_CAM_BOUNDS).
 - TODO: Handle SDL window resizes by adjusting the logical size/texture and clearing the framebuffer to avoid stretched/hung frames.
-- TODO: Add a simple frame pacing cap (sleep when FPS >> target) to make automated captures deterministic.
+- DONE: Add a simple frame pacing cap (sleep when FPS >> target) to make automated captures deterministic (HYDRA_FPS_TARGET).
 - TODO: Add a small “record inputs to script” mode (log keys/mouse deltas with timestamps) and a “playback” mode for deterministic repros.
-- TODO: Emit a brief startup summary (backend, font path, env knobs in effect) to stderr to aid reproducibility in logs.
+- DONE: Emit a brief startup summary (backend, font path, env knobs in effect) to stderr to aid reproducibility in logs.
 - TODO: Offer a HUD toggle for memory/bandwidth counters exposed from RTL (mem_cycle/read/write) so perf data is visible without LOG_FRAMES spam.
-- TODO: Add a hotkey to reset camera/flags to defaults (and print the defaults) for quick repro setups.
-- TODO: Add a screenshot hotkey (PPM/PNG with timestamp to `sim/`) that works in headless mode too.
-- TODO: Add a VSYNC toggle (hotkey/env) and reflect it in the HUD/backend startup log.
+- DONE: Add a hotkey to reset camera/flags to defaults (and print the defaults) for quick repro setups (R key).
+- DONE: Add a screenshot hotkey (PPM/PNG with timestamp to `sim/`) that works in headless mode too (S key saves timestamped PPM).
+- DONE: Add a VSYNC toggle (hotkey/env) and reflect it in the HUD/backend startup log.
 - TODO: Add a grid/axis overlay toggle to help orientation inside the voxel volume.
 - TODO: Add joystick/gamepad input support (fallback to SDL game controller mappings).
 - TODO: Add a HUD indicator when selection is active and editable keys (C/X/Z/B) are available, to reduce guesswork.
@@ -35,19 +35,19 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a latency/profiling overlay (ms/frame breakdown) toggled by a hotkey for perf debugging.
 - TODO: Add a toggle to freeze camera but keep rendering (to inspect static scenes) and another to pause rendering ticks.
 - TODO: Add a “noclip off” mode that keeps the camera inside the voxel bounds for guided demos.
-- TODO: Add a minimal unit test for `pixel96_to_argb` to guard the packing assumptions.
+- DONE: Add a minimal unit test for `pixel96_to_argb` to guard the packing assumptions.
 - TODO: Add a “single-step frame” hotkey (advance one frame) for debugging frame_done and HUD rendering.
 - TODO: Add an FPS target env var (default 60) that controls frame pacing and is shown in HUD/logs.
-- TODO: Add a hotkey to toggle HUD entirely (for clean screenshots) while keeping overlays like selection box optional.
+- DONE: Add a hotkey to toggle HUD entirely (for clean screenshots) while keeping overlays like selection box optional (H key).
 - TODO: Add a “reset world” hotkey/env to re-run the procedural generator and reload into BRAM without restarting sim.
 - TODO: Add a toggle to visualize selection bounding box/normal in 3D (e.g., wireframe highlight).
 - TODO: Add a debug mode that shows cam vectors (dir/plane) as on-screen arrows for math sanity checks.
-- TODO: Add keybind to dump current camera/flag/selection state to stdout for copy-paste into tests/docs.
+- DONE: Add keybind to dump current camera/flag/selection state to stdout for copy-paste into tests/docs (P key).
 - TODO: Add optional gamma correction or tone-mapping toggle to make visuals more consistent across displays.
 - TODO: Add a “safe defaults” preset (lower speed/sensitivity, noclip-off) for new users via env/hotkey.
 - DONE: Add an invert-Y mouse option (env/hotkey) and persist it in the config preload (HYDRA_INVERT_Y).
 - DONE: Add HUD font size scaling knob (env) to improve readability on high-DPI displays (HYDRA_FONT_SCALE).
-- TODO: Add a batch/headless mode to render N frames to numbered files for CI comparisons.
+- DONE: Add a batch/headless mode to render N frames to numbered files for CI comparisons (HYDRA_FRAME_BASE + HYDRA_MAX_FRAME_DUMPS).
 - TODO: Add command-line flags (in addition to env) for backend, seed, camera, speeds, to ease scripted runs.
 - TODO: Add an on-screen indicator when mouse capture is off, with a hint to toggle.
 - TODO: Add an env/hotkey to choose mouse smoothing vs. raw input (helpful for touchpads).
@@ -121,7 +121,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add `.owner = THIS_MODULE` to `hydra_misc_fops` in `drivers/linux/hydra_pcie_drv.c` to block unload while open.
 - DONE: Bounds-check `HYDRA_IOCTL_DMA` (`src+len`/`dst+len`) in `drivers/linux/hydra_pcie_drv.c` to prevent MMIO wrap.
 - DONE: Mark BAR mmaps with `VM_IO|VM_DONTDUMP|VM_DONTEXPAND` in `drivers/linux/hydra_pcie_drv.c`.
-- TODO: Strengthen parameter/error guards in `drivers/libhydra/hydra.c` (null/closed handles, ioctl failures) and provide an `HYDRA_HANDLE_INIT` helper.
+- DONE: Strengthen parameter/error guards in `drivers/libhydra/hydra.c` (null/closed handles, ioctl failures) and provide an `HYDRA_HANDLE_INIT` helper.
 - DONE: Switch `scripts/hydra_blit_smoketest.c` to shared UAPI headers instead of duplicating structs.
 - TODO: Flesh out the FreeBSD stub (`drivers/bsd/hydra_pci_stub.c`) to mirror the Linux ioctl map and BAR1 exposure instead of placeholder comments.
 - TODO: Make `scripts/hydra_drm_info.c` fail hard (non-zero) when DRM ioctls fail and print clearer error context.
@@ -228,10 +228,10 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a LICENSE header checker for new files (scripts/check_license_headers.py).
 
 ## Docs
-- TODO: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
+- DONE: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
 - TODO: Refresh IDs/rev/build in `docs/hydra_spec.md` to the current (0.0.5/next) values.
 - TODO: Update platform backend status (GL path renders) in README/docs to avoid “stubbed” confusion.
-- TODO: Document the backend selection/env vars and headless mode in README/test docs once implemented.
+- DONE: Document the backend selection/env vars and headless mode in README/test docs once implemented.
 - TODO: Add a short “known issues” section for 0.0.6 (e.g., stubbed DMA/AXI master, Vulkan backend stability) to set expectations.
 - TODO: Expand `docs/testing_overview.md` with example commands for negative tests (bad IOCTLs, headless frame dump).
 - TODO: Document keybindings and editing shortcuts in a dedicated sim controls doc to reduce friction for new testers.
@@ -247,7 +247,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a short “troubleshooting sim build” section (missing SDL_ttf, Verilator version mismatches).
 - DONE: Add doc pointers in README to the new TODO tracker so contributors can pick items easily.
 - TODO: Add a doc snippet on using LOG_KEYS/LOG_FRAMES and expected sample logs for sanity.
-- TODO: Add notes about headless runs and FRAME_DUMP outputs (file size, format).
+- DONE: Add notes about headless runs and FRAME_DUMP outputs (file size, format).
 - TODO: Add a short doc on SDL backends (Wayland/X11/GL/Vulkan) with build flags and runtime envs.
 - TODO: Add a brief note on expected memory footprint/frame times in sim for baseline hardware.
 - TODO: Add a small “perf tuning” doc for sim (env vars, pacing, disable HUD) for capturing reproducible metrics.

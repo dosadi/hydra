@@ -21,11 +21,13 @@
 #include <cstdlib>
 #include <cctype>
 #include <strings.h>
+#include <unistd.h>
 
 static const int   SCREEN_WIDTH  = 480;
 static const int   SCREEN_HEIGHT = 360;
 static const int   HUD_HEIGHT    = 80;
 static const float FX            = 256.0f;  // fixed-point scale
+static bool        g_vsync       = true;
 
 vluint64_t main_time = 0;
 double sc_time_stamp() { return main_time; }
@@ -44,6 +46,13 @@ static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
 
 static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
     return (uint32_t(x) << 12) | (uint32_t(y) << 6) | uint32_t(z);
+}
+
+static bool env_truthy(const char* key) {
+    if (const char* v = std::getenv(key)) {
+        return v[0] != '\0' && v[0] != '0' && strcasecmp(v, "false") != 0;
+    }
+    return false;
 }
 
 static const char* backend_name(PlatformBackend b) {
@@ -227,6 +236,16 @@ int main(int argc, char** argv) {
 
     // Platform backend selection (HYDRA_BACKEND env respected inside select_default_backend).
     PlatformBackend requested_backend = select_default_backend();
+    const bool headless_backend = (requested_backend == PlatformBackend::Headless);
+    if (headless_backend) {
+        // Force SDL to a dummy driver so no window/display server is required.
+        setenv("SDL_VIDEODRIVER", "dummy", 0);
+        setenv("SDL_AUDIODRIVER", "dummy", 0);
+    }
+
+    if (std::getenv("HYDRA_VSYNC")) {
+        g_vsync = env_truthy("HYDRA_VSYNC");
+    }
     PlatformBackend backend = PlatformBackend::SDL;
     PlatformContext plat_ctx;
     bool use_platform_present = false;
@@ -257,9 +276,9 @@ int main(int argc, char** argv) {
     if (!win) die("Cannot create SDL window");
     SDL_RaiseWindow(win);
 
-    SDL_Renderer* ren = SDL_CreateRenderer(
-        win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-    );
+    uint32_t sdl_renderer_flags = SDL_RENDERER_ACCELERATED;
+    if (g_vsync) sdl_renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
+    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, sdl_renderer_flags);
     if (!ren) die("Renderer creation failed");
 
     SDL_RenderSetLogicalSize(ren, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -378,12 +397,36 @@ int main(int argc, char** argv) {
     if (mouse_cap_env && std::strcmp(mouse_cap_env, "0") == 0)
         mouse_captured = false;
 
+    // Camera position clamping (configurable bounds)
+    bool cam_clamp_enabled = (std::getenv("HYDRA_CAM_CLAMP") != nullptr);
+    float cam_min = -1.0f;
+    float cam_max = 65.0f;  // Default to 64x64x64 voxel volume with margin
+    const char* cam_bounds_env = std::getenv("HYDRA_CAM_BOUNDS");
+    if (cam_bounds_env) {
+        float min_val, max_val;
+        if (std::sscanf(cam_bounds_env, "%f,%f", &min_val, &max_val) == 2) {
+            cam_min = min_val;
+            cam_max = max_val;
+        }
+    }
+
+    // Apply initial clamping if enabled
+    if (cam_clamp_enabled) {
+        if (pos_x < cam_min) pos_x = cam_min;
+        if (pos_x > cam_max) pos_x = cam_max;
+        if (pos_y < cam_min) pos_y = cam_min;
+        if (pos_y > cam_max) pos_y = cam_max;
+        if (pos_z < cam_min) pos_z = cam_min;
+        if (pos_z > cam_max) pos_z = cam_max;
+    }
+
     // Print startup summary for reproducibility
     std::fprintf(stderr, "\n[hydra] === Startup Configuration ===\n");
     std::fprintf(stderr, "[hydra] Backend: %s\n", backend_name(backend));
     std::fprintf(stderr, "[hydra] Resolution: %dx%d\n", SCREEN_WIDTH, SCREEN_HEIGHT);
     std::fprintf(stderr, "[hydra] Font: %s (size %d)\n", font_path, font_size);
     if (const char* v = std::getenv("HYDRA_BACKEND")) std::fprintf(stderr, "[hydra] HYDRA_BACKEND=%s\n", v);
+    if (std::getenv("HYDRA_VSYNC")) std::fprintf(stderr, "[hydra] HYDRA_VSYNC=%s\n", std::getenv("HYDRA_VSYNC"));
     if (frame_dump_path) std::fprintf(stderr, "[hydra] FRAME_DUMP=%s\n", frame_dump_path);
     if (max_dump_env) std::fprintf(stderr, "[hydra] HYDRA_MAX_FRAME_DUMPS=%s\n", max_dump_env);
     if (auto_exit) std::fprintf(stderr, "[hydra] AUTO_EXIT=1\n");
@@ -393,6 +436,7 @@ int main(int argc, char** argv) {
                  pos_x, pos_y, pos_z, yaw, pitch);
     std::fprintf(stderr, "[hydra] Move speed: %.3f (fast: %.3f) Mouse sens: %.4f%s\n",
                  move_speed, move_speed_fast, mouse_sens, invert_y_mouse ? " [Y-inverted]" : "");
+    if (cam_clamp_enabled) std::fprintf(stderr, "[hydra] Camera clamping enabled: bounds=[%.1f, %.1f]\n", cam_min, cam_max);
     if (clear_each_frame) std::fprintf(stderr, "[hydra] HYDRA_CLEAR_EACH_FRAME=1\n");
     if (autosave_cfg) std::fprintf(stderr, "[hydra] HYDRA_AUTOSAVE_CFG=%s\n", autosave_cfg);
     std::fprintf(stderr, "[hydra] ==============================\n\n");
@@ -458,7 +502,7 @@ int main(int argc, char** argv) {
     const char* idle_env = std::getenv("HYDRA_SIM_IDLE_MS");
     const int idle_ms = idle_env ? std::max(0, std::atoi(idle_env)) : 0;
     const char* fps_env = std::getenv("HYDRA_FPS_TARGET");
-    const float fps_target = fps_env ? std::max(0.0f, std::atof(fps_env)) : 0.0f;
+    const float fps_target = fps_env ? std::max(0.0f, static_cast<float>(std::atof(fps_env))) : 0.0f;
 
     while (running && !Verilated::gotFinish()) {
         // Default: no debug write
@@ -589,6 +633,34 @@ int main(int argc, char** argv) {
                                 (unsigned)selection_y,
                                 (unsigned)selection_z);
                             break;
+                        case SDLK_s: {
+                            // Screenshot: save current framebuffer as timestamped PPM
+                            auto now = std::chrono::system_clock::now();
+                            auto secs = std::chrono::duration_cast<std::chrono::seconds>(
+                                now.time_since_epoch()).count();
+                            char filename[256];
+                            std::snprintf(filename, sizeof(filename), "sim/screenshot_%ld.ppm", secs);
+                            FILE* f = std::fopen(filename, "wb");
+                            if (!f) {
+                                std::fprintf(stderr, "Failed to open %s for screenshot\n", filename);
+                            } else {
+                                std::fprintf(f, "P6\n%d %d\n255\n", SCREEN_WIDTH, SCREEN_HEIGHT);
+                                for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+                                    for (int x = 0; x < SCREEN_WIDTH; ++x) {
+                                        uint32_t argb = framebuffer[size_t(y) * SCREEN_WIDTH + x];
+                                        uint8_t rgb[3] = {
+                                            (uint8_t)((argb >> 16) & 0xFF),
+                                            (uint8_t)((argb >> 8) & 0xFF),
+                                            (uint8_t)(argb & 0xFF)
+                                        };
+                                        std::fwrite(rgb, 1, 3, f);
+                                    }
+                                }
+                                std::fclose(f);
+                                std::fprintf(stderr, "Screenshot saved: %s\n", filename);
+                            }
+                            break;
+                        }
                         default: break;
                     }
 
@@ -685,6 +757,16 @@ int main(int argc, char** argv) {
 
         if (pitch >  1.50f) pitch =  1.50f;
         if (pitch < -1.50f) pitch = -1.50f;
+
+        // Apply camera position clamping if enabled
+        if (cam_clamp_enabled) {
+            if (pos_x < cam_min) pos_x = cam_min;
+            if (pos_x > cam_max) pos_x = cam_max;
+            if (pos_y < cam_min) pos_y = cam_min;
+            if (pos_y > cam_max) pos_y = cam_max;
+            if (pos_z < cam_min) pos_z = cam_min;
+            if (pos_z > cam_max) pos_z = cam_max;
+        }
 
         if (cam_changed) {
             apply_camera_to_dut();
