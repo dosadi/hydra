@@ -1,5 +1,10 @@
 # Hydra HDMI / Video Output TODOs
 
+- TODO: Write a quick HDMI bring-up guide (clocking, expected CRC values, sink requirements) for FPGA/hw testing.
+- TODO: Add an HDMI “quiet mode” that suppresses verbose logs unless CRC mismatches occur (env/hotkey).
+- TODO: Provide a Makefile shortcut to run only HDMI CRC benches and dump artifacts to `sim/build/hdmi/`.
+- TODO: Add a tool to compare two HDMI CRC logs and highlight the first mismatch with context.
+- TODO: Document expected HDMI pixel packing/order (RGB888) alongside CRC derivation for firmware reviewers.
 - TODO: Add SVAs to ensure HDMI CRC counters reset on soft_reset and increment only when valid.
 - TODO: Extend HDMI benches to cover different resolutions (32x24, 64x48, 480x360) with golden CRCs.
 - TODO: Add coverage that hdmi_beat_count matches expected TOTAL_PIXELS per frame (with tolerance for stalls).

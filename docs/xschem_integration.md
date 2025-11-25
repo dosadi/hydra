@@ -22,6 +22,9 @@
 4. CI (best-effort) to render schematics and check netlists when Xschem is available; otherwise skip with notice.
 
 ## TODOs
+- TODO: Add an example symbol + schematic template (with metadata block) to onboard new contributors quickly.
+- TODO: Provide a headless smoke test that runs xschem render on a tiny schematic and fails clearly if xschem/ngspice missing.
+- TODO: Add a simple Makefile include for xschem so `make xschem-*` hooks work from repo root.
 - TODO: Add `xschem/` directory with starter rc/config and symbol library for Hydra modules.
 - TODO: Add `scripts/xschem_render.sh` to batch-export schematics to PNG/PDF (headless Xschem usage).
 - TODO: Add `scripts/xschem_netlist.sh` to generate Verilog/SPICE netlists and run lint (optional).

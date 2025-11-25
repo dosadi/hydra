@@ -1,5 +1,10 @@
 # Hydra DRAM / AXI Path TODOs
 
+- TODO: Publish a DRAM/AXI integration note (clock/reset domains, address map, latency knobs) for FPGA bring-up.
+- TODO: Add a cocotb-based AXI protocol checker wrapper (or hook up axi-lite-bfm) to automate handshake validation.
+- TODO: Provide a “slow DRAM” preset (high latency/jitter) in benches and run it in CI to catch marginal timing.
+- TODO: Add a doc + test that cross-checks BAR1 size vs. AXI address width to avoid silent truncation.
+- TODO: Add a regression that runs simultaneous DMA + CSR traffic while sampling stall counters to guard against starvation.
 - TODO: Add AXI backpressure handling in DMA path (stall/write buffering) for awready/wready deassertions.
 - TODO: Implement AXI burst support in DMA engine (awlen/wlast) or assert single-beat constraints clearly.
 - TODO: Add SVAs around AXI write/read channels (valid/ready handshake correctness, no X/Z).

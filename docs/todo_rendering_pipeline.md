@@ -1,5 +1,10 @@
 # Hydra Rendering Pipeline TODOs (Raycaster / Shader Path)
 
+- TODO: Add a microbenchmark/profiler pass to break down time spent in ray loop vs. framebuffer copy vs. HUD (baseline numbers in docs).
+- TODO: Separate render pipeline config into a struct and plumb through env/HUD so presets can toggle AA/fog/tonemap in one place.
+- TODO: Add a simple correctness test scene (few voxels with known normals/emissive) and compare rendered pixels against golden hashes.
+- TODO: Measure and document bandwidth for framebuffer uploads/copies; add an optional “skip HUD” flag in the pipeline to isolate cost.
+- TODO: Provide a shader/pipeline debug dump (current MAX_RAY_STEPS, STEP_SIZE, shading flags) in the HUD for quick verification.
 - TODO: Refine BRDF shading model (diffuse/specular balance) and normalize energy for emissive + lit surfaces.
 - TODO: Add per-material roughness/metallic parameters and propagate into the raycaster for highlight shaping.
 - TODO: Implement soft shadowing in the raystep loop (penumbra approximation) without large perf hit.

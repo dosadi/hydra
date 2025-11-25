@@ -1,5 +1,10 @@
 # Hydra DMA / PCIe Path TODOs
 
+- TODO: Define a minimal DMA/PCIe bring-up checklist (BAR sizes, MSI on/off, kselftest run) and add to docs/README.
+- TODO: Add an IOMMU/VT-d friendly path (dma_map/unmap helpers in driver) and document how to enable on distros.
+- TODO: Provide a cocotb test that mirrors driver MSI/legacy module params to ensure RTL reacts the same way (msi_pulse gating).
+- TODO: Add a BAR layout diagram (BAR0 CSRs vs. BAR1 framebuffer) to help debug address mismatches.
+- TODO: Add a small driver/unit test that flips between MSI/MSI-X/INTx at runtime and verifies IRQ delivery.
 - TODO: Add bounds/stride assertions in RTL DMA path (src/dst+len within BAR window) beyond current stub checks.
 - TODO: Implement DMA busy/err behavior in RTL stubs to mirror driver expectations (set/clear on violations).
 - TODO: Add an RTL cover/assert that INT_STATUS.DMA_DONE only sets after DMA completes and clears on RW1C.

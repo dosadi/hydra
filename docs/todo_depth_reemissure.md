@@ -1,5 +1,10 @@
 # Hydra Depth / Z / Reemissure Path TODOs
 
+- TODO: Decide on depth range convention (0..far, linear vs. non-linear) and align RTL/HUD dumps accordingly.
+- TODO: Add a small tool that parses FRAME_DUMP depth/reemissure planes and prints summary stats (min/max/histogram).
+- TODO: Add a regression that toggles fog on/off and confirms depth buffer stays stable (no accidental reuse).
+- TODO: Add a doc table describing pixel_word bitfields (depth, color, reemissure) and how they map to HUD overlays.
+- TODO: Add a “depth sanity” bench that renders a flat plane and checks for uniform depth values across the frame.
 - TODO: Define a depth/z buffer format and export path (debug buffer, optional PPM/PNG dump).
 - TODO: Wire pixel_reemissure sideband through the framebuffer/HUD so emissive contributions are visible.
 - TODO: Add a HUD toggle to visualize depth buffer (grayscale) and reemissure as overlays.

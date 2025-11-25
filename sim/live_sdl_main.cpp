@@ -70,6 +70,57 @@ static const char* backend_name(PlatformBackend b) {
     }
 }
 
+static void log_backend_caps(PlatformBackend requested, PlatformBackend backend, bool vsync) {
+    const char* video_driver = SDL_GetCurrentVideoDriver();
+    const char* render_driver = SDL_GetHint(SDL_HINT_RENDER_DRIVER);
+
+    std::fprintf(stderr,
+        "[hydra] backend requested=%s actual=%s vsync=%s video_driver=%s render_driver=%s\n",
+        backend_name(requested),
+        backend_name(backend),
+        vsync ? "on" : "off",
+        video_driver ? video_driver : "(unknown)",
+        render_driver ? render_driver : "(default)");
+
+    std::fprintf(stderr, "[hydra] compiled backends: SDL");
+#ifdef HYDRA_ENABLE_GL
+    std::fprintf(stderr, " GL");
+#endif
+#ifdef HYDRA_ENABLE_VULKAN
+    std::fprintf(stderr, " Vulkan");
+#endif
+#ifdef HYDRA_ENABLE_WAYLAND
+    std::fprintf(stderr, " Wayland");
+#endif
+#ifdef HYDRA_ENABLE_X11
+    std::fprintf(stderr, " X11");
+#endif
+    std::fprintf(stderr, " Headless\n");
+}
+
+static void log_input_caps() {
+    const char* grab_hint = SDL_GetHint(SDL_HINT_GRAB_KEYBOARD);
+    const char* mouse_hint = SDL_GetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP);
+
+    int joysticks = SDL_NumJoysticks();
+    int controllers = 0;
+    for (int i = 0; i < joysticks; ++i) {
+        if (SDL_IsGameController(i)) {
+            ++controllers;
+        }
+    }
+
+    int touch_devices = SDL_GetNumTouchDevices();
+
+    std::fprintf(stderr,
+        "[hydra] input: keyboard=assumed mouse_capture_hint=%s mouse_relative_hint=%s touch_devices=%d joysticks=%d controllers=%d\n",
+        grab_hint ? grab_hint : "(default)",
+        mouse_hint ? mouse_hint : "(default)",
+        touch_devices,
+        joysticks,
+        controllers);
+}
+
 struct InputState {
     bool forward     = false;
     bool back        = false;
@@ -243,6 +294,8 @@ int main(int argc, char** argv) {
         setenv("SDL_AUDIODRIVER", "dummy", 0);
     }
 
+    log_input_caps();
+
     if (std::getenv("HYDRA_VSYNC")) {
         g_vsync = env_truthy("HYDRA_VSYNC");
     }
@@ -266,6 +319,8 @@ int main(int argc, char** argv) {
     } else {
         std::fprintf(stdout, "Using backend: SDL\n");
     }
+
+    log_backend_caps(requested_backend, backend, g_vsync);
 
     SDL_Window* win = SDL_CreateWindow(
         "Voxel Accelerator — Interactive Raycaster",

@@ -1,5 +1,10 @@
 # Hydra Platform Backends TODOs (SDL/GL/Vulkan/Wayland/X11/Headless)
 
+- TODO: Add a short “backend triage” guide (common errors + fixes) linked from startup logs.
+- TODO: Provide a scripted backend probe (`scripts/check_backends.sh`) that prints available video/render drivers and exits non-zero on mismatch.
+- TODO: Add a CI note to skip GL/Vulkan tests when drivers are missing, but still capture backend capability logs as artifacts.
+- TODO: Surface backend choice and vsync status in the HUD so recordings show which path was used.
+- TODO: Add a unit test that exercises backend selection precedence (CLI > env > compiled availability) to prevent regressions.
 - TODO: Expand backend support matrix and document which platforms are exercised in CI vs. untested.
 - TODO: Add better detection/logging of available backends (GL/Vulkan/X11/Wayland) with fallbacks noted.
 - TODO: Implement headless backend parity (frame dumps, HUD toggles) and add a CI smoke for it.

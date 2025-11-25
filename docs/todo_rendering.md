@@ -1,5 +1,10 @@
 # Hydra Rendering Quality TODOs
 
+- TODO: Define a P0 “good defaults” bundle (fog mild, AO on, gamma/tone-map on, VSYNC on) and make it the default preset for demos.
+- TODO: Add a small golden-screenshot script that captures key scenes per preset (default/cinematic/flat) for before/after comparisons.
+- TODO: Create a render-quality checklist (fog, AO, tone-map, HUD overlays) to run before releases/demos and document expected toggles.
+- TODO: Document recommended display calibration (gamma/brightness) and add a gray-ramp test pattern for quick tuning.
+- TODO: Add a HUD indicator showing which quality preset is active and whether custom tweaks diverge from the preset.
 - TODO: Depth fog pass (distance-based alpha/attenuation) with tunable color/curve; expose env + HUD indicator.
 - TODO: Ambient occlusion approximation (screen-space or raystep heuristic) with strength/threshold knobs.
 - TODO: Wire pixel_reemissure sideband into framebuffer/HUD for debugging emissive contributions.

@@ -1,5 +1,10 @@
 # Hydra Ray Engine TODOs
 
+- TODO: Add a “ray math” spec note documenting coordinate system, handedness, and plane vectors to keep code/tests aligned.
+- TODO: Provide a tiny fixed-scene golden test that logs first N ray hits/misses for reproducibility in CI.
+- TODO: Add a watchdog/assert that the ray FSM returns to idle on soft_reset within N cycles (hang guard).
+- TODO: Document how diag_slice should alter ray traversal (expected slice masks) and add matching assertions.
+- TODO: Add a debug knob to clamp rays to a bounding box smaller than the full volume for perf sweeps.
 - TODO: Refine raystep algorithm (step size vs. voxel crossing) to reduce aliasing and overstepping.
 - TODO: Add per-material ray termination rules (e.g., stop on opaque, continue on translucent).
 - TODO: Implement max recursion/step clamp with runtime overrides for perf/quality sweeps.

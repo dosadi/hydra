@@ -31,7 +31,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add an option to log HUD stats (FPS, mem util, hits) to a CSV for offline perf tracking.
 - TODO: Add a world-seed override for the procedural scene to make deterministic repros across runs.
 - TODO: Add a tiny config file parser (e.g., env-var-provided path) to preload camera/flags/backend/seed.
-- TODO: Add input-device detection log (mouse/keyboard/gamepad) at startup to aid repro of input bugs.
+- DONE: Add input-device detection log (mouse/keyboard/gamepad) at startup to aid repro of input bugs (stderr summary after SDL init).
 - TODO: Add a latency/profiling overlay (ms/frame breakdown) toggled by a hotkey for perf debugging.
 - TODO: Add a toggle to freeze camera but keep rendering (to inspect static scenes) and another to pause rendering ticks.
 - DONE: Add a "noclip off" mode that keeps the camera inside the voxel bounds for guided demos (HYDRA_CAM_CLAMP provides this functionality).
