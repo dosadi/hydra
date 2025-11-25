@@ -16,7 +16,8 @@ enum class PlatformBackend {
     X11,
     Fbdev,
     Win32,
-    MacOS
+    MacOS,
+    Headless
 };
 
 struct PlatformConfig {

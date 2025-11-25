@@ -56,6 +56,7 @@ static const char* backend_name(PlatformBackend b) {
         case PlatformBackend::Fbdev:  return "fbdev";
         case PlatformBackend::Win32:  return "Win32";
         case PlatformBackend::MacOS:  return "macOS";
+        case PlatformBackend::Headless: return "Headless";
         default: return "Unknown";
     }
 }
@@ -376,6 +377,25 @@ int main(int argc, char** argv) {
     const char* mouse_cap_env = std::getenv("HYDRA_MOUSE_CAPTURE");
     if (mouse_cap_env && std::strcmp(mouse_cap_env, "0") == 0)
         mouse_captured = false;
+
+    // Print startup summary for reproducibility
+    std::fprintf(stderr, "\n[hydra] === Startup Configuration ===\n");
+    std::fprintf(stderr, "[hydra] Backend: %s\n", backend_name(backend));
+    std::fprintf(stderr, "[hydra] Resolution: %dx%d\n", SCREEN_WIDTH, SCREEN_HEIGHT);
+    std::fprintf(stderr, "[hydra] Font: %s (size %d)\n", font_path, font_size);
+    if (const char* v = std::getenv("HYDRA_BACKEND")) std::fprintf(stderr, "[hydra] HYDRA_BACKEND=%s\n", v);
+    if (frame_dump_path) std::fprintf(stderr, "[hydra] FRAME_DUMP=%s\n", frame_dump_path);
+    if (max_dump_env) std::fprintf(stderr, "[hydra] HYDRA_MAX_FRAME_DUMPS=%s\n", max_dump_env);
+    if (auto_exit) std::fprintf(stderr, "[hydra] AUTO_EXIT=1\n");
+    if (cam_pos_env) std::fprintf(stderr, "[hydra] HYDRA_CAM_POS=%s\n", cam_pos_env);
+    if (cam_ang_env) std::fprintf(stderr, "[hydra] HYDRA_CAM_ANG=%s\n", cam_ang_env);
+    std::fprintf(stderr, "[hydra] Camera: pos=(%.1f,%.1f,%.1f) yaw=%.2f pitch=%.2f\n",
+                 pos_x, pos_y, pos_z, yaw, pitch);
+    std::fprintf(stderr, "[hydra] Move speed: %.3f (fast: %.3f) Mouse sens: %.4f%s\n",
+                 move_speed, move_speed_fast, mouse_sens, invert_y_mouse ? " [Y-inverted]" : "");
+    if (clear_each_frame) std::fprintf(stderr, "[hydra] HYDRA_CLEAR_EACH_FRAME=1\n");
+    if (autosave_cfg) std::fprintf(stderr, "[hydra] HYDRA_AUTOSAVE_CFG=%s\n", autosave_cfg);
+    std::fprintf(stderr, "[hydra] ==============================\n\n");
 
     bool selection_active = false;
     uint8_t selection_x = 0;

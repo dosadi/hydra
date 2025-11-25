@@ -20,6 +20,7 @@ PlatformBackend select_default_backend() {
         if (strcasecmp(v, "FBDEV") == 0)   return PlatformBackend::Fbdev;
         if (strcasecmp(v, "WIN32") == 0)   return PlatformBackend::Win32;
         if (strcasecmp(v, "MACOS") == 0)   return PlatformBackend::MacOS;
+        if (strcasecmp(v, "HEADLESS") == 0) return PlatformBackend::Headless;
     }
     // Preference order: GPU-capable backends first when available.
     PlatformBackend prefs[] = {

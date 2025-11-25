@@ -29,6 +29,7 @@ static bool is_macos() {
 bool platform_backend_supported(PlatformBackend backend) {
     switch (backend) {
         case PlatformBackend::SDL:    return true;
+        case PlatformBackend::Headless: return true;
         case PlatformBackend::Wayland:
 #if defined(HYDRA_ENABLE_WAYLAND)
             return is_linux();
@@ -75,6 +76,7 @@ BackendOps make_stub_ops() {
 static BackendOps get_ops(PlatformBackend backend) {
     switch (backend) {
         case PlatformBackend::SDL:    return get_ops_sdl();
+        case PlatformBackend::Headless: return get_ops_headless();
         case PlatformBackend::GL:     return get_ops_gl();
         case PlatformBackend::Vulkan: return get_ops_vulkan();
         case PlatformBackend::Wayland:return get_ops_wayland();

@@ -22,3 +22,4 @@ BackendOps get_ops_x11();
 BackendOps get_ops_fbdev();
 BackendOps get_ops_win32();
 BackendOps get_ops_macos();
+BackendOps get_ops_headless();
