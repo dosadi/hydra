@@ -37,7 +37,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a “noclip off” mode that keeps the camera inside the voxel bounds for guided demos.
 - DONE: Add a minimal unit test for `pixel96_to_argb` to guard the packing assumptions.
 - TODO: Add a “single-step frame” hotkey (advance one frame) for debugging frame_done and HUD rendering.
-- TODO: Add an FPS target env var (default 60) that controls frame pacing and is shown in HUD/logs.
+- DONE: Add an FPS target env var (default 60) that controls frame pacing and is shown in HUD/logs (HYDRA_FPS_TARGET shown in HUD and startup summary).
 - DONE: Add a hotkey to toggle HUD entirely (for clean screenshots) while keeping overlays like selection box optional (H key).
 - TODO: Add a “reset world” hotkey/env to re-run the procedural generator and reload into BRAM without restarting sim.
 - TODO: Add a toggle to visualize selection bounding box/normal in 3D (e.g., wireframe highlight).
@@ -246,7 +246,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a short primer on interpreting HUD perf counters and mem utilization readings.
 - TODO: Add a short “troubleshooting sim build” section (missing SDL_ttf, Verilator version mismatches).
 - DONE: Add doc pointers in README to the new TODO tracker so contributors can pick items easily.
-- TODO: Add a doc snippet on using LOG_KEYS/LOG_FRAMES and expected sample logs for sanity.
+- DONE: Add a doc snippet on using LOG_KEYS/LOG_FRAMES and expected sample logs for sanity.
 - DONE: Add notes about headless runs and FRAME_DUMP outputs (file size, format).
 - TODO: Add a short doc on SDL backends (Wayland/X11/GL/Vulkan) with build flags and runtime envs.
 - TODO: Add a brief note on expected memory footprint/frame times in sim for baseline hardware.

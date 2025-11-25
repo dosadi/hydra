@@ -420,6 +420,12 @@ int main(int argc, char** argv) {
         if (pos_z > cam_max) pos_z = cam_max;
     }
 
+    // Frame pacing and timing configuration
+    const char* idle_env = std::getenv("HYDRA_SIM_IDLE_MS");
+    const int idle_ms = idle_env ? std::max(0, std::atoi(idle_env)) : 0;
+    const char* fps_env = std::getenv("HYDRA_FPS_TARGET");
+    const float fps_target = fps_env ? std::max(0.0f, static_cast<float>(std::atof(fps_env))) : 0.0f;
+
     // Print startup summary for reproducibility
     std::fprintf(stderr, "\n[hydra] === Startup Configuration ===\n");
     std::fprintf(stderr, "[hydra] Backend: %s\n", backend_name(backend));
@@ -437,6 +443,7 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "[hydra] Move speed: %.3f (fast: %.3f) Mouse sens: %.4f%s\n",
                  move_speed, move_speed_fast, mouse_sens, invert_y_mouse ? " [Y-inverted]" : "");
     if (cam_clamp_enabled) std::fprintf(stderr, "[hydra] Camera clamping enabled: bounds=[%.1f, %.1f]\n", cam_min, cam_max);
+    if (fps_target > 0.0f) std::fprintf(stderr, "[hydra] Frame pacing: target %.1f FPS\n", fps_target);
     if (clear_each_frame) std::fprintf(stderr, "[hydra] HYDRA_CLEAR_EACH_FRAME=1\n");
     if (autosave_cfg) std::fprintf(stderr, "[hydra] HYDRA_AUTOSAVE_CFG=%s\n", autosave_cfg);
     std::fprintf(stderr, "[hydra] ==============================\n\n");
@@ -498,11 +505,6 @@ int main(int argc, char** argv) {
     bool running = true;
     auto last_frame_time = std::chrono::high_resolution_clock::now();
     float fps = 0.0f;
-
-    const char* idle_env = std::getenv("HYDRA_SIM_IDLE_MS");
-    const int idle_ms = idle_env ? std::max(0, std::atoi(idle_env)) : 0;
-    const char* fps_env = std::getenv("HYDRA_FPS_TARGET");
-    const float fps_target = fps_env ? std::max(0.0f, static_cast<float>(std::atof(fps_env))) : 0.0f;
 
     while (running && !Verilated::gotFinish()) {
         // Default: no debug write
@@ -940,9 +942,15 @@ int main(int argc, char** argv) {
                 int yoff = hud_y;
                 SDL_Color hud_text_color = hud_theme_light ? SDL_Color{0,0,0,255} : SDL_Color{255,255,255,255};
 
-                std::snprintf(buf, sizeof(buf),
-                    "FPS %.1f | Pos %.1f %.1f %.1f",
-                    fps, pos_x, pos_y, pos_z);
+                if (fps_target > 0.0f) {
+                    std::snprintf(buf, sizeof(buf),
+                        "FPS %.1f / %.0f (target) | Pos %.1f %.1f %.1f",
+                        fps, fps_target, pos_x, pos_y, pos_z);
+                } else {
+                    std::snprintf(buf, sizeof(buf),
+                        "FPS %.1f | Pos %.1f %.1f %.1f",
+                        fps, pos_x, pos_y, pos_z);
+                }
                 draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
