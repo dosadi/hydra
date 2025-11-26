@@ -5,6 +5,12 @@
 
 ---
 
+## Continuation TODOs
+- **TODO [P1]:** Record the remaining action items from this session per major tracker (e.g., docs, DMA, board hardware) so the next reviewer begins with a concrete bucket.
+- **TODO [P2]:** Cross-link this continuation note to `docs/todo/todo_session_summary_2025_11_25.md` and `docs/todo/todo_ai_development.md` so context and AI guidelines stay tied to the session.
+- **TODO [P2]:** Add a mini-checklist for the “tree cleanup” work (release scripts, mixed-signal env, tracker rebalancing) and reference the corresponding tracker files above for quick verification.
+- **TODO [P1]:** Promote a small micro-task (e.g., refresh `docs/todo/todo_project_structure.md` entry or update README cross-link) from this continuation note to give contributors a focused win before tackling big trackers.
+
 ## Executive Summary
 
 Completed comprehensive extension of the Hydra TODO tracking system by creating **8 new critical infrastructure trackers** that were referenced in the master index but missing from disk. The TODO system now has **100% coverage** of all project areas with **40 total tracker files** documenting **~1,350+ TODO items** across **~15,000+ lines** of planning documentation.
