@@ -216,8 +216,12 @@ Tracks integration of third-party IP cores (LitePCIe, LiteDRAM, LiteVideo, LiteX
   - **Priority:** P1 - Build automation
   - **Dependencies:** LitePCIe/LiteDRAM working
   - **Validation:** LiteX generates integrated SoC
-  - **Deliverable:** LiteX build script
+- **Deliverable:** LiteX build script
 
+### LiteX Stubs & Surface Work
+- **TODO [P1]:** Turn `rtl/litex/litex_pcie_bridge.sv` into a working bridge with AXI translation, descriptor parsing, and MSI-X handling; log progress in this tracker for visibility.
+- **TODO [P2]:** Build out `rtl/litex/litex_dma_engine.sv` so it produces AXI bursts (read/write) mapped to LiteX descriptors, and connect the module to `docs/todo/todo_dma_pcie.md` for DMA parity testing.
+- **TODO [P2]:** Add documentation/reference in this tracker describing how the LiteX stubs tie into rails/clocking/power; use `docs/mixed_signal_environment.md` or `docs/todo/todo_board_hardware_design.md` as needed.
 - **TODO [P1]:** Add LiteX CPU (VexRiscv or similar) for boot/config if needed
   - **Effort:** 7 days
   - **Priority:** P1 - Advanced control
