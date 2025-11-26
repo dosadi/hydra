@@ -40,6 +40,14 @@ repos:
         pass_filenames: false
         files: 'docs/todo/todo_master\.md$'
 
+      - id: doc-touch-check
+        name: Check documentation freshness
+        entry: ./scripts/pre_commit_doc_touch.sh
+        language: script
+        pass_filenames: false
+        files: '\.md$'
+        stages: [commit]
+
       - id: verilator-check
         name: Verify Verilator version
         entry: ./scripts/verilator_check.sh

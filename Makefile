@@ -1,6 +1,6 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint docs-only diff-summary fmt package lint verilator-check files todo-unique bench spellcheck license-check pixel-test dma-negative cam-reset mmap-smoke cam-flags-demo bar1-hexdump backend-probe
+.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint docs-only diff-summary fmt package lint verilator-check files todo-unique bench spellcheck license-check pixel-test dma-negative cam-reset mmap-smoke cam-flags-demo bar1-hexdump backend-probe doc-scan doc-check doc-freshen doc-freshen-analyze doc-ai-prompts build-scan build-check build-freshen touch-check-all touch-freshen-all
 
 all: sim
 
@@ -41,6 +41,18 @@ help:
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
 	@echo "  make bsd-kmod      - Build FreeBSD hydra kmod (drivers/bsd/Makefile.kmod)"
+	@echo ""
+	@echo "Touch System (Dependency Tracking & Auto-Freshening):"
+	@echo "  make doc-scan      - Scan documentation dependencies"
+	@echo "  make doc-check     - Check documentation freshness"
+	@echo "  make doc-freshen   - Auto-freshen Tier 1 docs (dates, broken refs)"
+	@echo "  make doc-freshen-analyze - Analyze stale docs (Tier 1/2/3 breakdown)"
+	@echo "  make doc-ai-prompts- Generate AI update prompts for Tier 2 docs"
+	@echo "  make build-scan    - Scan build tree dependencies"
+	@echo "  make build-check   - Check build artifact freshness"
+	@echo "  make build-freshen - Analyze build freshening plan"
+	@echo "  make touch-check-all   - Check both docs and build freshness"
+	@echo "  make touch-freshen-all - Auto-freshen all Tier 1 items"
 	@echo ""
 	@echo "  make libhydra      - Build libhydra.a static library"
 	@echo "  make blit-smoketest- Build user blit smoke test"
@@ -208,6 +220,47 @@ bar1-hexdump:
 
 backend-probe:
 	@./scripts/check_backends.sh
+
+# Touch system targets
+doc-scan:
+	@echo "Scanning documentation dependencies..."
+	@python3 scripts/doc_touch.py --scan
+	@python3 scripts/doc_touch.py --rebuild-metadata
+
+doc-check:
+	@echo "Checking documentation freshness..."
+	@python3 scripts/doc_touch.py --check
+
+doc-freshen:
+	@echo "Auto-freshening Tier 1 documentation..."
+	@python3 scripts/doc_freshen.py --auto
+
+doc-freshen-analyze:
+	@echo "Analyzing stale documentation..."
+	@python3 scripts/doc_freshen.py --analyze
+
+doc-ai-prompts:
+	@echo "Generating AI update prompts for Tier 2 docs..."
+	@python3 scripts/doc_ai_freshen.py --generate-prompts --confidence 0.7
+
+build-scan:
+	@echo "Scanning build tree dependencies..."
+	@python3 scripts/build_touch.py --scan
+
+build-check:
+	@echo "Checking build artifact freshness..."
+	@python3 scripts/build_touch.py --check
+
+build-freshen:
+	@echo "Analyzing build freshening plan..."
+	@python3 scripts/build_freshen.py --analyze
+
+touch-check-all: doc-check build-check
+	@echo "✓ All touch system checks complete"
+
+touch-freshen-all: doc-freshen
+	@echo "✓ All Tier 1 auto-freshening complete"
+
 clean:
 	@$(MAKE) -C sim clean || true
 	@rm -f drivers/libhydra/libhydra.a drivers/libhydra/*.o

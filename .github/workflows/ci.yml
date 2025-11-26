@@ -52,6 +52,79 @@ jobs:
           path: artifacts
           if-no-files-found: ignore
 
+  doc-build-touch:
+    runs-on: ubuntu-latest
+    needs: linux
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          python3 -m pip install --upgrade pip
+
+      - name: Scan documentation dependencies
+        run: |
+          python3 scripts/doc_touch.py --scan
+          python3 scripts/doc_touch.py --rebuild-metadata
+
+      - name: Check doc freshness
+        id: doc_check
+        run: |
+          python3 scripts/doc_touch.py --check > doc_check.txt || echo "STALE_DOCS=true" >> $GITHUB_OUTPUT
+          cat doc_check.txt
+
+      - name: Analyze stale docs
+        if: steps.doc_check.outputs.STALE_DOCS == 'true'
+        run: |
+          python3 scripts/doc_freshen.py --analyze > doc_analysis.txt
+          cat doc_analysis.txt
+
+      - name: Auto-freshen Tier 1 docs
+        if: steps.doc_check.outputs.STALE_DOCS == 'true'
+        run: |
+          python3 scripts/doc_freshen.py --auto --dry-run > doc_freshen_plan.txt
+          cat doc_freshen_plan.txt
+          echo "Would auto-freshen Tier 1 docs in production mode"
+
+      - name: Scan build tree dependencies
+        run: |
+          python3 scripts/build_touch.py --scan
+
+      - name: Check build artifact freshness
+        id: build_check
+        run: |
+          python3 scripts/build_touch.py --check > build_check.txt || echo "STALE_BUILDS=true" >> $GITHUB_OUTPUT
+          cat build_check.txt || echo "All build artifacts up to date"
+
+      - name: Generate touch system report
+        if: always()
+        run: |
+          mkdir -p artifacts
+          echo "# Touch System CI Report" > artifacts/touch_report.md
+          echo "" >> artifacts/touch_report.md
+          echo "## Documentation Status" >> artifacts/touch_report.md
+          cat doc_check.txt >> artifacts/touch_report.md 2>/dev/null || echo "No stale docs" >> artifacts/touch_report.md
+          echo "" >> artifacts/touch_report.md
+          echo "## Build Artifact Status" >> artifacts/touch_report.md
+          cat build_check.txt >> artifacts/touch_report.md 2>/dev/null || echo "All artifacts fresh" >> artifacts/touch_report.md
+
+      - name: Upload touch system report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: touch-system-report
+          path: artifacts/touch_report.md
+
+      - name: Fail if critical docs are stale
+        if: steps.doc_check.outputs.STALE_DOCS == 'true'
+        run: |
+          echo "::warning::Stale documentation detected. Run 'python3 scripts/doc_freshen.py --auto' to fix."
+          # Don't fail the build yet - just warn
+          # Uncomment below to enforce freshness:
+          # exit 1
+
   qemu-smoke:
     runs-on: ubuntu-latest
     needs: linux
