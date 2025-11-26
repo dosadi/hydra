@@ -11,6 +11,16 @@ This living document tracks the status of the biggest TODO areas so contributors
 | `todo_dma_trace_artifacts.md` | **In Progress** | Trace capture schema and report generator TODOs added; requires structured logging tracker outputs before closing. |
 | `todo_build_ci.md` | **Ready** | Build/test enhancements scoped; needs sprint slot/nominated owner to pick up jobs arising from new FPS/dependency instrumentation. |
 
+## Automation Status
+
+| Automation Task | Status | Notes |
+|-----------------|--------|-------|
+| `scripts/automation_watchdog.sh` | **Active** | Runs rebalance/todo sweep/AI dashboard + briefing; feed results into `out/todo_rebalance_report.txt` and `out/ai_health_dashboard.txt`. |
+| `scripts/ai_session_report.py` | **Active** | Logs AI sessions and triggers dashboard refreshing + briefing updates. |
+| `scripts/ai_health_dashboard.py` | **Active** | Aggregates tracker metadata for the AI dashboard artifact; summary posted to GitHub workflow runs. |
+| `scripts/todo_metadata.py` | **Active** | Outputs JSON metadata used by every automation job; needs occasional reviews when new tracker files appear. |
+| `scripts/ai_dashboard_briefing.py` | **Pending Review** | Keeps `docs/todo/todo_ai_dashboard.md` in sync with automation; should run automatically after dashboards regenerate. |
+
 ## How to Use
 
 - **Update the row** for a tracker whenever status changes (e.g., mark “In Progress” when someone picks it up, “Blocked” when a dependency is still open).  
