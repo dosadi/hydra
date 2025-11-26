@@ -11,6 +11,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SIM_BIN="$PROJECT_ROOT/sim/sim_voxel"
+SYSNAME="$(uname -s) $(uname -m)"
 
 # Colors
 RED='\033[0;31m'
@@ -24,6 +25,26 @@ NC='\033[0m'
 # Options
 SHOW_RUNTIME=0
 JSON_OUTPUT=0
+
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=${ID:-unknown}
+else
+    case "$(uname)" in
+        Darwin)
+            OS="macos"
+            ;;
+        FreeBSD)
+            OS="freebsd"
+            ;;
+        Linux)
+            OS="linux"
+            ;;
+        *)
+            OS="unknown"
+            ;;
+    esac
+fi
 
 for arg in "$@"; do
     case $arg in
@@ -105,24 +126,103 @@ fi
 
 # Output format
 if [ $JSON_OUTPUT -eq 1 ]; then
-    echo "{"
-    echo "  \"backends\": ["
-    first=1
-    for b in SDL Headless OpenGL Vulkan Wayland X11 fbdev Win32 macOS; do
-        [ $first -eq 0 ] && echo ","
-        first=0
-        echo -n "    {\"name\": \"$b\", \"description\": \"${BACKENDS[$b]}\""
-        if [ -n "${COMPILED[$b]}" ]; then
-            echo -n ", \"compiled\": \"${COMPILED[$b]}\""
-        fi
-        if [ -n "${RUNTIME_OK[$b]}" ]; then
-            echo -n ", \"runtime\": \"${RUNTIME_OK[$b]}\""
-        fi
-        echo -n "}"
-    done
-    echo ""
-    echo "  ]"
-    echo "}"
+    python3 - <<PY
+import json
+
+backends = [
+    {
+        "name": "SDL",
+        "description": "${BACKENDS[SDL]}",
+        "compiled": "${COMPILED[SDL]:-unknown}",
+        "status": "${sdl_status:-unknown}",
+        "version": "${sdl_version:-}",
+        "detail": "${sdl_driver:-}",
+        "runtime": "${RUNTIME_OK[SDL]:-untested}",
+    },
+    {
+        "name": "Headless",
+        "description": "${BACKENDS[Headless]}",
+        "compiled": "${COMPILED[Headless]:-unknown}",
+        "status": "compiled",
+        "version": "",
+        "detail": "",
+        "runtime": "${RUNTIME_OK[Headless]:-untested}",
+    },
+    {
+        "name": "OpenGL",
+        "description": "${BACKENDS[OpenGL]}",
+        "compiled": "${COMPILED[OpenGL]:-unknown}",
+        "status": "${gl_status:-unknown}",
+        "version": "${gl_version:-}",
+        "detail": "${gl_renderer:-}",
+        "runtime": "${RUNTIME_OK[OpenGL]:-untested}",
+    },
+    {
+        "name": "Vulkan",
+        "description": "${BACKENDS[Vulkan]}",
+        "compiled": "${COMPILED[Vulkan]:-unknown}",
+        "status": "${vk_status:-unknown}",
+        "version": "${vk_version:-}",
+        "detail": "${vk_devices:-}",
+        "runtime": "${RUNTIME_OK[Vulkan]:-untested}",
+    },
+    {
+        "name": "Wayland",
+        "description": "${BACKENDS[Wayland]}",
+        "compiled": "${COMPILED[Wayland]:-unknown}",
+        "status": "compiled",
+        "version": "",
+        "detail": "",
+        "runtime": "${RUNTIME_OK[Wayland]:-untested}",
+    },
+    {
+        "name": "X11",
+        "description": "${BACKENDS[X11]}",
+        "compiled": "${COMPILED[X11]:-unknown}",
+        "status": "compiled",
+        "version": "",
+        "detail": "",
+        "runtime": "${RUNTIME_OK[X11]:-untested}",
+    },
+    {
+        "name": "fbdev",
+        "description": "${BACKENDS[fbdev]}",
+        "compiled": "${COMPILED[fbdev]:-unknown}",
+        "status": "compiled",
+        "version": "",
+        "detail": "",
+        "runtime": "${RUNTIME_OK[fbdev]:-untested}",
+    },
+    {
+        "name": "Win32",
+        "description": "${BACKENDS[Win32]}",
+        "compiled": "${COMPILED[Win32]:-unknown}",
+        "status": "compiled",
+        "version": "",
+        "detail": "",
+        "runtime": "${RUNTIME_OK[Win32]:-untested}",
+    },
+    {
+        "name": "macOS",
+        "description": "${BACKENDS[macOS]}",
+        "compiled": "${COMPILED[macOS]:-unknown}",
+        "status": "compiled",
+        "version": "",
+        "detail": "",
+        "runtime": "${RUNTIME_OK[macOS]:-untested}",
+    },
+]
+
+data = {
+    "platform": "$SYSNAME",
+    "os": "$OS",
+    "compiled_backends": "${COMPILED_BACKENDS:-}",
+    "backends": backends,
+}
+
+print(json.dumps(data, indent=2))
+PY
+    exit 0
 else
     echo -e "${BOLD}=== Hydra Backends ===${NC}"
     echo ""
