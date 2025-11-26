@@ -7,6 +7,30 @@
 
 ## Continuation TODOs
 
+### Continuity Log
+
+#### Claude (2025-11-25)
+Session Date: 2025-11-25  
+Files Touched: `docs/todo/` trackers (build automation, hardware validation, documentation, security, AI tooling, DMA/PCIe), automation scripts (`scripts/automation_watchdog.sh`, `scripts/ci_todo_rebalance.sh`, `scripts/todo_sweep.py`), and release/driver helpers.  
+Key Actions: Rebalanced tracker priorities, recorded automation watchdog results, archived prior session summaries, and documented the new Windows/automation pipeline (see `docs/AUTOMATION_WATCHDOG_RESULTS_2025_11_25.md`, `docs/TODO_PRIORITY_ANALYSIS_2025_11_25.md`, `docs/windows_build_instructions.md`).  
+Automation Run: `python3 scripts/todo_sweep.py` (reports 1,452 TODOs), `./scripts/automation_watchdog.sh` (bundled TODO rebalance + sanity checks).  
+Next Priorities (with `[P0/P1/P2/P3]`):
+- [P1] Continue priority-tagging sprint across the six high-unknown trackers (`todo_dram_axi.md`, `todo_hdmi.md`, `todo_platform_backends.md`, `todo_ray_engine.md`, `todo_dma_pcie.md`, `todo_master.md`).
+- [P2] Split oversized trackers (`todo_testing_ci.md`, `todo_board_hardware_design.md`) into focused sub-trackers as noted in `docs/TODO_PRIORITY_ANALYSIS_2025_11_25.md`.
+- [P2] Document mixed-signal/mathematical shading topics and capture automation outcomes in the new `docs/` drafts for future reference.
+Blockers / Notes: Need to ensure the automation watchdog report artifacts remain accessible to CI and that new documentation files are referenced from the master index.
+
+#### Codex (2025-11-26)
+Session Date: 2025-11-26  
+Files Touched: `docs/agent_integration_bridge.md`, `docs/todo/todo_master.md`, `docs/TODO_MASTER_INDEX.md` (indirectly via sweep), various automation outputs.  
+Key Actions: Added the Agent Coordination Bridge template, mass-tagged `docs/todo/todo_master.md` entries as `[P2]`, ran TODO sweeps to confirm unknown counts dropped, and recorded automation failures/successes for follow-up.  
+Automation Run: `./scripts/board_simulate.sh` (fails: missing mixed-signal tools `vsim`, `ngspice`, `xyce`, `matlab`, `octave`), `python3 scripts/todo_sweep.py` (success, now 1,464 TODOs with 114 unknowns).  
+Next Priorities (with `[P0/P1/P2/P3]`):
+- [P1] Tag remaining trackers with unknown priorities (`todo_rebalance_policy.md`, plus any future seeds) and note any dependencies in `docs/todo/todo_dependency_map.md`.
+- [P2] When analog tooling is available, rerun `./scripts/board_simulate.sh` and capture the `mixed_signal_env/logs/analog_sim_run.txt` artifact.
+- [P2] Track new automation runs or TODO seeds under this Continuity section and update `docs/todo/todo_status_overview.md` so future agents know what’s pending.
+Blockers / Notes: Mixed-signal utilities are not installed on this machine; release automation should wait for the next tag (0.0.7 already released).
+
 ### Completed
 - **DONE:** Fixed duplicate `docs/toodo/` directory (typo) - removed and updated `.pre-commit-config.yaml` reference (2025-11-25)
 - **DONE:** Cross-linked to related documentation (see "Related Documentation" section below) (2025-11-25)

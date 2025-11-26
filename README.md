@@ -42,6 +42,8 @@ Requirements:
 - `g++`, `make`
 - (Optional) FreeBSD kmod stub build requires FreeBSD kernel headers/sources (see `drivers/bsd/`).
 
+**For complete platform-specific requirements, see [`docs/PACKAGE_REQUIREMENTS.md`](docs/PACKAGE_REQUIREMENTS.md).**
+
 On Ubuntu/Debian:
 
 ```bash
@@ -148,6 +150,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **`docs/ip_integration_cleanup.md`** - Split of simulation vs. FPGA shells and next steps
 - **`docs/component_status.md`** - Component maturity and status
 - **`docs/sim_controls.md`** - sim_voxel keybinds and editing shortcuts
+- **`docs/PACKAGE_REQUIREMENTS.md`** - Comprehensive package/dependency requirements across all platforms
 
 **TODO Tracking System:**
 - **`docs/TODO_README.md`** - Quick start guide to the TODO tracking system

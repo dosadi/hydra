@@ -1,0 +1,235 @@
+{
+  "meta": {
+    "version": "1.0",
+    "generated": "2025-11-25",
+    "description": "Machine-readable mapping of trackers to sectors for automation"
+  },
+  "sectors": {
+    "SECTOR-01": {
+      "id": "RTL_CORE",
+      "name": "RTL Core & Ray Engine",
+      "priority": "P0",
+      "trackers": [
+        "todo_ray_engine.md",
+        "todo_ray_mechanics.md",
+        "todo_depth_buffer.md",
+        "todo_depth_reemissure.md"
+      ],
+      "dependencies": ["SECTOR-02", "SECTOR-06"],
+      "test_commands": ["make test_rtl_ray"]
+    },
+    "SECTOR-02": {
+      "id": "AXI_PCIE_DMA",
+      "name": "AXI/PCIe/DMA Infrastructure",
+      "priority": "P0",
+      "trackers": [
+        "todo_dram_axi.md",
+        "todo_dma_pcie.md",
+        "todo_axi_lite_coverage.md",
+        "todo_axi_mem.md",
+        "todo_dma_hang_policy.md",
+        "todo_dma_hotplug.md",
+        "todo_dma_structured_logging.md",
+        "todo_dma_trace_artifacts.md"
+      ],
+      "dependencies": ["SECTOR-01", "SECTOR-04", "SECTOR-07"],
+      "test_commands": ["make test_axi"]
+    },
+    "SECTOR-03": {
+      "id": "VIDEO_HDMI",
+      "name": "Video Output & Display",
+      "priority": "P1",
+      "trackers": [
+        "todo_hdmi.md",
+        "todo_hdmi_display.md",
+        "todo_hdmi_stream.md"
+      ],
+      "dependencies": ["SECTOR-01", "SECTOR-04"],
+      "test_commands": ["make test_hdmi_crc"]
+    },
+    "SECTOR-04": {
+      "id": "IP_INTEGRATION",
+      "name": "IP Integration (LitePCIe/LiteDRAM/LiteVideo)",
+      "priority": "P0",
+      "trackers": [
+        "todo_ip_integration.md"
+      ],
+      "dependencies": ["SECTOR-02", "SECTOR-03", "SECTOR-05"],
+      "test_commands": ["make ip-fetch"]
+    },
+    "SECTOR-05": {
+      "id": "FPGA_BOARD",
+      "name": "FPGA Synthesis & Board Design",
+      "priority": "P1",
+      "trackers": [
+        "todo_board_fpga.md",
+        "todo_board_hardware_design.md",
+        "todo_board_level.md",
+        "todo_fpga.md",
+        "todo_synthesis.md",
+        "todo_xschem.md"
+      ],
+      "dependencies": ["SECTOR-04", "SECTOR-08"],
+      "test_commands": ["scripts/board_simulate.sh"]
+    },
+    "SECTOR-06": {
+      "id": "SIM_TEST",
+      "name": "Simulation & Testing Infrastructure",
+      "priority": "P0",
+      "trackers": [
+        "todo_testing_ci.md",
+        "todo_simulation_viewer.md",
+        "todo_debugging_tools.md"
+      ],
+      "dependencies": ["SECTOR-01", "SECTOR-10"],
+      "test_commands": ["make test", "make test_frame"]
+    },
+    "SECTOR-07": {
+      "id": "DRIVERS_SDK",
+      "name": "Drivers & Userspace SDK",
+      "priority": "P1",
+      "trackers": [
+        "todo_mesa_drivers.md"
+      ],
+      "dependencies": ["SECTOR-02", "SECTOR-09"],
+      "test_commands": ["make -C drivers/linux", "./scripts/setup_sdk.sh"]
+    },
+    "SECTOR-08": {
+      "id": "HW_VALIDATION",
+      "name": "Hardware Validation & Bring-Up",
+      "priority": "P0",
+      "trackers": [
+        "todo_hardware_validation.md"
+      ],
+      "dependencies": ["SECTOR-05", "SECTOR-06"],
+      "test_commands": ["sim/tests/run_rtl_tests.sh"]
+    },
+    "SECTOR-09": {
+      "id": "SECURITY",
+      "name": "Security & Robustness",
+      "priority": "P1",
+      "trackers": [
+        "todo_security.md"
+      ],
+      "dependencies": ["SECTOR-07", "SECTOR-02"],
+      "test_commands": []
+    },
+    "SECTOR-10": {
+      "id": "BUILD_CI",
+      "name": "Build System & CI/CD",
+      "priority": "P0",
+      "trackers": [
+        "todo_build_tooling.md",
+        "todo_build_devtools.md",
+        "todo_build_ci.md"
+      ],
+      "dependencies": ["SECTOR-06"],
+      "test_commands": ["./scripts/hydra_dev_loop.sh", "scripts/automation_watchdog.sh"]
+    },
+    "SECTOR-11": {
+      "id": "DOCS_EXAMPLES",
+      "name": "Documentation & Examples",
+      "priority": "P1",
+      "trackers": [
+        "todo_documentation.md",
+        "todo_examples_demos.md",
+        "todo_site_wiki.md"
+      ],
+      "dependencies": [],
+      "test_commands": ["scripts/docs_lint.py"]
+    },
+    "SECTOR-12": {
+      "id": "RENDERING",
+      "name": "Rendering & Visual Quality",
+      "priority": "P2",
+      "trackers": [
+        "todo_rendering.md",
+        "todo_rendering_camera.md",
+        "todo_rendering_debug.md",
+        "todo_rendering_effects.md",
+        "todo_rendering_pipeline.md",
+        "todo_rendering_presets.md",
+        "todo_rendering_trace.md",
+        "todo_reemissure.md"
+      ],
+      "dependencies": ["SECTOR-01", "SECTOR-13"],
+      "test_commands": ["make test_frame"]
+    },
+    "SECTOR-13": {
+      "id": "VIEWER_PLATFORM",
+      "name": "Interactive Viewer & Platform Backends",
+      "priority": "P1",
+      "trackers": [
+        "todo_platform_backends.md"
+      ],
+      "dependencies": ["SECTOR-01", "SECTOR-14"],
+      "test_commands": ["scripts/check_backends.sh"]
+    },
+    "SECTOR-14": {
+      "id": "MULTIPLATFORM",
+      "name": "Multi-Platform Support",
+      "priority": "P2",
+      "trackers": [
+        "todo_multiplatform_builds.md"
+      ],
+      "dependencies": ["SECTOR-07", "SECTOR-10"],
+      "test_commands": ["cmake --preset linux-default", "cmake --preset windows-msvc"]
+    },
+    "SECTOR-15": {
+      "id": "PERFORMANCE",
+      "name": "Performance & Optimization",
+      "priority": "P3",
+      "trackers": [
+        "todo_performance.md",
+        "todo_system_fps.md"
+      ],
+      "dependencies": ["SECTOR-01", "SECTOR-06"],
+      "test_commands": []
+    },
+    "SECTOR-16": {
+      "id": "DATA_FORMATS",
+      "name": "Data Formats & Interoperability",
+      "priority": "P3",
+      "trackers": [
+        "todo_data_formats.md"
+      ],
+      "dependencies": ["SECTOR-07"],
+      "test_commands": []
+    },
+    "SECTOR-17": {
+      "id": "COMMUNITY",
+      "name": "Community & Deployment",
+      "priority": "P3",
+      "trackers": [
+        "todo_community_contributors.md",
+        "todo_deployment_operations.md"
+      ],
+      "dependencies": ["SECTOR-11"],
+      "test_commands": []
+    },
+    "SECTOR-18": {
+      "id": "RESEARCH",
+      "name": "Research & Experimental",
+      "priority": "P3",
+      "trackers": [
+        "todo_research_experimental.md"
+      ],
+      "dependencies": [],
+      "test_commands": []
+    },
+    "SECTOR-19": {
+      "id": "PROJECT_META",
+      "name": "Project Structure & Meta",
+      "priority": "P2",
+      "trackers": [
+        "todo_project_structure.md",
+        "todo_ai_development.md",
+        "todo_dependency_map.md",
+        "todo_rebalance_policy.md",
+        "todo_status_overview.md"
+      ],
+      "dependencies": [],
+      "test_commands": ["scripts/todo_sweep.py", "scripts/check_todo_unique.py", "scripts/automation_watchdog.sh"]
+    }
+  }
+}
