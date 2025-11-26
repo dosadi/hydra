@@ -29,3 +29,7 @@ Schematic capture hygiene and symbol/library work to keep RTL ↔ board flow ali
 - TODO [P2]: Provide a checklist or template for electrical reviewers to mark `xschem` notes (power, clocks, differential pairs) before releases, linking it to `docs/todo/todo_board_hardware_design.md`.
 - TODO [P3]: Add a visual diff workflow that captures per-page screenshots and overlays the previous release so mechanical/design reviewers can spot symbol shifts without opening the schematic GUI.
 - TODO [P3]: Capture a small script that extracts pin counts/addresses from the xschem library for documentation tables (per-block listing) so downstream docs stay in sync automatically.
+- TODO [P1]: Add FPGA-specific schematic variants in `xschem/fpga/` with macros for debug headers, enabling quick board drafts for FPGA prototypes tied to `docs/todo/todo_board_fpga.md`.
+- TODO [P2]: Document how to export xschem libraries for third-party reviewers (ZIP package + README) and store metadata (hash, date) to prove the release matches the recorded schematic state.
+- TODO [P2]: Integrate the schematic symbol set with `scripts/check_todo_unique.py` so any change to symbol names automatically raises a TODO until reviewed.
+- TODO [P3]: Track how schematic power rails map to CAD-specific net names (e.g., `VDDA`, `VDDR`) and record translations in the tracker so firmware/hardware teams can align unexpectedly renamed nets.
