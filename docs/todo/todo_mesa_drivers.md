@@ -372,6 +372,12 @@ Tracks driver development for FreeBSD, Windows, macOS, and Mesa (Linux DRM/DRI) 
 
 ---
 
+## P3 Extension - Mesa Tooling Automation
+
+- **TODO [P3]:** Align Mesa regression hooks with the AI dashboard so Mesa tracker shifts update `docs/todo/todo_tracker_metadata.json`.
+- **TODO [P3]:** Create a Mesa regression harness that runs `scripts/ai_health_dashboard.py` + `scripts/todo_sweep.py` on each Mesa change so the dashboard flags regressions immediately.
+- **TODO [P3]:** Document Mesa extension points (Gallium, DRM) in `docs/mesa_driver_architecture.md` and cross-reference the AI resource strategy so future contributors understand the automation context.
+
 **Document Version:** 1.0
 **Created:** 2025-11-25
 **Status:** Active tracker for cross-platform drivers
