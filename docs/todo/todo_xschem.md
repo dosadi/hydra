@@ -25,3 +25,7 @@ Schematic capture hygiene and symbol/library work to keep RTL ↔ board flow ali
 - TODO [P2]: Integrate xschem lint results with `scripts/todo_inspect.py` so failing rule checks automatically add a TODO entry for the flagged nets/symbols.
 - TODO [P3]: Add training notes or short onboarding doc (perhaps in `docs/todo/todo_ai_development.md`) outlining how to open/edit the xschem workspace so newcomers can update schematics safely.
 - TODO [P1]: Evaluate migrating critical xschem automations (render, netlist diffing) into a simple Python CLI under `scripts/` so they can be scripted in CI and cross-platform without requiring the GUI.
+- TODO [P2]: Build an `xschem` regression harness that loads the same library on Linux/macOS (if possible) and verifies that the generated netlists match expected hashes, guarding against accidental symbol swaps.
+- TODO [P2]: Provide a checklist or template for electrical reviewers to mark `xschem` notes (power, clocks, differential pairs) before releases, linking it to `docs/todo/todo_board_hardware_design.md`.
+- TODO [P3]: Add a visual diff workflow that captures per-page screenshots and overlays the previous release so mechanical/design reviewers can spot symbol shifts without opening the schematic GUI.
+- TODO [P3]: Capture a small script that extracts pin counts/addresses from the xschem library for documentation tables (per-block listing) so downstream docs stay in sync automatically.
