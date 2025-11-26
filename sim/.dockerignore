@@ -1,0 +1,12 @@
+# Ignore large or irrelevant files to keep build context small
+.git
+out
+build
+sim/obj_dir
+*.so
+*.pyc
+__pycache__
+/.cache
+node_modules
+Dockerfile
+.dockerignore
