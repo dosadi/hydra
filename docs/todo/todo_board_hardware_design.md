@@ -200,6 +200,9 @@ Tracks custom PCB design, component selection, connectors/headers, power distrib
 
 - **TODO [P2]:** Integrate analog/Mixed-Signal sims (VAMS/Spice/Xyce/Matlab) for the power/IO rails and signal integrity paths; document the exact tooling, input decks, and regression steps so the board simulation workflow can be reproduced.
 - **TODO [P3]:** Add a script (`scripts/board_simulate.sh`) that runs the analog models (VAMS/Spice) and saves the waveforms/logs for each release, producing artifacts referenced in `docs/todo/todo_system_summary_2025_11_25.md`.
+- **TODO [P1]:** Author a VAMS-focused checklist covering setup (license, models), verification steps, and drift detection of analog parameters to run before each analog regression.  
+- **TODO [P2]:** Build converters that produce netlist inputs for VAMS from existing xschem files, documenting any manual mapping or symbol substitutions required.  
+- **TODO [P3]:** Capture the analog verification environment (VM image/container) with VAMS and associated scripts so the analog simulation stack stays reproducible by board engineers.  
 
 - **TODO [P1]:** Select passives (capacitors, resistors, inductors) with appropriate ratings
   - **Effort:** 2 days
