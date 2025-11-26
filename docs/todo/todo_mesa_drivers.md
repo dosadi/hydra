@@ -4,6 +4,8 @@
 **Owner:** Driver Team
 **Related Trackers:** `todo_security.md`, `todo_testing_ci.md`, `todo_multiplatform_builds.md`
 
+**Session Reference:** See [`docs/TODO_SESSION_CONTINUATION_2025_11_25.md`](../TODO_SESSION_CONTINUATION_2025_11_25.md) "Near-Term (Sprint 2-3)" section for P1 cross-platform driver action items (FreeBSD parity, driver testing, package creation).
+
 ---
 
 ## Overview
@@ -210,6 +212,16 @@ Tracks driver development for FreeBSD, Windows, macOS, and Mesa (Linux DRM/DRI) 
   - **Deliverable:** WDDM investigation report
 
 - **TODO [P2]:** Add Windows to CI (if Windows runner available)
+
+### Windows Driver Status & Plan
+- **Status:** Work in progress; research + WDM stub exist but full DMA/IRQ support pending. 32-bit (x86) build scripts rely on the same source tree as 64-bit (x64), but we still need dual-target build flags (MSVC toolset) and installers that include both architectures.
+- **Next steps:** Formalize the cross-build pipeline (MSVC/x64/x86), produce matching INF/drop-in packages, and expand docs that describe how the Windows runtime loads the Hydra device on both bitnesses.
+
+### Supplemental Windows Todos
+- **TODO [P1]:** Add MSVC solution configurations for both Win32 and Win64 builds, ensuring the driver and `libhydra_win.dll` compile cleanly with the same sources; document the paths in `docs/windows_installation.md`.
+- **TODO [P2]:** Create a dual-architecture installer (INF + driver catalog) that bundles x86 + x64 binaries plus a `HydraInstaller.exe` for both versions.
+- **TODO [P2]:** Build automation this repo (scripts/windows-build.sh) that invokes both `msbuild /p:Platform=x86` and `/p:Platform=x64`, runs `scripts/test_litex_stubs.sh`, and calls `scripts/automation_watchdog.sh` to keep TODOs in sync; add CI coverage once Windows runners are available.
+- **TODO [P3]:** Document how to configure Windows Device Installation settings (driver store, disable driver signature enforcement) and capture a checklist for prepping Windows 10/11 test VMs.
   - **Effort:** 3 days
   - **Priority:** P2 - CI coverage
   - **Dependencies:** Windows driver buildable
