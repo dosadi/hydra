@@ -12,6 +12,8 @@ Tracks cross-cutting housekeeping so the repo stays discoverable, sane, and frie
 - **TODO [P3]:** Warn when editing a tracker listed in `docs/todo/todo_dependency_map.md` without updating its dependents (e.g., via a pre-commit hook) so the dependency graph remains accurate.
 - **TODO [P2]:** Create a “tree audit” script that diffs `git status` against a whitelist of safe paths and reports unexpected new files; run it from CI or as a pre-merge check for contributors who touch big folders.
 - **TODO [P2]:** Provide a `docs/todo/tree_guidelines.md` page describing directory layout conventions, when to add new top-level folders, and how to keep the toc/master index synced so contributors follow the same structuring rules.
+- **TODO [P2]:** Add a “structure health” JSON summary (from `scripts/todo_metadata.py`) that surfaces in the AI dashboard so the master file knows when directories expand/shrink drastically.
+- **TODO [P3]:** Document the repository growth plan (new modules, product lines, architecture expansions) as part of this tracker so future contributors can drop a note when they add whole new subsystems.
 
 ## AI Development TODOs
 - **TODO [P1]:** Document the prompt templates, tool commands, and workflow sequences used by AI agents so future automation can inherit/update the same practices.
