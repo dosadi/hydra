@@ -26,3 +26,11 @@ Use this ordered list as a lightweight “sector TODO” before jumping to more 
 7. **Underrepresented trackers**
    - `docs/todo/todo_sector_overview.md` currently mirrors the big trackers but should also point to the quieter lists (site wiki, xschem, board level) so people can add new anchors when those areas need attention.
    - Add small, high-impact TODO items to the shorter lists (sector overview, site wiki, Xschem) whenever the large documents are already saturated; that balances contributor load and keeps every section fresh.
+
+8. **Release automation / tooling**
+   - `scripts/automation_watchdog.sh`, `scripts/ci_todo_rebalance.sh`, and `scripts/finish_release.sh` now bundle the TODO checks plus build/test steps, but they still need integration into the CI pipeline and documentation for non-CLI users.
+   - TODO: Document the “automation automation” workflow in this sector overview so new team members know when/why the watchdog runs, and link to the generated rebalance artifact (`out/todo_rebalance_report.txt`).
+
+9. **Toolchain health**
+   - Keep an eye on `scripts/setup_mixed_signal_env.sh` + `scripts/board_simulate.sh` for analog regression coverage; the sector tracker should suggest follow-ups when analog artifacts move (VAMS model versions, log outputs).
+   - TODO: Track new debug tools (remote logging, automation watchdog, DMA dashboard) and cross-link them here so the sector overview remains a quick reference for tooling-related TODOs.
