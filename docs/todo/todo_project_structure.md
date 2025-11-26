@@ -10,7 +10,7 @@ Tracks cross-cutting housekeeping so the repo stays discoverable, sane, and frie
 - **TODO [P2]:** Add a `scripts/clean_tree.py` helper that removes generated dirs (`sim/obj_dir`, `cmake-build-*`) and warns when `git status` shows these cruft files, keeping the working tree predictable for contributors.  
 - **TODO [P3]:** Warn when editing a tracker listed in `docs/todo/todo_dependency_map.md` without updating its dependents (e.g., via a pre-commit hook) so the dependency graph remains accurate.
 - **TODO [P2]:** Create a “tree audit” script that diffs `git status` against a whitelist of safe paths and reports unexpected new files; run it from CI or as a pre-merge check for contributors who touch big folders.
--- **TODO [P2]:** Provide a `docs/todo/tree_guidelines.md` page describing directory layout conventions, when to add new top-level folders, and how to keep the toc/master index synced so contributors follow the same structuring rules.
+- **TODO [P2]:** Provide a `docs/todo/tree_guidelines.md` page describing directory layout conventions, when to add new top-level folders, and how to keep the toc/master index synced so contributors follow the same structuring rules.
 
 ## AI Development TODOs
 - **TODO [P1]:** Document the prompt templates, tool commands, and workflow sequences used by AI agents so future automation can inherit/update the same practices.
@@ -22,6 +22,6 @@ Tracks cross-cutting housekeeping so the repo stays discoverable, sane, and frie
 
 ## GitHub / CI TODOs
 - **TODO [P1]:** Add a PR template that directs contributors to run `scripts/check_required_files.py`, `scripts/todo_sweep.py`, and `scripts/check_todo_unique.py` whenever they touch README/docs or rtl assets so GH reviewers can focus on logic changes.
-- **TODO [P2]:** Build a GitHub Actions workflow that runs the full `make` + `scripts/check_required_files.py` / `scripts/todo_sweep.py` + `scripts/check_todo_unique.py` matrix and publishes `scripts/todo_inspect.py` artifacts (FPS stats, structured logs) with each run.
+- **TODO [P2]:** Build a GitHub Actions workflow that runs the full `make` + `scripts/check_required_files.py` / `scripts/todo_sweep.py` + `scripts/check_todo_unique.py` matrix plus `scripts/ci_todo_rebalance.sh`, publishing rebalance output artifacts and failing when the balance threshold breaks.
 - **TODO [P3]:** Auto-generate GitHub issue templates tied to key trackers (FPS, rendering, DMA) so triage captures priority/context by referencing `docs/todo/todo_system_fps.md`, `docs/todo/todo_rendering.md`, etc.
 - **TODO [P2]:** Link release notes + session summaries in `.github/README.md` (or a repository-level wiki) so the GitHub UI surfaces the latest state before a stakeholder opens a PR.

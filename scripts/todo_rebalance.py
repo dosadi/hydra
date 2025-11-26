@@ -8,6 +8,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import textwrap
 from collections import Counter
 from pathlib import Path
@@ -39,6 +40,14 @@ def collect_counts(path: Path) -> Counter[str]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Suggest TODO rebalance targets.")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optional path to write the rebalance report for CI artifacts.",
+    )
+    args = parser.parse_args()
+
     tracker_files = sorted(Path("docs").glob("todo_*.md"))
     tracker_files += sorted(Path("docs").glob("TODO_*.md"))
     tracker_counts = {}
@@ -55,6 +64,8 @@ def main() -> None:
 
     if not tracker_counts:
         print("No TODO trackers with TODO lines found.")
+        if args.output:
+            args.output.write_text("No TODO trackers with TODO lines found.")
         return
 
     average = total_todo / len(tracker_counts)
@@ -70,20 +81,30 @@ def main() -> None:
         if ratio < 0.65:
             suggestions.append((path.name, todo, ratio))
 
+    report_lines = []
     if not suggestions:
-        print("All trackers meet the rebalance threshold (>=65% of average).")
+        report_lines.append("All trackers meet the rebalance threshold (>=65% of average).")
+        report = "\n".join(report_lines)
+        print(report)
+        if args.output:
+            args.output.write_text(report)
         return
 
-    print("Under-populated trackers (ratio < 0.65 of average):")
+    report_lines.append("Under-populated trackers (ratio < 0.65 of average):")
     for name, todo, ratio in suggestions:
-        print(f"  - {name}: {todo} TODO lines ({ratio:.2f}x average)")
-    print()
-    print("Suggested actions:")
-    print(textwrap.dedent("""\
+        report_lines.append(f"  - {name}: {todo} TODO lines ({ratio:.2f}x average)")
+    report_lines.append("")
+    report_lines.append("Suggested actions:")
+    report_lines.append(textwrap.dedent("""\
         * Add one or two focus TODOs (P1/P2) to each listed file describing concrete steps
         * Reference neighboring trackers (e.g., cross-link site wiki updates from doc fixes)
         * Use these trackers as “micro-areas” for fast wins so big trackers stay manageable
     """))
+    report = "\n".join(report_lines)
+    print(report)
+    if args.output:
+        args.output.write_text(report)
+    raise SystemExit(1)
 
 
 if __name__ == "__main__":
