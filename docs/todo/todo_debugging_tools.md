@@ -198,6 +198,10 @@ Improves developer productivity and debugging efficiency.
 ---
 
 ## P3: Low Priority Debug Tools (Future)
+- **TODO [P2]:** Build a synthetic failure corpus (frame dumps + logs) that CI can feed into `scripts/todo_inspect.py` to verify debug tools (waveform dumps, heatmaps) still capture the expected data.
+- **TODO [P3]:** Add a “debug API” RFC (docs/todo/todo_debugging_tools.md) describing how to instrument new modules (what sysfs entries, logs, HUD overlays to extend).
+- **TODO [P3]:** Create a “debug log aggregator” script that tails sim logs, driver logs, and board-sim outputs and collates them by timestamp for easier triage.
+- **TODO [P2]:** Integrate with `scripts/todo_rebalance.py` to warn when major trackers lose debug coverage (e.g., fewer TODOs referencing debug tools) by automatically matching keywords.
 - **TODO [P3]:** Add remote debugging support (socket-based capture) so HDL logs can stream over the network to remote viewers, enabling distributed debugging sessions.
 - **TODO [P2]:** Crawl `scripts/todo_inspect.py` coverage to ensure every debug artifact (waveform, metric log) is referenced somewhere; flag gaps for TODO creation.
 - **TODO [P1]:** Add an “assertion replay” tool that takes an RTL assertion failure log, replays the exact signal sequence in the simulator, and reruns the viewer to recreate the bug visually.
