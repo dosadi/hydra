@@ -28,6 +28,8 @@ See `docs/TODO_MASTER_INDEX.md` for complete tracker reference. Most items are P
 - TODO [P2]: Provide a small ray/voxel collision fuzz test to shake out edge cases at volume boundaries.
 - TODO [P2]: Add coverage for negative/edge camera angles to ensure ray math holds across quadrants.
 - TODO [P2]: Expose ray hit/miss counts via CSR for quick regression checks in benches.
+- TODO [P2]: Add directed tests that record ray step distributions and export JSON for the AI dashboard so regressions in the ray engine raise alerts via `scripts/ai_health_dashboard.py`.
+- TODO [P2]: Create a ray engine performance harness that runs in headless mode, logs timing/pixel counters, and stores artifacts under `out/ray_performance/` for cross-tracker dashboards.
 
 ## P3 - Low Priority (Advanced Features & Debug Tools)
 
@@ -51,3 +53,4 @@ See `docs/TODO_MASTER_INDEX.md` for complete tracker reference. Most items are P
 - TODO [P3]: Add a debug toggle to color-code rays by step count (heatmap) in the framebuffer.
 - TODO [P3]: Add a "ray replay" mode that logs cursor ray params and replays them for debugging.
 - DONE [P3]: Add a runtime "ray jitter" option to reduce banding and improve visual smoothing; toggled via the `J` key / `HYDRA_RAY_JITTER`.
+- TODO [P3]: Create a ray engine roadmap section (under this tracker) that outlines when new product lines or big features require additional TODO coverage, so the tracker remains flexible for everything from bugfixes to large system efforts.
