@@ -1,5 +1,13 @@
 # Testing & Debugging Overview
 
+**Last Updated:** 2025-11-26
+**Owner:** Testing Team
+**Depends:** `hydra_spec.md`, `driver_integration.md`, `ip_integration.md`
+**Related Trackers:** `todo/todo_testing_ci.md`, `todo/todo_dma_pcie.md`, `todo/todo_hardware_validation.md`
+**Touches:** `hardware_test_plan.md`, `todo/todo_testing_ci.md`
+
+---
+
 This repo has several layers of tests and debug tools, from pure RTL up to driver/PCIe stubs.
 This document summarizes the main entry points.
 

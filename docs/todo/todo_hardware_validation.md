@@ -1,8 +1,10 @@
 # Hardware Validation & FPGA Bring-Up TODO Tracker
 
-**Last Updated:** 2025-11-25
+**Last Updated:** 2025-11-26
 **Owner:** Hardware Validation Team
-**Related Trackers:** `todo_board_fpga.md`, `todo_ip_integration.md`, `todo_testing_ci.md`
+**Depends:** `../hydra_spec.md`, `../hardware_test_plan.md`, `../ip_integration.md`
+**Related Trackers:** `todo_board_fpga.md`, `todo_ip_integration.md`, `todo_testing_ci.md`, `todo_dma_pcie.md`
+**Touches:** `../hardware_test_plan.md`, `todo_ip_integration.md`
 
 **Session Reference:** See [`docs/TODO_SESSION_CONTINUATION_2025_11_25.md`](../TODO_SESSION_CONTINUATION_2025_11_25.md) "Immediate (Sprint 1)" section for P0 pre-silicon validation action items (1000-frame regression, AXI-Lite SVAs, cocotb suite).
 

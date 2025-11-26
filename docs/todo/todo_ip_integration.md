@@ -1,8 +1,10 @@
 # IP Integration TODO Tracker (LiteX/LitePCIe/LiteDRAM/LiteVideo)
 
-**Last Updated:** 2025-11-25
+**Last Updated:** 2025-11-26
 **Owner:** IP Integration Team
+**Depends:** `../hydra_spec.md`, `../ip_integration.md`
 **Related Trackers:** `todo_board_fpga.md`, `todo_hardware_validation.md`, `todo_dma_pcie.md`, `todo_hdmi.md`
+**Touches:** `../ip_integration.md`, `../driver_integration.md`, `todo_hardware_validation.md`
 
 ---
 

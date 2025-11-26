@@ -1,5 +1,13 @@
 # Hardware Test/Emulation Plan (Pre-silicon)
 
+**Last Updated:** 2025-11-26
+**Owner:** Hardware Validation Team
+**Depends:** `hydra_spec.md`, `driver_integration.md`, `ip_integration.md`, `testing_overview.md`
+**Related Trackers:** `todo/todo_hardware_validation.md`, `todo/todo_testing_ci.md`, `todo/todo_dma_pcie.md`
+**Touches:** `todo/todo_hardware_validation.md`
+
+---
+
 Short-term targets to exercise drivers without real hardware:
 
 - **Verilated PCIe endpoint + cocotb/pyuvm**: build a cocotb testbench that toggles BAR0/INT_STATUS via DPI hooks. Goals: verify IRQ pulses (`msi_pulse`), DMA stub start/done, blitter stub FIFO/copy, and HDMI CRC updates. Artifact: VCD/trace for CI. (Scaffold lives in `sim/tests/cocotb_hydra`; an optional `cocotb` GitHub Actions job runs a basic Icarus-based smoke test.)

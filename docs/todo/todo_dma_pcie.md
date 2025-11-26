@@ -1,9 +1,13 @@
 # Hydra DMA / PCIe Path TODOs (0.0.7 Cycle)
 
+**Last Updated:** 2025-11-26
+**Owner:** DMA/PCIe Team
+**Depends:** `hydra_spec.md`, `todo_master.md`
+**Related Trackers:** `todo_dram_axi.md`, `todo_hardware_validation.md`, `todo_testing_ci.md`, `todo_dma_hang_policy.md`, `todo_dma_structured_logging.md`, `todo_dma_hotplug.md`, `todo_dma_trace_artifacts.md`
+**Touches:** `driver_integration.md`, `testing_overview.md`
+
 **Focus:** Protocol compliance, backpressure handling, hardware validation infrastructure.
 See `docs/TODO_MASTER_INDEX.md` for complete tracker reference.
-
-**Related Trackers:** `todo_dram_axi.md`, `todo_hardware_validation.md`, `todo_testing_ci.md`, `todo_dma_hang_policy.md`, `todo_dma_structured_logging.md`, `todo_dma_hotplug.md`, `todo_dma_trace_artifacts.md`
 
 ---
 

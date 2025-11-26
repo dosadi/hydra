@@ -1,5 +1,13 @@
 # IP Integration Plan (PCIe-Centric)
 
+**Last Updated:** 2025-11-26
+**Owner:** IP Integration Team
+**Depends:** `hydra_spec.md`
+**Related Trackers:** `todo/todo_ip_integration.md`, `todo/todo_dma_pcie.md`, `todo/todo_dram_axi.md`
+**Touches:** `hardware_test_plan.md`, `driver_integration.md`, `testing_overview.md`, `todo/todo_ip_integration.md`
+
+---
+
 Goal: standardize around a PCIe control/data fabric (no Wishbone exposure upstream), with DMA into external DRAM and HDMI output. Use open-source, FPGA-proven IP and keep ASIC hooks clean.
 
 ## Targets

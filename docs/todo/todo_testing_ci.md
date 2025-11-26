@@ -1,8 +1,10 @@
 # Testing & CI Infrastructure TODO Tracker
 
-**Last Updated:** 2025-11-25 (Expanded)
+**Last Updated:** 2025-11-26
 **Owner:** QA/Testing Team
-**Related Trackers:** `todo_build_tooling.md`, `todo_hardware_validation.md`, `todo_security.md`, `todo_mesa_drivers.md`
+**Depends:** `../testing_overview.md`, `../hardware_test_plan.md`, `todo_master.md`
+**Related Trackers:** `todo_build_tooling.md`, `todo_hardware_validation.md`, `todo_security.md`, `todo_mesa_drivers.md`, `todo_dma_pcie.md`
+**Touches:** `../testing_overview.md`, `todo_hardware_validation.md`
 
 ---
 

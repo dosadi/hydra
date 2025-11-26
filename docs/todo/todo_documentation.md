@@ -334,6 +334,18 @@ Tracks documentation improvements across specifications, guides, tutorials, API 
 
 ---
 
-**Document Version:** 1.0
+## Infrastructure (2025-11-26)
+
+- **DONE [P1]:** Implement pervasive doc touch system for Makefile-style dependency tracking
+  - **Deliverable:** `scripts/doc_touch.py` + `docs/doc_touch_system.md`
+  - **Impact:** Automatically flags stale docs when dependencies change
+  - **Usage:** `python3 scripts/doc_touch.py --check`
+  - **Metadata:** Generated at `docs/todo/doc_dependencies.json`
+  - **Integration:** Ready for CI and `hydra_dev_loop.sh`
+
+---
+
+**Document Version:** 1.1
 **Created:** 2025-11-25
+**Last Updated:** 2025-11-26
 **Status:** Active tracker for 0.0.7+

@@ -80,3 +80,6 @@ CTestTestfile.cmake
 
 # Local output artifacts
 out
+
+# Generated AI freshening prompts
+docs/ai_freshening/

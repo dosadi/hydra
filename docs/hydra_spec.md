@@ -1,5 +1,11 @@
 # Hydra Device Sketch (Draft)
 
+**Last Updated:** 2025-11-26
+**Owner:** RTL/Driver Team
+**Touches:** `driver_integration.md`, `hardware_test_plan.md`, `ip_integration.md`, `testing_overview.md`, `todo/todo_dma_pcie.md`, `todo/todo_testing_ci.md`
+
+---
+
 This is a working outline for the Hydra PCIe device: blocks, formats, and a straw‑man BAR0 register map to guide driver/hardware bring‑up.
 
 ## Functional blocks (initial)

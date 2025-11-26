@@ -1,5 +1,12 @@
 # Driver Integration Plan (Hydra PCIe Device)
 
+**Last Updated:** 2025-11-26
+**Owner:** Driver Team
+**Depends:** `hydra_spec.md`
+**Related Trackers:** `todo/todo_dma_pcie.md`, `todo/todo_testing_ci.md`, `todo/todo_multiplatform_builds.md`
+
+---
+
 Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be brought up quickly on Linux, Windows, and macOS, while keeping stubs that do not break builds.
 
 ## Targets
