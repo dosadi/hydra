@@ -10,15 +10,15 @@ Run the helper any time you finish a TODO batch or start a new push:
 python3 scripts/todo_rebalance.py
 ```
 
-It prints the average TODO count and highlights trackers whose TODO volume is less than 65% of the average. These are the places that should absorb the next “small bite” of work so the system stays uniformly detailed.
+It prints the average TODO count and highlights trackers whose TODO volume is less than 65% of the average. These are signals that the quieter trackers can absorb the next round of work (whether a quick fix, a deeper investigation, or a larger feature) so the system stays uniformly detailed.
 
-## 2. Prefer “micro-trackers” for short bursts
+## 2. Use the flagged tracker for whatever growth it needs
 
-When the script flags a file:
+When the script flags a file as under-indexed:
 
-- Add **1–3 concrete TODOs** (P1/P2 ideally) that describe observable deliverables (e.g., “Document new hazard log template for board lab sessions”).
+- Add **a few concrete TODOs** (any priority) that describe deliverables ranging from quick fixes to exploratory efforts or even multi-week features; the goal is to keep the tracker expressive.
 - Link back to larger trackers when the work relates (e.g., note how a new `todo_site_wiki.md` entry references `todo_documentation.md`).
-- Keep each TODO short and actionable to make it easy for contributors to pick up; these trackers act as fairness reservoirs for the big ones.
+- Treat the flagged trackers as overflow slots for whatever scale of work the project needs—whether the next brief bugfix or a larger architecture spike. They ensure coverage remains balanced without dictating task size.
 
 ## 3. Refresh the distribution regularly
 
