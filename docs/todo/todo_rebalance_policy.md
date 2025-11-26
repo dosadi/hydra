@@ -31,3 +31,10 @@ Schedule the rebalance script alongside your weekly plan, especially after mergi
 - Extend `todo_xschem.md` with a short checklist whenever the schematic or symbols change, even if the rest of the TODOs are long.
 
 Use this policy to keep the tracker grid even and encourage contributors to explore the edges of the TODO ecosystem.
+
+## 5. Policy TODOs
+
+- **TODO [P2]:** Add a `scripts/todo_rebalance_tracker.py` helper that reads `docs/todo/todo_tracker_metadata.json`, compares each tracker count to the rebalance threshold, and annotates `docs/todo/todo_rebalance_policy.md` with recent rebalance runs for auditability.
+- **TODO [P2]:** Extend `scripts/automation_watchdog.sh` to fail when the rebalance script reports the same tracker under 65% for more than three runs (or warn and log before promoting more TODOs).
+- **TODO [P3]:** Document how to treat mega trackers (e.g., `todo_master.md`) when they become the dominant buckets—include a fallback plan to split them or promote new trackers via this policy.
+- **TODO [P3]:** Maintain a short log in this file showing when bots/agents reran the rebalance script and what trackers they nudged so future contributors know the automation history.
