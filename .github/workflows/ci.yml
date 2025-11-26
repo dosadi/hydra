@@ -46,7 +46,7 @@ jobs:
 
       - name: Upload CI artifacts (frame diff, logs)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: hydra-ci-artifacts
           path: artifacts
@@ -133,7 +133,7 @@ jobs:
 
       - name: Upload AI dashboard artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ai-health-dashboard
           path: out/ai_health_dashboard.txt
