@@ -230,6 +230,7 @@ Tracks documentation improvements across specifications, guides, tutorials, API 
   - **Deliverable:** `docs/release_workflow.md`
 
 - **TODO [P2]:** Add TODO tracker maintenance guide (status tags, priority updates)
+- **TODO [P2]:** Publish a definitive register map document (`docs/hydra_register_map.md`) covering BAR0/BAR1/AXI registers, memory layout, and firmware expectations, tying it to `todo_dram_axi.md` and AI automation so missing register defs appear as TODOs.
   - **Effort:** 0.5 days
   - **Priority:** P2 - Project management
   - **Dependencies:** TODO system stabilized

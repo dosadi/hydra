@@ -80,6 +80,7 @@ See `docs/TODO_MASTER_INDEX.md` for complete tracker reference.
 - TODO [P3]: Document expected AXI latency/perf targets and how to tune stub parameters to match hardware.
 - TODO [P3]: Add documentation on AXI-lite timing expectations for external masters (min/max wait states).
 - TODO [P3]: Implement parameterized AXI data width for future expansion (document constraints).
+- TODO [P2]: Explore HBM integration (wide AXI channels, PHY setup, power) and document how Hydra’s DMA/AXI stack would map to HBM rows/partitions in `docs/hbm_integration_plan.md`.
 
 ---
 

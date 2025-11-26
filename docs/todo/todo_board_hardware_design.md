@@ -217,6 +217,7 @@ Tracks custom PCB design, component selection, connectors/headers, power distrib
   - **Dependencies:** Form factor, thermal solution
   - **Validation:** Fabricator/assembler acknowledge mechanical requirements
   - **Deliverable:** Demo mechanical note (PDF + CAD snippet)
+- **TODO [P1]:** Document all required PHYs (PCIe PHY, HDMI PHY, DDR PHY, clock/USB PHY) with part numbers and vendor guidance so manufacturing/assembly knows the analog modules needed; tie these notes to `docs/mixed_signal_environment.md` and `todo_board_hardware_design.md`.
 
 ### Manufacturing Preparation
 - **TODO [P2]:** Build a BOM/per-cost estimate template with multiple component sources to ensure longest lead-time items have alternates.
