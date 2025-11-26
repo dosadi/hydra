@@ -18,6 +18,8 @@ See `docs/TODO_MASTER_INDEX.md` for complete tracker reference. Priority tags: `
 - TODO [P1]: Add coverage that hdmi_beat_count matches expected TOTAL_PIXELS per frame (with tolerance for stalls).
 - TODO [P1]: Add assertions that hdmi_crc_last is stable between frames and only updates on frame_done.
 - TODO [P1]: Document HDMI CSR semantics (HDMI_CRC, HDMI_FR, HDMI_LINE, HDMI_PIX) in the spec and README.
+- TODO [P1]: Integrate HDMI health metrics (frame_count, CRC error counts, beat_count) into `scripts/hardware_health_summary.py` so the AI dashboard surfaces HDMI-specific regressions.
+- TODO [P1]: Add HDMI hotplug + EDID programming notes in the bring-up guide and tie them to PCIe DMA state transitions to ensure stable detection.
 
 ## P2 - Medium Priority (Testing & Debug Tools)
 
@@ -45,6 +47,9 @@ See `docs/TODO_MASTER_INDEX.md` for complete tracker reference. Priority tags: `
 - TODO [P2]: Add a golden log check in CI to detect shifts in HDMI counters without CRC mismatch.
 - TODO [P2]: Provide a Makefile shortcut to run only HDMI CRC benches and dump artifacts to `sim/build/hdmi/`.
 - TODO [P2]: Add debugfs/sysfs hook to read last HDMI CRC/frame count from hardware for parity with sim.
+- TODO [P2]: Add HDMI pipeline coverage for multi-sink support (two outputs), ensuring pixel and CRC counters isolate per sink.
+- TODO [P2]: Automate HDR/workspace tests that shift the framebuffer to different color gamuts and check CRC/histograms, logging results for the AI health dashboard.
+- TODO [P2]: Add a CI-targeted assert that HDMI CRC values stay within running tolerance vs. golden data after enabling the headless backend, failing the job when drift occurs.
 
 ## P3 - Low Priority (Advanced Features & Tools)
 
@@ -54,3 +59,5 @@ See `docs/TODO_MASTER_INDEX.md` for complete tracker reference. Priority tags: `
 - TODO [P3]: Add a high-res HDMI bench (e.g., 128x96) with golden CRC to stress timing.
 - TODO [P3]: Provide a tool/script to parse HDMI CRC logs and highlight mismatches vs. golden.
 - TODO [P3]: Provide a "HDMI debug dump" script to extract frame dumps from benches and compare visually (PPM).
+- TODO [P3]: Document HDMI multi-link extensions (e.g., DP MST, eDP) to guide future board builds and driver support.
+- TODO [P3]: Add a research note on using machine learning to predict HDMI CRC drift before it happens, tied to `docs/todo/todo_ai_development.md`.
