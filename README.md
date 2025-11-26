@@ -71,7 +71,7 @@ For contributor notes and a more detailed development workflow, see `CONTRIBUTIN
 
 This repo ships a minimal CMake build for host-side components (libhydra and optional POSIX tools).
 
-Open work items live in `docs/toodo/todo_master.md` (shared tracker). Please skim it before filing issues or PRs so we stay aligned.
+Open work items live in `docs/todo/todo_master.md` (shared tracker). Please skim it before filing issues or PRs so we stay aligned.
 
 ```
 cmake --preset windows-msvc
@@ -159,7 +159,7 @@ Contributions are welcome! Please see `CONTRIBUTING.md` for:
 - Commit message conventions
 - Testing requirements
 - Code review process
-- Shared task list: see `docs/toodo/todo_master.md` for the current 0.0.6 TODOs.
+- Shared task list: see `docs/todo/todo_master.md` for the current 0.0.6 TODOs.
 
 ## License
 

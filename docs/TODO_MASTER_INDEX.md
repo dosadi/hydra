@@ -12,8 +12,8 @@
 ## Quick Navigation
 
 - **Start Here:** [`TODO_README.md`](./TODO_README.md) - Quick start guide
-- **Strategic Planning:** [`todo_prioritization.md`](./toodo/todo_prioritization.md) - 8-week sprint plan
-- **This Session:** [`todo_system_summary_2025_11_25.md`](./toodo/todo_system_summary_2025_11_25.md) - Summary of today's work
+- **Strategic Planning:** [`todo_prioritization.md`](./todo/todo_prioritization.md) - 8-week sprint plan
+- **This Session:** [`todo_system_summary_2025_11_25.md`](./todo/todo_system_summary_2025_11_25.md) - Summary of today's work
 
 ---
 
@@ -370,9 +370,9 @@ These run in parallel with software development and have their own timeline.
 ## Additional Resources
 
 - **Quick Start:** [`TODO_README.md`](./TODO_README.md)
-- **Sprint Plan:** [`todo_prioritization.md`](./toodo/todo_prioritization.md)
-- **Session Summary:** [`todo_system_summary_2025_11_25.md`](./toodo/todo_system_summary_2025_11_25.md)
-- **Master Tracker:** [`todo_master.md`](./toodo/todo_master.md)
+- **Sprint Plan:** [`todo_prioritization.md`](./todo/todo_prioritization.md)
+- **Session Summary:** [`todo_system_summary_2025_11_25.md`](./todo/todo_system_summary_2025_11_25.md)
+- **Master Tracker:** [`todo_master.md`](./todo/todo_master.md)
 
 ---
 

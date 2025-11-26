@@ -23,4 +23,4 @@ Document the environment quirks and next steps required to keep the Hydra host t
 
 ## Next steps
 
-- Keep this doc in sync with `docs/toodo/todo_multiplatform_builds.md`. When you decide to tackle a TODO above, mark it completed with pointers to the commits or scripts that fulfil the requirement.
+- Keep this doc in sync with `docs/todo/todo_multiplatform_builds.md`. When you decide to tackle a TODO above, mark it completed with pointers to the commits or scripts that fulfil the requirement.

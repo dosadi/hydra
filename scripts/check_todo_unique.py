@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Detect duplicate TODO entries in docs/toodo/todo_master.md."""
+"""Detect duplicate TODO entries in docs/todo/todo_master.md."""
 
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ TODO_RE = re.compile(r"^- (TODO|DONE|IN-PROGRESS|WONTFIX-[^:]+):\s*(.*)")
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
-    todo_path = root / "docs" / "todo_master.md"
+    todo_path = root / "docs" / "todo" / "todo_master.md"
     if not todo_path.exists():
-        print("[todo-unique] docs/toodo/todo_master.md not found", file=sys.stderr)
+        print("[todo-unique] docs/todo/todo_master.md not found", file=sys.stderr)
         return 1
 
     seen = {}

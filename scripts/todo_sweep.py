@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Brief utility to inspect docs/toodo/todo_*.md trackers and summarize TODO counts.
+Brief utility to inspect docs/todo/todo_*.md trackers and summarize TODO counts.
 
 Usage:
   python scripts/todo_sweep.py
@@ -43,7 +43,9 @@ def scan_file(path: Path) -> Counter[str]:
 
 
 def main() -> None:
-    docs = sorted(Path("docs").glob("TODO*.md")) + sorted(Path("docs").glob("todo_*.md"))
+    docs = sorted(Path("docs").glob("TODO*.md")) \
+        + sorted(Path("docs").glob("todo_*.md")) \
+        + sorted(Path("docs/todo").glob("todo_*.md"))
     overall: Counter[str] = Counter()
     per_file = {}
 

@@ -382,14 +382,14 @@ These **P1 items provide outsized benefit**:
 ## Session Deliverables
 
 ### Files Created (8 New Trackers)
-1. ✅ `docs/toodo/todo_build_tooling.md` (~435 lines, 49 items)
-2. ✅ `docs/toodo/todo_documentation.md` (~350 lines, 34 items)
-3. ✅ `docs/toodo/todo_hardware_validation.md` (~435 lines, 46 items)
-4. ✅ `docs/toodo/todo_security.md` (~420 lines, 32 items)
-5. ✅ `docs/toodo/todo_board_fpga.md` (~380 lines, 26 items)
-6. ✅ `docs/toodo/todo_ip_integration.md` (~450 lines, 50 items)
-7. ✅ `docs/toodo/todo_mesa_drivers.md` (~380 lines, 40 items)
-8. ✅ `docs/toodo/todo_performance.md` (~370 lines, 47 items)
+1. ✅ `docs/todo/todo_build_tooling.md` (~435 lines, 49 items)
+2. ✅ `docs/todo/todo_documentation.md` (~350 lines, 34 items)
+3. ✅ `docs/todo/todo_hardware_validation.md` (~435 lines, 46 items)
+4. ✅ `docs/todo/todo_security.md` (~420 lines, 32 items)
+5. ✅ `docs/todo/todo_board_fpga.md` (~380 lines, 26 items)
+6. ✅ `docs/todo/todo_ip_integration.md` (~450 lines, 50 items)
+7. ✅ `docs/todo/todo_mesa_drivers.md` (~380 lines, 40 items)
+8. ✅ `docs/todo/todo_performance.md` (~370 lines, 47 items)
 
 ### Files Updated (1 Meta Document)
 1. ✅ `docs/TODO_MASTER_INDEX.md` - Updated metrics, tracker list, priorities

@@ -11,7 +11,7 @@ import re
 
 REQUIRED_FILES: List[str] = [
     "README.md",
-    "docs/toodo/todo_master.md",
+    "docs/todo/todo_master.md",
     "sim/Makefile",
     "Makefile",
     "CMakeLists.txt",
@@ -50,7 +50,7 @@ def check_todo_files(root: Path) -> List[str]:
     todo_names: Set[str] = set(re.findall(r"todo_[\\w_]+\\.md", text))
     missing = []
     for name in sorted(todo_names):
-        candidate = root / "docs" / "toodo" / name
+        candidate = root / "docs" / "todo" / name
         if not candidate.exists():
             missing.append(str(candidate))
     return missing
