@@ -460,3 +460,4 @@ Tracks integration of third-party IP cores (LitePCIe, LiteDRAM, LiteVideo, LiteX
 - **TODO [P1]:** Produce an integration checklist that lists CSR mappings, DMA descriptors, and debug hooks to cross-reference when replacing AXI stubs with LiteX IP; reference the list from `docs/todo/todo_dma_pcie.md` and `docs/todo/todo_build_tooling.md`.
 - **TODO [P2]:** Create scripts (e.g., `scripts/litex_integration.sh`) that build only one IP core at a time to isolate integration issues and document how to enable them via env vars.
 - **TODO [P2]:** Add latency/bandwidth expectations for the LiteX stack into `docs/todo/todo_performance.md` so software validation knows when DMA/PCIe throughput is constrained by stub vs. real IP.
+- **TODO [P2]:** Run `scripts/test_litex_stubs.sh` from CI/automation (see `scripts/automation_watchdog.sh`) to ensure the stub RTL remains lint-clean before hooking in real LiteX IP.
