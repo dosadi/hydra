@@ -19,10 +19,12 @@ Tracks pipelines for exporting voxel scenes, automating render capture, and keep
 - **TODO [P2]:** Create regression scripts that load exported assets into Blender and replay them, generating frame dumps to compare against golden assets (`scripts/check_export_assets.sh` + AI dashboard).
 - **TODO [P2]:** Capture HDR/config differences across tools (Blender vs Maya vs 3ds Max) and record them in `docs/camera_constants.md` for release notes; feed differences into AI automation.
 - **TODO [P2]:** Add an asset dependency map linking Blender/Maya files to TODO trackers (rendering, demos, docs) inside `docs/todo/todo_dependency_map.md`.
+- **TODO [P2]:** Automate asset metadata publishing (`scripts/export_asset_metadata.py`) that writes summary JSON consumed by `scripts/ai_health_dashboard.py` so asset health appears on the dashboard alongside code TODOs.
+- **TODO [P2]:** Add a “content consistency” tracker in `docs/todo/todo_dependency_map.md` referencing Blender/Maya scenes tied to reemissure/hardening TODOs so the board knows when content updates need follow-up in performance/renderer trackers.
 
 ## P3 - Pipeline Extensions & Education
 
 - **TODO [P3]:** Build tutorial videos (Blender/Max/Maya) showing how to author Hydra scenes, capturing the recorded macros and linking them to `docs/tutorials/content_creation.md`.
 - **TODO [P3]:** Document a “3D tool regression checklist” referencing Hydra automation (AI dashboard + build reacquire) so rapid content changes feed the tracker.
 - **TODO [P3]:** Explore generating animated demos directly from Blender/Maya that can be consumed by Hydra’s timeline/capture scripts (e.g., Hydra-specific camera paths or scripted scene toggles).
-
+- **TODO [P3]:** Maintain a living art release note (via this tracker) listing scene updates, expected visual differences, and how they map to TODOs so the AI workflow knows the difference between a quick art tweak and a whole new demo suite.
