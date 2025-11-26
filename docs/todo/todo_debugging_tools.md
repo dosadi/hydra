@@ -198,6 +198,10 @@ Improves developer productivity and debugging efficiency.
 ---
 
 ## P3: Low Priority Debug Tools (Future)
+- **TODO [P3]:** Add remote debugging support (socket-based capture) so HDL logs can stream over the network to remote viewers, enabling distributed debugging sessions.
+- **TODO [P2]:** Crawl `scripts/todo_inspect.py` coverage to ensure every debug artifact (waveform, metric log) is referenced somewhere; flag gaps for TODO creation.
+- **TODO [P1]:** Add an “assertion replay” tool that takes an RTL assertion failure log, replays the exact signal sequence in the simulator, and reruns the viewer to recreate the bug visually.
+- **TODO [P2]:** Add a curated “debug toolkit” README linking `scripts/board_simulate.sh`, `scripts/automation_watchdog.sh`, `scripts/ci_todo_rebalance.sh`, and new debug utilities so engineers can find instrumentation quickly.
 
 ### Advanced Visualization
 
