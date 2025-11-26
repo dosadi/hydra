@@ -136,6 +136,8 @@ module test_dma_stub_direct;
     );
 
     initial begin
+        integer errors;
+        integer i;
         $display("DMA_STUB_DIRECT: starting");
         $dumpfile("dma_stub_direct.vcd");
         $dumpvars(0, test_dma_stub_direct);
@@ -153,8 +155,26 @@ module test_dma_stub_direct;
 
         wait(done === 1'b1);
         $display("DMA_STUB_DIRECT: done busy=%0b", busy);
+        // Verify first few words copied
+        errors = 0;
+        for (i = 0; i < 8; i = i + 1) begin
+            if (u_mem.mem[(dst_addr >> 3) + i] !== {32'hAAAA0000 + i, 32'h55550000 + i}) begin
+                $display("DMA copy mismatch at word %0d: got %h expected %h", i, u_mem.mem[(dst_addr >> 3) + i], {32'hAAAA0000 + i, 32'h55550000 + i});
+                errors++;
+            end
+        end
+        if (errors == 0) $display("DMA_STUB_DIRECT: PASS");
+        else $fatal(1, "DMA_STUB_DIRECT: FAIL (%0d mismatches)", errors);
         #100;
         $finish;
+    end
+
+    // Populate a small region in SDRAM stub so DMA copies real data.
+    initial begin
+        integer i;
+        for (i = 0; i < 16; i = i + 1) begin
+            u_mem.mem[i] = {32'hAAAA0000 + i, 32'h55550000 + i};
+        end
     end
 
 endmodule

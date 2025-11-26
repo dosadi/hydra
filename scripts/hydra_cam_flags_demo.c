@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     ret = hydra_set_camera_raw(&h, -512, -512, -512, -32768, 0, 0, 0, 64);
     if (ret) goto out;
-    ret = hydra_set_flags(&h, true, false, true, false);
+    ret = hydra_set_flags(&h, true, false, true, false, false);
     if (ret) goto out;
     ret = hydra_set_selection(&h, true, 1, 2, 3);
     if (ret) goto out;

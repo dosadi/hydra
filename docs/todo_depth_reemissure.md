@@ -1,48 +1,6 @@
-# Hydra Depth / Z / Reemissure Path TODOs
+# Hydra Depth / Reemissure Index
 
-- TODO: Decide on depth range convention (0..far, linear vs. non-linear) and align RTL/HUD dumps accordingly.
-- TODO: Add a small tool that parses FRAME_DUMP depth/reemissure planes and prints summary stats (min/max/histogram).
-- TODO: Add a regression that toggles fog on/off and confirms depth buffer stays stable (no accidental reuse).
-- TODO: Add a doc table describing pixel_word bitfields (depth, color, reemissure) and how they map to HUD overlays.
-- TODO: Add a “depth sanity” bench that renders a flat plane and checks for uniform depth values across the frame.
-- TODO: Define a depth/z buffer format and export path (debug buffer, optional PPM/PNG dump).
-- TODO: Wire pixel_reemissure sideband through the framebuffer/HUD so emissive contributions are visible.
-- TODO: Add a HUD toggle to visualize depth buffer (grayscale) and reemissure as overlays.
-- TODO: Add assertions/coverage that reemissure is populated per-pixel in RTL and not dropped.
-- TODO: Add a cocotb/RTL bench to check reemissure correctness (known scene → expected sideband).
-- TODO: Support depth-aware fog (use z buffer) to avoid over/under fogging emissive surfaces.
-- TODO: Provide a depth histogram HUD/readout to tune fog/occlusion parameters.
-- TODO: Add a “depth debug” hotkey to step through depth slices and compare to selection.
-- TODO: Enable optional depth-based SSAO/SSR experiments using exported depth/normal buffers.
-- TODO: Document reemissure semantics (units, normalization) and depth buffer range in the spec.
-- TODO: Add a per-pixel depth clamp to avoid NaNs/inf in debug dumps; flag invalid values in logs.
-- TODO: Provide a reemissure scaling knob (env/HUD) to tune emissive contribution vs. base color.
-- TODO: Add a cocotb check that depth increments monotonically per-ray and resets correctly on frame start.
-- TODO: Expose depth/reemissure buffers to `FRAME_DUMP` (multi-plane PNG) for easier analysis.
-- TODO: Add a HUD toggle to overlay depth contours/isolines for visualizing geometry.
-- TODO: Gate reemissure writes by valid pixel hits (assert no stale data on miss).
-- TODO: Add a “depth peeking” debug mode to display depth at cursor/selection in HUD text.
-- TODO: Implement per-material depth bias control to reduce acne/self-intersection artifacts.
-- TODO: Add a regression test that compares depth slices against expected voxel geometry for a simple scene.
-- TODO: Provide a reemissure histogram HUD to see distribution of emissive values per frame.
-- TODO: Add an option to zero depth/reemissure when reset mid-frame to avoid partial garbage.
-- TODO: Add assertions that pixel_word0/1/2 remain stable when pixel_write_en deasserts.
-- TODO: Provide a pixel packing unit test (argb output vs. 96-bit inputs) in C++/SV.
-- TODO: Add coverage that reemissure sideband toggles when emissive voxels are present vs. absent.
-- TODO: Expose pixel_word2 (reemissure) via FRAME_DUMP optional plane for debugging emissive balance.
-- TODO: Add a cocotb monitor to log first/last pixel addresses and associated depth/reemissure values per frame.
-- TODO: Add an assertion that pixel_word2 is zero when emissive flag is off, and nonzero when on.
-- TODO: Provide a small SV scoreboard to check pixel_addr monotonicity and reemissure alignment per frame.
-- TODO: Add coverage for diag_slice flag effects on pixel_word outputs (depth/reemissure changes).
-- TODO: Add a “reemissure debug overlay” in HUD to show per-pixel emissive intensity as heatmap.
-- TODO: Include pixel_word0/1/2 in cocotb waveform dumps for targeted regression debugging.
-- TODO: Add a per-pixel checksum/log in SV benches to validate consistency of pixel_word0/1/2 across frames.
-- TODO: Provide a CLI flag/env to dump pixel_word raw values to a CSV for offline analysis.
-- TODO: Add coverage that pixel_word fields reset to defaults on soft_reset/start_frame.
-- TODO: Implement a test that flips emissive voxels mid-frame and observes pixel_word2 transitions.
-- TODO: Document pixel_word field layout (bit assignments) alongside depth/reemissure usage in spec.
-- TODO: Add coverage that pixel_word2 saturates/clamps as expected on over-range emissive values.
-- TODO: Provide a HUD readout of current pixel_word stats (min/max/avg) when debug mode enabled.
-- TODO: Add a cocotb assertion that pixel_word fields never go X/Z during normal operation.
-- TODO: Add a “pixel debug dump” hotkey to print pixel_word0/1/2 for the currently selected voxel.
-- TODO: Verify FRAME_DUMP planes remain aligned (pixel addr, depth, reemissure) across frame boundaries.
+This landing page now references the split depth and reemissure trackers so contributors can find the narrow TODO sets quickly.
+
+- **Depth buffer:** `docs/todo_depth_buffer.md` – depth ranges, fog/SSAO experiments, histograms, debug overlays.
+- **Reemissure:** `docs/todo_reemissure.md` – reemissure semantics, assertions, histograms, and emissive debugging helpers.

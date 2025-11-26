@@ -1,10 +1,15 @@
-# Hydra Platform Backends TODOs (SDL/GL/Vulkan/Wayland/X11/Headless)
+# Hydra Platform Backends TODOs (SDL/GL/Vulkan/Wayland/X11/Headless) - 0.0.7 Cycle
+
+**Focus:** Backend testing and validation, multi-platform stability.
+See `docs/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
+
+**Completed in 0.0.6:** CLI backend override, HUD info display, backend probe script, triage guide, window resize handling.
 
 - DONE: Add a short “backend triage” guide (common errors + fixes) linked from startup logs (`docs/backend_triage.md`).
 - DONE: Provide a scripted backend probe (`scripts/check_backends.sh`) that prints available video drivers and exits non-zero on mismatch (skips if SDL missing).
-- TODO: Add a CI note to skip GL/Vulkan tests when drivers are missing, but still capture backend capability logs as artifacts.
+- DONE: Add a CI note to skip GL/Vulkan tests when drivers are missing, but still capture backend capability logs as artifacts (documented in `docs/platform_backends.md`).
 - DONE: Surface backend choice and vsync status in the HUD so recordings show which path was used (HUD line added in sim).
-- TODO: Add a unit test that exercises backend selection precedence (CLI > env > compiled availability) to prevent regressions.
+- TODO [P1]: Add a unit test that exercises backend selection precedence (CLI > env > compiled availability) to prevent regressions. (Promoted from P2 based on 0.0.6 known issues)
 - TODO: Expand backend support matrix and document which platforms are exercised in CI vs. untested.
 - TODO: Add better detection/logging of available backends (GL/Vulkan/X11/Wayland) with fallbacks noted.
 - TODO: Implement headless backend parity (frame dumps, HUD toggles) and add a CI smoke for it.
@@ -13,7 +18,7 @@
 - TODO: Add backend-specific error logs (e.g., missing SDL_ttf, GL init failures) with actionable hints.
 - TODO: Provide a “minimal backend smoke” target that builds/runs SDL-only for quick checks.
 - DONE: Add a backend selection CLI flag (in addition to env) for scripting (`--backend`/`-b`).
-- TODO: Implement a backend preference order that prefers compiled GPU backends and falls back cleanly.
+- DONE: Implement a backend preference order that prefers compiled GPU backends and falls back cleanly (HYDRA_BACKEND_PREFS env to override order).
 - TODO: Add a platform capabilities dump (GPU/driver versions, SDL/GL/Vulkan availability) printed at startup.
 - TODO: Add resize handling tests (manual bench) to ensure backends recreate textures/buffers correctly.
 - TODO: Provide a fallback font detection/log when TTF init fails, per backend.
@@ -35,7 +40,7 @@
 - TODO: Add coverage for backend-specific key/mouse mapping consistency (e.g., Wayland vs. X11).
 - TODO: Implement a “backend quiet” mode to suppress non-fatal warnings during batch runs.
 - TODO: Add a script to exercise backends with `--help` or dry-run modes for CI availability checks.
-- TODO: Add a “backend summary” printed at exit (frames rendered, backend used, vsync state).
+- DONE: Add a “backend summary” printed at exit (frames rendered, backend used, vsync state).
 - TODO: Provide a fallback font search path per platform to reduce HUD init failures.
 - TODO: Add coverage for window focus/alt-tab handling across backends (mouse capture restore).
 - TODO: Implement a backend watchdog that tears down/reinits on repeated present failures.
@@ -50,7 +55,7 @@
 - TODO: Add coverage for backend selection precedence (env vs. CLI vs. compiled availability).
 - TODO: Implement an env/hotkey to toggle between backends at runtime when supported (or log unsupported).
 - TODO: Add a “help overlay” hotkey that shows backend selection keybinds and current backend.
-- TODO: Add a guard to warn/fail when requested backend isn’t compiled in (clear stderr message).
+- DONE: Add a guard to warn/fail when requested backend isn’t compiled in (clear stderr message for HYDRA_BACKEND).
 - TODO: Provide a script to list available backends and their compile/runtime status.
 - TODO: Add a CI artifact that captures backend capabilities dump and HUD screenshot on failure.
 - TODO: Implement per-backend hotkeys (e.g., toggle vsync) with consistent messaging.

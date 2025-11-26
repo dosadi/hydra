@@ -4,6 +4,14 @@
 /*
  * Hydra BAR0 register sketch (must align with RTL when implemented).
  * Offsets are byte offsets from BAR0 base.
+ *
+ * Userspace entrypoints (misc device):
+ *   HYDRA_IOCTL_INFO    - discover BAR0/1 spans, IRQ number, and IRQ count.
+ *   HYDRA_IOCTL_RD32    - aligned BAR0 read (bounds-checked against BAR0 size).
+ *   HYDRA_IOCTL_WR32    - aligned BAR0 write (RW1C honored for INT_STATUS).
+ *   HYDRA_IOCTL_DMA     - program the BAR0 DMA stub (src/dst/len) and poll done.
+ *   HYDRA_IOCTL_VERSION - ABI guard (struct sizes + ABI major/minor).
+ * Keep this list in sync with drivers/linux/uapi/hydra_ioctl.h and the BSD stub.
  */
 
 #ifndef BIT
@@ -36,7 +44,7 @@
 #define HYDRA_REG_CAM_PLANE_X   0x0038
 #define HYDRA_REG_CAM_PLANE_Y   0x003C
 
-#define HYDRA_REG_FLAGS         0x0040  /* [0]=smooth, [1]=curv, [2]=extra_light, [3]=diag_slice */
+#define HYDRA_REG_FLAGS         0x0040  /* [0]=smooth, [1]=curv, [2]=extra_light, [3]=diag_slice, [4]=ray_jitter */
 
 #define HYDRA_REG_SEL_ACTIVE    0x0044
 #define HYDRA_REG_SEL_X         0x0048

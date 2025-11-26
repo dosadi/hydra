@@ -13,6 +13,7 @@ module voxel_world_gen #(
     input  wire        clk,
     input  wire        rst_n,
     input  wire        start,
+    input  wire [31:0] seed,
     output reg         busy,
     output reg         done,
 
@@ -42,6 +43,7 @@ module voxel_world_gen #(
     reg  [7:0] floor_r, floor_g, floor_b;
     reg  [2:0] texture_noise;
     reg  [5:0] xz_xor;
+    wire [2:0] seed_noise = seed[2:0];
 
     localparam [5:0] SPH0_CX = 6'd32;
     localparam [5:0] SPH0_CY = 6'd32;
@@ -128,7 +130,7 @@ module voxel_world_gen #(
 
                         // Concrete-like floor with subtle warmth and procedural texture variation.
                         // XOR-based pseudo-noise adds micro-detail without costly computation.
-                        texture_noise = x[1:0] ^ y[2:1] ^ z[1:0];
+                        texture_noise = x[1:0] ^ y[2:1] ^ z[1:0] ^ seed_noise[1:0];
                         xz_xor = x ^ z;
                         floor_r = 8'd92  + {5'd0, x[2:0]} + {5'd0, texture_noise};  // 92-107 (neutral warm)
                         floor_g = 8'd88  + {5'd0, z[2:0]} + {5'd0, texture_noise};  // 88-103 (slightly cooler)

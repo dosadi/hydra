@@ -94,6 +94,13 @@ module voxel_sim_harness #(
     output wire        msi_pulse
 );
 
+`ifndef SYNTHESIS
+    initial begin
+        $dumpfile("voxel_sim_harness.vcd");
+        $dumpvars(0, voxel_sim_harness);
+    end
+`endif
+
     // --------------------------------------------------------------------
     // CSR block (AXI-Lite) driving voxel controls
     // --------------------------------------------------------------------
@@ -112,6 +119,7 @@ module voxel_sim_harness #(
     wire         flag_curvature;
     wire         flag_extra_light;
     wire         flag_diag_slice;
+    wire         flag_ray_jitter;
 
     wire         sel_load_pulse;
     wire         sel_active;
@@ -190,6 +198,7 @@ module voxel_sim_harness #(
         .flag_curvature (flag_curvature),
         .flag_extra_light(flag_extra_light),
         .flag_diag_slice(flag_diag_slice),
+        .flag_ray_jitter(flag_ray_jitter),
 
         .sel_load_pulse (sel_load_pulse),
         .sel_active     (sel_active),
@@ -233,12 +242,12 @@ module voxel_sim_harness #(
     // SDRAM stub + crossbar for sim
     // Decode voxel window (256 KiB at base 0x000_0000) vs. BAR1 (offset 0x100_0000)
     // --------------------------------------------------------------------
-    localparam [27:0] VOXEL_WIN_MASK = 28'h0FF_F000; // 256 KiB window
-    localparam [27:0] VOXEL_WIN_BASE = 28'h000_0000;
-    localparam [27:0] BAR1_BASE      = 28'h100_0000;
+    localparam [27:0] VOXEL_WIN_BASE  = 28'h000_0000;
+    localparam [27:0] VOXEL_WIN_BYTES = 28'h0040_000; // 256 KiB window
+    localparam [27:0] BAR1_BASE       = 28'h100_0000;
 
-    wire ext_voxel_aw = ((ext_axi_awaddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
-    wire ext_voxel_ar = ((ext_axi_araddr & VOXEL_WIN_MASK) == VOXEL_WIN_BASE);
+    wire ext_voxel_aw = (ext_axi_awaddr >= VOXEL_WIN_BASE) && (ext_axi_awaddr < (VOXEL_WIN_BASE + VOXEL_WIN_BYTES));
+    wire ext_voxel_ar = (ext_axi_araddr >= VOXEL_WIN_BASE) && (ext_axi_araddr < (VOXEL_WIN_BASE + VOXEL_WIN_BYTES));
 
     // DMA master wires
     wire [3:0]  m1_awid;
@@ -559,8 +568,9 @@ module voxel_sim_harness #(
                 .flags_load     (flags_load_pulse),
                 .flag_smooth_in (flag_smooth),
                 .flag_curvature_in(flag_curvature),
-                .flag_extra_light_in(flag_extra_light),
-                .flag_diag_slice_in(flag_diag_slice),
+        .flag_extra_light_in(flag_extra_light),
+        .flag_diag_slice_in(flag_diag_slice),
+        .flag_ray_jitter_in(flag_ray_jitter),
                 .sel_load       (sel_load_pulse),
                 .sel_active_in  (sel_active),
                 .sel_voxel_x_in (sel_x),

@@ -31,6 +31,7 @@ struct hydra_flags_state {
     bool curvature;
     bool extra_light;
     bool diag_slice;
+    bool ray_jitter;
 };
 
 struct hydra_selection_state {
@@ -79,7 +80,8 @@ int hydra_set_camera_raw(struct hydra_handle* h,
                          int32_t plane_x, int32_t plane_y);
 int hydra_set_flags(struct hydra_handle* h,
                     bool smooth, bool curvature,
-                    bool extra_light, bool diag_slice);
+                    bool extra_light, bool diag_slice,
+                    bool ray_jitter);
 int hydra_set_selection(struct hydra_handle* h,
                         bool active, uint8_t x, uint8_t y, uint8_t z);
 int hydra_apply_state(struct hydra_handle* h,

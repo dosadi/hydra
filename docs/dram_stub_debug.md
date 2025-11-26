@@ -1,0 +1,6 @@
+# DRAM Stub Debug Guide
+
+- **Waveform snapshot #1 (WLAST missing).** Capture `test_axi_sdram_error.vcd`, set `AWLEN>0`, and freeze at the cycle where `w_beats` is still non-zero but `s_axi_wlast` is low. Annotate the waveform with the `w_active`/`state` vectors to show the FSM waiting for `WLAST`.
+- **Waveform snapshot #2 (ARLEN mismatch).** Force a multi-beat read (`ARLEN=4`, `ARSIZE=3`) and inspect `r_beats` vs `s_axi_rlast`. Highlight the point where the read FSM decrements `r_beats` but `s_axi_rlast` remains high for the wrong beat; use this capture to validate that `r_addr` increments based on `r_burst`.
+- **Poison mode checklist.** When `POISON_ON_UNINIT=1`, the stub tracks `mem_valid` for each word. Record the waveform showing `mem_valid` staying low until a write fires, and verify a subsequent read returns `X` (see `sim/tests/rtl/test_axi_sdram_poison.vcd`). Document how to trigger poison reads via cocotb or TCL to catch uninitialized accesses.
+- **Out-of-range assertion log.** Use the error test (`test_axi_sdram_error.sv`) to confirm `bresp=SLVERR`/`rresp=SLVERR` when the master issues addresses beyond `MEM_WORDS`. Log the expected responses and provide the command line to rerun the bench so others can reproduce the failure.

@@ -74,6 +74,7 @@ module axi_dma_stub #(
     reg [ADDR_WIDTH-1:0] cur_dst;
     reg [31:0] remaining;
     reg [DATA_WIDTH-1:0] read_data_hold;
+    reg [15:0] beat_count;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -84,6 +85,7 @@ module axi_dma_stub #(
             cur_dst      <= {ADDR_WIDTH{1'b0}};
             remaining    <= 32'd0;
             read_data_hold <= {DATA_WIDTH{1'b0}};
+            beat_count   <= 16'd0;
 
             m_axi_awid   <= {ID_WIDTH{1'b0}};
             m_axi_awaddr <= {ADDR_WIDTH{1'b0}};
@@ -115,6 +117,7 @@ module axi_dma_stub #(
                         cur_src   <= src_addr;
                         cur_dst   <= dst_addr;
                         remaining <= len_bytes;
+                        beat_count<= 16'd0;
                         state     <= S_AR;
                     end
                 end
@@ -160,6 +163,7 @@ module axi_dma_stub #(
                 S_B: begin
                     if (m_axi_bvalid && m_axi_bready) begin
                         m_axi_bready <= 1'b0;
+                        beat_count   <= beat_count + 1'b1;
                         // Advance pointers
                         if (remaining <= STRB_WIDTH) begin
                             remaining <= 0;
@@ -180,5 +184,46 @@ module axi_dma_stub #(
             endcase
         end
     end
+
+`ifdef VERILATOR
+    // AXI4 master stability and basic correctness checks.
+    always @(posedge clk) begin
+        if (m_axi_awvalid && !m_axi_awready) begin
+            assert($stable(m_axi_awaddr)) else $fatal("AWADDR changed while AWVALID held high");
+            assert($stable(m_axi_awlen)) else $fatal("AWLEN changed while AWVALID held high");
+            assert($stable(m_axi_awsize)) else $fatal("AWSIZE changed while AWVALID held high");
+            assert($stable(m_axi_awburst)) else $fatal("AWBURST changed while AWVALID held high");
+        end
+        if (m_axi_wvalid && !m_axi_wready) begin
+            assert($stable(m_axi_wdata)) else $fatal("WDATA changed while WVALID held high");
+            assert($stable(m_axi_wstrb)) else $fatal("WSTRB changed while WVALID held high");
+            assert($stable(m_axi_wlast)) else $fatal("WLAST changed while WVALID held high");
+        end
+        if (m_axi_arvalid && !m_axi_arready) begin
+            assert($stable(m_axi_araddr)) else $fatal("ARADDR changed while ARVALID held high");
+            assert($stable(m_axi_arlen)) else $fatal("ARLEN changed while ARVALID held high");
+            assert($stable(m_axi_arsize)) else $fatal("ARSIZE changed while ARVALID held high");
+            assert($stable(m_axi_arburst)) else $fatal("ARBURST changed while ARVALID held high");
+        end
+        // Single-beat bursts only in this stub.
+        if (m_axi_awvalid) assert(m_axi_awlen == 8'd0) else $fatal("AWLEN != 0 in stub DMA");
+        if (m_axi_arvalid) assert(m_axi_arlen == 8'd0) else $fatal("ARLEN != 0 in stub DMA");
+        // No X/Z on outgoing signals when valid.
+        if (m_axi_awvalid) begin
+            assert(!$isunknown(m_axi_awaddr)) else $fatal("AWADDR X/Z");
+        end
+        if (m_axi_wvalid) begin
+            assert(!$isunknown(m_axi_wdata)) else $fatal("WDATA X/Z");
+            assert(!$isunknown(m_axi_wstrb)) else $fatal("WSTRB X/Z");
+        end
+        if (m_axi_arvalid) begin
+            assert(!$isunknown(m_axi_araddr)) else $fatal("ARADDR X/Z");
+        end
+        // Beat counter should match transfer length / STRB_WIDTH at completion.
+        if (done) begin
+            assert(beat_count == len_bytes/STRB_WIDTH) else $fatal("beat_count=%0d len_bytes=%0d mismatch", beat_count, len_bytes);
+        end
+    end
+`endif
 
 endmodule

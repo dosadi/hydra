@@ -125,6 +125,13 @@ Scene notes:
 - A warm emissive ceiling slab near y≈52 shines down onto a cool floor band near y≈10; the main cyan sphere casts a soft shadow on the floor.
 - Stand near the floor looking upward to see the light slab; move above the floor to see the shadowed area beneath the sphere.
 
+## Driver readiness
+
+- Linux: PCIe + DRM stubs live under `drivers/linux/`; IOCTLs are documented in `drivers/linux/uapi/hydra_regs.h` and `docs/driver_integration.md`.
+- FreeBSD: PCI stub in `drivers/bsd/` maps BAR0/1, supports `/dev/hydra` mmap (BAR0 then BAR1), and exposes IRQ/DMA counters via `dev.hydra.*` sysctls; `scripts/hydra_bsd_info` prints IOCTL + sysctl stats.
+- Coverage: `./scripts/driver_coverage.sh` runs small IOCTL helpers and drops logs under `out/driver-coverage/` (see `docs/driver_coverage_guide.md`).
+- Platform notes: Windows/macOS build hints in `docs/macos_windows_build.md`; wider bring-up checklist in `docs/driver_integration.md`.
+
 ## Documentation
 
 Comprehensive documentation is available in the `docs/` directory:

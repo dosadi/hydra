@@ -1,6 +1,8 @@
-# Hydra TODO Tracker (toward 0.0.6)
+# Hydra TODO Tracker (toward 0.0.7)
 
-Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROGRESS`, `DONE`, `WONTFIX-0.0.6` (with a short rationale). Keep entries concise; add owner/notes inline if useful.
+Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROGRESS`, `DONE`, `WONTFIX-0.0.7` (with a short rationale). Keep entries concise; add owner/notes inline if useful.
+
+**Note:** 0.0.6 released 2025-11-24. Focus areas for 0.0.7: RTL hardening (backpressure, SVAs), visual quality Phase 2+3, hardware bring-up infrastructure. See `docs/todo_prioritization.md` for strategic prioritization and sprint plan.
 
 ## Simulation / Viewer
 - IN-PROGRESS: Diagnose 'o' key (diagnostic slice toggle) not responding - added debug output (commit 708a373), awaiting user test results.
@@ -11,10 +13,10 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Clear the framebuffer each frame in `sim/live_sdl_main.cpp` (or when fewer than NPIX pixels are produced) to prevent stale pixels if the RTL stalls early (HYDRA_CLEAR_EACH_FRAME, HYDRA_CLEAR_COLOR).
 - DONE: Add env/CLI overrides for initial camera pos/yaw/pitch, move speed, and mouse sensitivity in `sim/live_sdl_main.cpp` for scriptable demos/regressions (HYDRA_CAM_POS, HYDRA_CAM_ANG, HYDRA_MOVE_SPEED, HYDRA_MOUSE_SENS).
 - DONE: Allow font path override (env) in `sim/live_sdl_main.cpp` to avoid silent HUD loss when DejaVuSans is absent (HYDRA_FONT).
-- TODO: Expose a debug/HUD toggle to visualize the 96-bit pixel sidebands (`pixel_word0/2`) instead of dropping them in `pixel96_to_argb`.
+- DONE: Expose a debug/HUD toggle to visualize the 96-bit pixel sidebands (`pixel_word0/2`) instead of dropping them in `pixel96_to_argb` (HYDRA_PIXEL_VIEW + `V` cycles color/word0/word2/sideband).
 - DONE: Relax/case-fold `HYDRA_BACKEND` parsing and prefer compiled GPU backends ahead of SDL in `sim/platform/backend_selector.cpp` (uses strcasecmp for case-insensitive matching).
 - DONE: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don’t need a display server.
-- TODO: Surface an on-screen help overlay (keybind list) in the HUD, gated by a hotkey, to improve discoverability.
+- DONE: Surface an on-screen help overlay (keybind list) in the HUD, gated by a hotkey (F1 sticky toggle, `/` for timed popup at startup or on demand).
 - DONE: Clamp camera position to the voxel volume bounds (configurable) to avoid flying far outside the scene during demos (HYDRA_CAM_CLAMP + HYDRA_CAM_BOUNDS).
 - DONE: Handle SDL window resizes by adjusting the logical size/texture and clearing the framebuffer to avoid stretched/hung frames.
 - DONE: Add a simple frame pacing cap (sleep when FPS >> target) to make automated captures deterministic (HYDRA_FPS_TARGET).
@@ -26,11 +28,11 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a VSYNC toggle (hotkey/env) and reflect it in the HUD/backend startup log.
 - TODO: Add a grid/axis overlay toggle to help orientation inside the voxel volume.
 - TODO: Add joystick/gamepad input support (fallback to SDL game controller mappings).
-- TODO: Add a HUD indicator when selection is active and editable keys (C/X/Z/B) are available, to reduce guesswork.
+- DONE: Add a HUD indicator when selection is active and editable keys (C/X/Z/B) are available, to reduce guesswork (HUD now shows edit hints when selection is latched).
 - TODO: Add crosshair style/color/size customization (env/hotkey) so recorded clips can match different backgrounds.
 - TODO: Add an option to log HUD stats (FPS, mem util, hits) to a CSV for offline perf tracking.
-- TODO: Add a world-seed override for the procedural scene to make deterministic repros across runs.
-- TODO: Add a tiny config file parser (e.g., env-var-provided path) to preload camera/flags/backend/seed.
+- DONE: Add a world-seed override for the procedural scene to make deterministic repros across runs (HYDRA_WORLD_SEED env consumed in world_gen; default seed preserves existing scene).
+- IN-PROGRESS: Add a tiny config file parser (e.g., env-var-provided path) to preload camera/flags/backend/seed (autosave/autoload exists; extend to seed/backend).
 - DONE: Add input-device detection log (mouse/keyboard/gamepad) at startup to aid repro of input bugs (stderr summary after SDL init).
 - TODO: Add a latency/profiling overlay (ms/frame breakdown) toggled by a hotkey for perf debugging.
 - TODO: Add a toggle to freeze camera but keep rendering (to inspect static scenes) and another to pause rendering ticks.
@@ -44,18 +46,18 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a debug mode that shows cam vectors (dir/plane) as on-screen arrows for math sanity checks.
 - DONE: Add keybind to dump current camera/flag/selection state to stdout for copy-paste into tests/docs (P key).
 - TODO: Add optional gamma correction or tone-mapping toggle to make visuals more consistent across displays.
-- TODO: Add a “safe defaults” preset (lower speed/sensitivity, noclip-off) for new users via env/hotkey.
+- DONE: Add a “safe defaults” preset (lower speed/sensitivity, noclip-off) for new users via env/hotkey (HYDRA_SAFE_DEFAULTS + F2 toggle).
 - DONE: Add an invert-Y mouse option (env/hotkey) and persist it in the config preload (HYDRA_INVERT_Y).
 - DONE: Add HUD font size scaling knob (env) to improve readability on high-DPI displays (HYDRA_FONT_SCALE).
 - DONE: Add a batch/headless mode to render N frames to numbered files for CI comparisons (HYDRA_FRAME_BASE + HYDRA_MAX_FRAME_DUMPS).
-- TODO: Add command-line flags (in addition to env) for backend, seed, camera, speeds, to ease scripted runs.
-- TODO: Add an on-screen indicator when mouse capture is off, with a hint to toggle.
+- DONE: Add command-line flags (in addition to env) for backend, seed, camera, speeds, to ease scripted runs (`--cam-pos/--cam-ang/--move-speed/.../--pixel-view/--seed`).
+- DONE: Add an on-screen indicator when mouse capture is off, with a hint to toggle (red HUD line + overlay warning).
 - TODO: Add an env/hotkey to choose mouse smoothing vs. raw input (helpful for touchpads).
-- TODO: Add a HUD toggle to briefly display keybinds on startup and when pressed.
+- DONE: Add a HUD toggle to briefly display keybinds on startup and when pressed (F1 sticky overlay, `/` timed popup, auto-start hint).
 - DONE: Add an env to auto-exit after N frames (with optional rotating FRAME_DUMP names) for CI captures (HYDRA_MAX_FRAME_DUMPS + HYDRA_FRAME_BASE, AUTO_EXIT).
 - DONE: Add an option to persist camera/selection/flags to a small config file and reload on startup (HYDRA_AUTOSAVE_CFG).
-- TODO: Add a HUD toggle to flash when selection write fails (e.g., cursor miss) to aid debugging.
-- TODO: Add a “safe capture” mode that disables input and keeps camera fixed while dumping frames.
+- DONE: Add a HUD toggle to flash when selection write fails (e.g., cursor miss) to aid debugging (viewer shows selection miss warning when F is pressed without a hit).
+- DONE: Add a “safe capture” mode that disables input and keeps camera fixed while dumping frames (HYDRA_SAFE_CAPTURE + F3 toggle; freezes input/mouse, HUD line + warning).
 - TODO: Add a hotkey/env to toggle cursor ray visualization (line to hit point) for debugging aiming/selection.
 - TODO: Add an audio click/feedback on selection or edit to improve UX during demos (optional, env-controlled).
 - TODO: Add a seed/randomize hotkey to quickly flip worlds without restarting the sim.
@@ -70,34 +72,35 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a “telemetry off” mode to skip HUD drawing for maximal render throughput in benchmarks.
 
 ## RTL Shell
-- TODO: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (buffer or stall when `m_axis_tready` deasserts).
+- DONE: Handle AXI-Stream backpressure in `rtl/voxel_axi_core.sv` (one-beat skid buffer with fatal-on-overflow to expose integration needs).
 - TODO: Tie off or assert stub AXI master signals in `rtl/voxel_axi_core.sv` to silence unused-interface warnings (aw/ar/w channels driven with valid=0 today).
 - TODO: Surface or assert the `pixel_reemissure` sideband in `rtl/voxel_axi_core.sv` so the 96-bit format stays exercised.
-- TODO: Add simple AXI-Lite SVAs in `rtl/voxel_axil_csr.sv` (handshakes, INT_STATUS RW1C correctness).
-- TODO: Add a lightweight SV testbench that drives AXI-Lite writes/reads over the BAR0 map to flag regressions when CSRs change.
+- DONE: Add simple AXI-Lite SVAs in `rtl/voxel_axil_csr.sv` (handshake stability on AW/AR/W when VALID stalls).
+- DONE: Add a lightweight SV testbench that drives AXI-Lite writes/reads over the BAR0 map to flag regressions when CSRs change (`sim/tests/rtl/test_voxel_axil_csr_simple.sv`).
+- TODO: Keep AXI-Lite coverage tracked in `docs/todo_axi_lite_coverage.md` and add regression scripts/tests as coverage requirements evolve.
 - TODO: Add compile-time parameters or CSRs for VOXEL_GRID_SIZE/SCREEN dims that propagate into the sim HUD for consistency.
 - TODO: Add an assertion or coverage point for `frame_done` cadence vs. expected pixel count to catch truncated frames in RTL.
-- TODO: Add reset-value checks for key CSRs (flags, selection, CTRL) to match the spec and fail sim if mismatched.
+- DONE: Add reset-value checks for key CSRs (flags, selection, CTRL) to match the spec and fail sim if mismatched (Verilator assertions in voxel_axil_csr.sv).
 - TODO: Add coverage/assertions that INT_MASK gates irq_out/msi_pulse correctly on each bit.
 - TODO: Add a lint-time check or assertion that camera/flag pulses are single-cycle to avoid missed updates.
 - TODO: Add a lightweight formal/cover for dbg write path (address range, pulse duration) to catch off-by-one errors.
 - TODO: Add parameterized address widths for dbg write addr to match different VOXEL_GRID_SIZE targets cleanly.
 - TODO: Add optional perf counters for pixel drops/STALLs in the AXI-Stream path to surface backpressure issues.
 - TODO: Add a compile-time switch to bypass auto-start frames (AUTO_START_FRAMES=0) and verify manual start_frame path.
-- TODO: Add a simple scoreboard in sim to check pixel_addr monotonicity and no gaps per frame when tready is asserted.
-- TODO: Add an assertion that frame_done only pulses after the final pixel (TOTAL_PIXELS-1) unless reset.
+- DONE: Add a simple scoreboard in sim to check pixel_addr monotonicity and no gaps per frame when tready is asserted (pixel_addr monotonic + frame_done count assertions in voxel_axi_core).
+- DONE: Add an assertion that frame_done only pulses after the final pixel (TOTAL_PIXELS-1) unless reset (frame_done count check in voxel_axi_core).
 - TODO: Add a “sim slow” knob to inject wait-states into mem-side counters to stress stalls/backpressure paths.
 - TODO: Add reset/soft-reset behavior checks to ensure counters and FSMs go to known state.
 - TODO: Add coverage for diag_slice flag effects (ensuring expected pixel_write_en pattern changes when set).
 - TODO: Add a small SV covergroup on INT_STATUS bits to ensure each event is observed at least once in regression.
 - TODO: Add a parameter to disable diagnostic slice entirely for FPGA builds (synth-friendly switch).
 - TODO: Add a build-time flag to reduce MAX_RAY_STEPS for faster sims and verify behavior under short rays.
-- TODO: Add a simple checker that pixel_word0/1/2 are stable when pixel_write_en deasserts (no X propagation).
-- TODO: Add assertions that selection x/y/z remain within VOXEL_GRID_SIZE and are only latched on sel_load_pulse.
+- DONE: Add a simple checker that pixel_word0/1/2 are stable when pixel_write_en deasserts (no X propagation) (global X/Z assertions in voxel_axi_core).
+- DONE: Add assertions that selection x/y/z remain within VOXEL_GRID_SIZE and are only latched on sel_load_pulse (voxel_axi_core SVAs).
 - TODO: Add parameterized screen dims for non-480x360 builds and propagate to TOTAL_PIXELS checks.
 - TODO: Add a cover/check that dbg writes do not coincide with soft_reset/start_frame (or define behavior).
 - TODO: Add an assertion that frame_done clears core_busy within a bounded number of cycles.
-- TODO: Add a check that no pixel writes occur after frame_done until the next frame start.
+- DONE: Add a check that no pixel writes occur after frame_done until the next frame start (voxel_axi_core SVA).
 - TODO: Add a parameter to disable extra_light flag effects for baseline testing.
 - TODO: Add coverage on selection edit paths (C/X/Z/B) to ensure dbg write pulses reach voxel RAM in sim.
 - TODO: Add a simple check that fb_base/fb_stride CSRs hold non-zero values when start_frame pulses (or define default).
@@ -120,15 +123,15 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Mark BAR mmaps with `VM_IO|VM_DONTDUMP|VM_DONTEXPAND` in `drivers/linux/hydra_pcie_drv.c`.
 - DONE: Strengthen parameter/error guards in `drivers/libhydra/hydra.c` (null/closed handles, ioctl failures) and provide an `HYDRA_HANDLE_INIT` helper.
 - DONE: Switch `scripts/hydra_blit_smoketest.c` to shared UAPI headers instead of duplicating structs.
-- TODO: Flesh out the FreeBSD stub (`drivers/bsd/hydra_pci_stub.c`) to mirror the Linux ioctl map and BAR1 exposure instead of placeholder comments.
-- TODO: Make `scripts/hydra_drm_info.c` fail hard (non-zero) when DRM ioctls fail and print clearer error context.
+- DONE: Flesh out the FreeBSD stub (`drivers/bsd/hydra_pci_stub.c`) to mirror the Linux ioctl map and BAR1 exposure instead of placeholder comments (INFO/RD32/WR32/DMA/ABI version and BAR info wired).
+- DONE: Make `scripts/hydra_drm_info.c` fail hard (non-zero) when DRM ioctls fail and print clearer error context (named ioctl errors, non-zero exit).
 - DONE: Add a small libhydra sample that exercises camera/flags/selection APIs so new users can sanity-check BAR0 writes.
 - DONE: Allow overriding vendor/device IDs in the Linux driver via module params to ease bring-up on FPGA prototypes.
 - DONE: Add a tiny userspace test that issues `HYDRA_IOCTL_DMA` with bad offsets to confirm the driver rejects wraps (negative test).
-- TODO: Add uapi header versioning (struct size check) in userspace tools to catch mismatch with the kernel driver.
+- DONE: Add uapi header versioning (struct size check) in userspace tools to catch mismatch with the kernel driver (hydra_drm_info queries HYDRA_IOCTL_VERSION and verifies struct sizes/ABI).
 - TODO: Add a debugfs knob in `hydra_pcie_drv` to toggle verbose IRQ logging without recompiling.
 - DONE: Package a pkg-config file for libhydra so external tools can find headers/libs without hardcoded paths.
-- TODO: Make the FreeBSD stub expose a `devctl`/sysctl readout similar to the Linux debugfs status for parity.
+- DONE: Make the FreeBSD stub expose a `devctl`/sysctl readout similar to the Linux debugfs status for parity (sysctl nodes for BAR sizes, INT/DMA status, irq_count).
 - TODO: Add a self-test debugfs entry to trigger IRQ_TEST and report INT_STATUS to validate interrupts without user tooling.
 - TODO: Teach `hydra_dma_blit_demo` to skip cleanly (exit 77) when the device node is missing, for nicer CI gating.
 - DONE: Add a tiny `hydra_cam_reset` CLI that sets camera/flags/selection to defaults via libhydra (mirrors sim reset hotkey).
@@ -140,7 +143,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add an example systemd service that loads the driver and sets permissions for devnode on boot.
 - TODO: Add a kselftest-style script in `scripts/` to exercise ioctl/mmap paths and report pass/fail.
 - DONE: Add a tiny `hydra_irq_test` userspace tool to pulse IRQ_TEST and poll INT_STATUS for quick sanity.
-- TODO: Add a FreeBSD userspace sample matching the Linux ones (info + IRQ test) to validate that stub.
+- DONE: Add a FreeBSD userspace sample matching the Linux ones (info + IRQ test) to validate that stub (`scripts/hydra_bsd_info.c`).
 - DONE: Add a libhydra API to read INT_MASK/INT_STATUS and clear bits to reduce boilerplate in tools.
 - DONE: Add a quick “device present?” helper in libhydra (returns ENODEV if node missing) to simplify app startup.
 - TODO: Add a debugfs entry that dumps recent IRQ timestamps/counts for profiling interrupt cadence.
@@ -166,7 +169,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Add a libhydra call to fetch BAR sizes/info (mirrors HYDRA_IOCTL_INFO) for convenience.
 - TODO: Add CI smoke that runs libhydra samples under strace to confirm IOCTL sequences look sane.
 - DONE: Add a tiny tool to toggle INT_MASK bits and poll INT_STATUS to validate IRQ masking from userspace.
-- TODO: Add a FreeBSD Makefile target to build/install the stub (mirroring Linux make help).
+- DONE: Add a FreeBSD Makefile target to build/install the stub (mirroring Linux make help) (`make bsd-kmod`).
 - DONE: Add a small README for user tools describing expected outputs and exit codes.
 
 ## Build / CI / Tooling
@@ -196,6 +199,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
 - DONE: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
 - DONE: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
+- DONE: Stand up new domain TODO trackers: board-level (`docs/todo_board_level.md`), xschem (`docs/todo_xschem.md`), DRAM stub (`docs/todo_dram_stub.md`), synthesis (`docs/todo_synthesis.md`), FPGA (`docs/todo_fpga.md`), multiplatform builds (`docs/todo_multiplatform_builds.md`), and site/wiki (`docs/todo_site_wiki.md`); keep them updated alongside this master list.
 - DONE: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
 - DONE: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
 - DONE: Add an automated spellcheck/lint for docs to keep wording clean.
@@ -227,30 +231,30 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 ## Docs
 - DONE: Sync README license wording to the existing BSD-3-Clause `LICENSE`.
 - TODO: Refresh IDs/rev/build in `docs/hydra_spec.md` to the current (0.0.5/next) values.
-- TODO: Update platform backend status (GL path renders) in README/docs to avoid “stubbed” confusion.
+- DONE: Update platform backend status (GL path renders) in README/docs to avoid “stubbed” confusion (backend matrix/status in `docs/platform_backends.md`).
 - DONE: Document the backend selection/env vars and headless mode in README/test docs once implemented.
-- TODO: Add a short “known issues” section for 0.0.6 (e.g., stubbed DMA/AXI master, Vulkan backend stability) to set expectations.
-- TODO: Expand `docs/testing_overview.md` with example commands for negative tests (bad IOCTLs, headless frame dump).
-- TODO: Document keybindings and editing shortcuts in a dedicated sim controls doc to reduce friction for new testers.
+- DONE: Add a short “known issues” section for 0.0.6 (e.g., stubbed DMA/AXI master, Vulkan backend stability) to set expectations.
+- DONE: Expand `docs/testing_overview.md` with example commands for negative tests (bad IOCTLs, headless frame dump).
+- DONE: Document keybindings and editing shortcuts in a dedicated sim controls doc to reduce friction for new testers (`docs/sim_controls.md` kept current).
 - TODO: Add a brief “architecture at a glance” diagram or ASCII map linking RTL modules to sim components for onboarding.
-- TODO: Document the BAR0 CSR reset defaults and how drivers should validate them during probe.
-- TODO: Add a “backend compatibility matrix” note (which OS/flags are exercised in CI vs. untested).
+- DONE: Document the BAR0 CSR reset defaults and how drivers should validate them during probe (`docs/hydra_spec.md` reset defaults + probe checklist).
+- DONE: Add a “backend compatibility matrix” note (which OS/flags are exercised in CI vs. untested) in `docs/platform_backends.md`.
 - TODO: Add a short “how to repro a frame” doc snippet (FRAME_DUMP/AUTO_EXIT usage with expected outputs).
 - TODO: Document cocotb smoke expectations and how to interpret failures/timeouts for `sim/tests/cocotb_hydra`.
 - TODO: Add a contributor note explaining status tags (TODO/IN-PROGRESS/DONE/WONTFIX-0.0.6) and how to update owners.
 - TODO: Add a release checklist for 0.0.6 (tests to run, docs to touch, version bumps).
-- TODO: Add a driver bring-up checklist (Linux/FreeBSD) with expected dmesg/debugfs/sysctl outputs.
+- DONE: Add a driver bring-up checklist (Linux/FreeBSD) with expected dmesg/debugfs/sysctl outputs (`docs/driver_integration.md` section).
 - TODO: Add a short primer on interpreting HUD perf counters and mem utilization readings.
-- TODO: Add a short “troubleshooting sim build” section (missing SDL_ttf, Verilator version mismatches).
+- DONE: Add a short “troubleshooting sim build” section (missing SDL_ttf, Verilator version mismatches) in `docs/testing_overview.md`.
 - DONE: Add doc pointers in README to the new TODO tracker so contributors can pick items easily.
 - DONE: Add a doc snippet on using LOG_KEYS/LOG_FRAMES and expected sample logs for sanity.
 - DONE: Add notes about headless runs and FRAME_DUMP outputs (file size, format).
-- TODO: Add a short doc on SDL backends (Wayland/X11/GL/Vulkan) with build flags and runtime envs.
+- DONE: Add a short doc on SDL backends (Wayland/X11/GL/Vulkan) with build flags and runtime envs (`docs/platform_backends.md` updated with current status and matrix).
 - TODO: Add a brief note on expected memory footprint/frame times in sim for baseline hardware.
 - TODO: Add a small “perf tuning” doc for sim (env vars, pacing, disable HUD) for capturing reproducible metrics.
 - TODO: Add instructions for running cocotb tests with alternative simulators (icarus/vcs/etc.) if applicable.
-- TODO: Add a FAQ section capturing common setup/running errors and fixes.
-- TODO: Add a “first run” checklist (deps, make, test_frame, sim_voxel) for new contributors.
+- DONE: Add a FAQ section capturing common setup/running errors and fixes (`docs/testing_overview.md`).
+- DONE: Add a “first run” checklist (deps, make, test_frame, sim_voxel) for new contributors (`docs/testing_overview.md` quick start section).
 - TODO: Add a release-notes template snippet (what changed/how validated) for future versions.
 - TODO: Add a short doc on integrating Hydra RTL into other projects (AXI shell expectations).
 - DONE: Add a short “how to file a good bug” blurb (logs to attach, FRAME_DUMP, LOG_KEYS/LOG_FRAMES).

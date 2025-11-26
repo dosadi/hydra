@@ -40,6 +40,7 @@ help:
 	@echo "  make backend-probe - Probe SDL backends (best effort; skips if SDL missing)"
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
+	@echo "  make bsd-kmod      - Build FreeBSD hydra kmod (drivers/bsd/Makefile.kmod)"
 	@echo ""
 	@echo "  make libhydra      - Build libhydra.a static library"
 	@echo "  make blit-smoketest- Build user blit smoke test"
@@ -171,6 +172,9 @@ todo-unique:
 
 bench:
 	@$(MAKE) -C sim bench
+
+bsd-kmod:
+	@$(MAKE) -C drivers/bsd -f Makefile.kmod
 
 spellcheck:
 	@./scripts/spellcheck_docs.sh

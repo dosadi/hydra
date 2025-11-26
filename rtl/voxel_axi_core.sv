@@ -112,6 +112,7 @@ module voxel_axi_core #(
     wire         flag_curvature;
     wire         flag_extra_light;
     wire         flag_diag_slice;
+    wire         flag_ray_jitter;
 
     wire         sel_load_pulse;
     wire         sel_active;
@@ -128,12 +129,13 @@ module voxel_axi_core #(
 
     // DMA CSRs (for future LiteDMA integration)
     wire         dma_start_pulse;
-    wire         dma_busy;
-    wire         dma_done;
+    reg          dma_busy;
+    reg          dma_done;
+    reg          dma_err;
     wire [31:0]  dma_src;
     wire [31:0]  dma_dst;
     wire [31:0]  dma_len;
-    wire [31:0]  dma_status;
+    reg  [31:0]  dma_status;
 
     // Blitter memory access (for 3D blitter bring-up)
     wire         blit_mem_we;
@@ -152,10 +154,68 @@ module voxel_axi_core #(
     assign msi_pulse = irq_out & ~irq_out_d;
 
     // TODO: Wire DMA/blitter ports to LiteDMA or leave stubbed for now.
-    // For initial bring-up, tie off DMA status and blitter readback:
-    assign dma_busy   = 1'b0;
-    assign dma_done   = 1'b0;
-    assign dma_status = 32'd0;
+    // For initial bring-up, implement a minimal DMA stub with bounds/error checks.
+    localparam integer DMA_ADDR_WIDTH = 24; // 16 MiB default window for stub checks.
+    localparam [31:0]  DMA_ADDR_MAX   = (1 << DMA_ADDR_WIDTH);
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            dma_busy    <= 1'b0;
+            dma_done    <= 1'b0;
+            dma_err     <= 1'b0;
+            dma_status  <= 32'd0;
+            dma_state   <= DMA_IDLE;
+            dma_stub_start <= 1'b0;
+        end else begin
+            dma_done      <= 1'b0; // pulse
+            dma_stub_start<= 1'b0;
+
+            case (dma_state)
+                DMA_IDLE: begin
+                    if (dma_start_pulse) begin
+                        if (dma_busy) begin
+                            dma_err    <= 1'b1;
+                            dma_status <= dma_status | 32'h4;
+                        end else if (dma_len == 0 ||
+                                     dma_src >= DMA_ADDR_MAX || dma_dst >= DMA_ADDR_MAX ||
+                                     dma_src + dma_len > DMA_ADDR_MAX ||
+                                     dma_dst + dma_len > DMA_ADDR_MAX) begin
+                            dma_err    <= 1'b1;
+                            dma_status <= dma_status | 32'h4;
+                            dma_done   <= 1'b1;
+                            dma_status <= dma_status | 32'h5;
+                            dma_state  <= DMA_ERR;
+                        end else begin
+                            dma_busy    <= 1'b1;
+                            dma_status  <= dma_status | 32'h2; // busy
+                            dma_stub_start <= 1'b1;
+                            dma_state   <= DMA_RUN;
+                        end
+                    end
+                end
+                DMA_RUN: begin
+                    if (dma_stub_done) begin
+                        dma_busy   <= 1'b0;
+                        dma_status <= (dma_status & ~32'h2) | 32'h1;
+                        dma_done   <= 1'b1;
+                        dma_state  <= DMA_IDLE;
+                    end
+                end
+                DMA_ERR: begin
+                    dma_state <= DMA_IDLE;
+                end
+                default: dma_state <= DMA_IDLE;
+            endcase
+        end
+    end
+
+`ifdef VERILATOR
+    always @(posedge clk) begin
+        if (dma_start_pulse && dma_busy) begin
+            $fatal("DMA start received while busy");
+        end
+    end
+`endif
     assign blit_mem_rdata = 64'd0;
 
     // Simple safety assertions (simulation only).
@@ -214,6 +274,7 @@ module voxel_axi_core #(
         .flag_curvature (flag_curvature),
         .flag_extra_light(flag_extra_light),
         .flag_diag_slice(flag_diag_slice),
+        .flag_ray_jitter(flag_ray_jitter),
 
         .sel_load_pulse (sel_load_pulse),
         .sel_active     (sel_active),
@@ -292,6 +353,7 @@ module voxel_axi_core #(
         .flag_curvature_in(flag_curvature),
         .flag_extra_light_in(flag_extra_light),
         .flag_diag_slice_in(flag_diag_slice),
+        .flag_ray_jitter_in(flag_ray_jitter),
         .sel_load       (sel_load_pulse),
         .sel_active_in  (sel_active),
         .sel_voxel_x_in (sel_x),
@@ -304,40 +366,111 @@ module voxel_axi_core #(
         .soft_reset_ext  (soft_reset_pulse)
     );
 
+    wire pixel_reemissure_used = |pixel_reemissure;
+
     // --------------------------------------------------------------------
     // Framebuffer write AXI4 master
-    // - Converts pixel stream from voxel core to AXI4 writes to DRAM
-    // - Simple burst writer: each pixel is one 64-bit word (RGBA32 + reemissure32)
-    // --------------------------------------------------------------------
-    // TODO: Replace this placeholder with a proper AXI4 burst writer.
-    // For now, stub out the master interface (no actual writes).
-    // LiteX integration will require:
-    //   1. Buffering pixel stream into bursts (e.g., 16-beat AXI4 bursts)
-    //   2. Address management (framebuffer base from CSR + pixel offset)
-    //   3. Backpressure handling (stall voxel core if DRAM is slow)
+    // - Backed by axi_dma_stub: issues AXI read/write copies with backpressure handling.
+    // - Still a stub (no scatter-gather), but performs real data moves.
+    wire dma_stub_busy, dma_stub_done;
+    reg  dma_stub_start;
 
-    assign m_axi_awid    = 4'd0;
-    assign m_axi_awaddr  = 28'd0;
-    assign m_axi_awlen   = 8'd0;
-    assign m_axi_awsize  = 3'b011; // 8 bytes
-    assign m_axi_awburst = 2'b01;  // INCR
-    assign m_axi_awvalid = 1'b0;
+    wire [3:0]  dma_awid_w;
+    wire [27:0] dma_awaddr_w;
+    wire [7:0]  dma_awlen_w;
+    wire [2:0]  dma_awsize_w;
+    wire [1:0]  dma_awburst_w;
+    wire        dma_awvalid_w;
 
-    assign m_axi_wdata   = 64'd0;
-    assign m_axi_wstrb   = 8'hFF;
-    assign m_axi_wlast   = 1'b0;
-    assign m_axi_wvalid  = 1'b0;
+    wire [63:0] dma_wdata_w;
+    wire [7:0]  dma_wstrb_w;
+    wire        dma_wlast_w;
+    wire        dma_wvalid_w;
 
-    assign m_axi_bready  = 1'b1;
+    wire [1:0]  dma_bresp_w;
+    wire        dma_bvalid_w;
+    wire        dma_bready_w;
 
-    assign m_axi_arid    = 4'd0;
-    assign m_axi_araddr  = 28'd0;
-    assign m_axi_arlen   = 8'd0;
-    assign m_axi_arsize  = 3'b011;
-    assign m_axi_arburst = 2'b01;
-    assign m_axi_arvalid = 1'b0;
+    wire [3:0]  dma_arid_w;
+    wire [27:0] dma_araddr_w;
+    wire [7:0]  dma_arlen_w;
+    wire [2:0]  dma_arsize_w;
+    wire [1:0]  dma_arburst_w;
+    wire        dma_arvalid_w;
 
-    assign m_axi_rready  = 1'b1;
+    wire [3:0]  dma_rid_w;
+    wire [63:0] dma_rdata_w;
+    wire [1:0]  dma_rresp_w;
+    wire        dma_rlast_w;
+    wire        dma_rvalid_w;
+    wire        dma_rready_w;
+
+    assign m_axi_awid    = dma_awid_w;
+    assign m_axi_awaddr  = dma_awaddr_w;
+    assign m_axi_awlen   = dma_awlen_w;
+    assign m_axi_awsize  = dma_awsize_w;
+    assign m_axi_awburst = dma_awburst_w;
+    assign m_axi_awvalid = dma_awvalid_w;
+
+    assign m_axi_wdata   = dma_wdata_w;
+    assign m_axi_wstrb   = dma_wstrb_w;
+    assign m_axi_wlast   = dma_wlast_w;
+    assign m_axi_wvalid  = dma_wvalid_w;
+
+    assign m_axi_bready  = dma_bready_w;
+
+    assign m_axi_arid    = dma_arid_w;
+    assign m_axi_araddr  = dma_araddr_w;
+    assign m_axi_arlen   = dma_arlen_w;
+    assign m_axi_arsize  = dma_arsize_w;
+    assign m_axi_arburst = dma_arburst_w;
+    assign m_axi_arvalid = dma_arvalid_w;
+
+    assign m_axi_rready  = dma_rready_w;
+
+    axi_dma_stub #(
+        .ADDR_WIDTH(28),
+        .DATA_WIDTH(64),
+        .ID_WIDTH  (4)
+    ) u_dma_stub (
+        .clk       (clk),
+        .rst_n     (rst_n),
+        .start     (dma_stub_start),
+        .src_addr  (dma_src[27:0]),
+        .dst_addr  (dma_dst[27:0]),
+        .len_bytes (dma_len),
+        .busy      (dma_stub_busy),
+        .done      (dma_stub_done),
+        .m_axi_awid    (dma_awid_w),
+        .m_axi_awaddr  (dma_awaddr_w),
+        .m_axi_awlen   (dma_awlen_w),
+        .m_axi_awsize  (dma_awsize_w),
+        .m_axi_awburst (dma_awburst_w),
+        .m_axi_awvalid (dma_awvalid_w),
+        .m_axi_awready (m_axi_awready),
+        .m_axi_wdata   (dma_wdata_w),
+        .m_axi_wstrb   (dma_wstrb_w),
+        .m_axi_wlast   (dma_wlast_w),
+        .m_axi_wvalid  (dma_wvalid_w),
+        .m_axi_wready  (m_axi_wready),
+        .m_axi_bid     (m_axi_bid),
+        .m_axi_bresp   (dma_bresp_w),
+        .m_axi_bvalid  (dma_bvalid_w),
+        .m_axi_bready  (dma_bready_w),
+        .m_axi_arid    (dma_arid_w),
+        .m_axi_araddr  (dma_araddr_w),
+        .m_axi_arlen   (dma_arlen_w),
+        .m_axi_arsize  (dma_arsize_w),
+        .m_axi_arburst (dma_arburst_w),
+        .m_axi_arvalid (dma_arvalid_w),
+        .m_axi_arready (m_axi_arready),
+        .m_axi_rid     (m_axi_rid),
+        .m_axi_rdata   (dma_rdata_w),
+        .m_axi_rresp   (dma_rresp_w),
+        .m_axi_rlast   (dma_rlast_w),
+        .m_axi_rvalid  (dma_rvalid_w),
+        .m_axi_rready  (dma_rready_w)
+    );
 
     // --------------------------------------------------------------------
     // AXI-Stream video master
@@ -345,6 +478,57 @@ module voxel_axi_core #(
     // --------------------------------------------------------------------
     localparam integer TOTAL_PIXELS = SCREEN_WIDTH * SCREEN_HEIGHT;
     wire axis_fire = m_axis_tvalid && m_axis_tready;
+
+    // Simple one-deep skid buffer to tolerate brief backpressure on m_axis_tready.
+    // If a stall lasts longer than one beat, flag an error in sim to expose the violation.
+    reg        axis_buf_valid;
+    reg [23:0] axis_buf_data;
+    reg        axis_buf_last;
+    reg        axis_buf_user;
+    reg        axis_drop_seen;
+
+    wire axis_accept = m_axis_tready || !axis_buf_valid;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            axis_buf_valid <= 1'b0;
+            axis_buf_data  <= 24'd0;
+            axis_buf_last  <= 1'b0;
+            axis_buf_user  <= 1'b0;
+            axis_drop_seen <= 1'b0;
+        end else begin
+            if (m_axis_tready && axis_buf_valid) begin
+                axis_buf_valid <= 1'b0;
+            end
+
+            if (pixel_write_en) begin
+                if (axis_accept) begin
+                    axis_buf_valid <= 1'b1;
+                    axis_buf_data  <= pixel_word1[23:0];
+                    axis_buf_last  <= (pixel_addr == TOTAL_PIXELS - 1);
+                    axis_buf_user  <= (pixel_addr == 0);
+                end else begin
+                    axis_drop_seen <= 1'b1;
+                end
+            end
+        end
+    end
+
+`ifdef VERILATOR
+    // Flag sustained backpressure so integration work is visible.
+    always @(posedge clk) begin
+        if (axis_drop_seen) begin
+            $fatal("m_axis_tready deasserted while pixel_write_en asserted (backpressure not handled upstream)");
+        end
+    end
+
+    // Pixel words should never carry X/Z in simulation to avoid downstream HUD/HDMI confusion.
+    always @(posedge clk) begin
+        assert(!$isunknown(pixel_word0)) else $fatal("pixel_word0 X/Z observed");
+        assert(!$isunknown(pixel_word1)) else $fatal("pixel_word1 X/Z observed");
+        assert(!$isunknown(pixel_word2)) else $fatal("pixel_word2 X/Z observed");
+    end
+`endif
 
     reg [31:0] hdmi_crc_accum;
     reg [31:0] hdmi_frame_count_r;
@@ -356,10 +540,10 @@ module voxel_axi_core #(
     assign hdmi_line_count    = hdmi_line_count_r;
     assign hdmi_pixel_in_line = hdmi_pixel_in_line_r;
 
-    assign m_axis_tdata  = pixel_word1[23:0]; // RGB888
-    assign m_axis_tvalid = pixel_write_en;
-    assign m_axis_tuser  = (pixel_addr == 0); // Start of frame
-    assign m_axis_tlast  = (pixel_addr == TOTAL_PIXELS - 1); // End of frame
+    assign m_axis_tdata  = axis_buf_valid ? axis_buf_data : pixel_word1[23:0]; // RGB888
+    assign m_axis_tvalid = axis_buf_valid ? 1'b1 : pixel_write_en;
+    assign m_axis_tuser  = axis_buf_valid ? axis_buf_user : (pixel_addr == 0); // Start of frame
+    assign m_axis_tlast  = axis_buf_valid ? axis_buf_last : (pixel_addr == TOTAL_PIXELS - 1); // End of frame
 
     // Lightweight CRC/counter tracking for HDMI/AXI-Stream output.
     always @(posedge clk or negedge rst_n) begin
@@ -389,6 +573,119 @@ module voxel_axi_core #(
             end
         end
     end
+
+`ifdef VERILATOR
+    // Sanity: pixel data should be clean when emitted.
+    // Also check address monotonicity and frame completeness.
+    reg [31:0] last_pixel_addr;
+    reg [31:0] pixels_in_frame;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            last_pixel_addr <= 32'd0;
+            pixels_in_frame <= 32'd0;
+        end else begin
+            if (pixel_write_en) begin
+                assert(!$isunknown(pixel_word0)) else $fatal("pixel_word0 X/Z on write");
+                assert(!$isunknown(pixel_word1)) else $fatal("pixel_word1 X/Z on write");
+                assert(!$isunknown(pixel_word2)) else $fatal("pixel_word2 X/Z on write");
+                assert(!$isunknown(pixel_reemissure)) else $fatal("pixel_reemissure X/Z on write");
+
+                assert(pixel_addr < TOTAL_PIXELS) else $fatal("pixel_addr out of range: %0d", pixel_addr);
+                if (pixels_in_frame == 0) begin
+                    assert(pixel_addr == 0) else $fatal("first pixel_addr not zero: %0d", pixel_addr);
+                end else begin
+                    assert(pixel_addr == last_pixel_addr + 1) else $fatal("pixel_addr not monotonic: last=%0d cur=%0d", last_pixel_addr, pixel_addr);
+                end
+                last_pixel_addr <= pixel_addr;
+                pixels_in_frame <= pixels_in_frame + 1'b1;
+            end
+            if (frame_done) begin
+                assert(pixels_in_frame == TOTAL_PIXELS) else $fatal("frame_done with pixels_in_frame=%0d (expected %0d)", pixels_in_frame, TOTAL_PIXELS);
+                last_pixel_addr <= 32'd0;
+                pixels_in_frame <= 32'd0;
+            end
+        end
+    end
+
+    // Selection changes should only occur on sel_load_pulse and stay in-bounds.
+    reg [5:0] sel_x_d, sel_y_d, sel_z_d;
+    reg       sel_active_d;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            sel_x_d      <= 6'd0;
+            sel_y_d      <= 6'd0;
+            sel_z_d      <= 6'd0;
+            sel_active_d <= 1'b0;
+        end else begin
+            if (sel_load_pulse) begin
+                assert(sel_x < VOXEL_GRID_SIZE && sel_y < VOXEL_GRID_SIZE && sel_z < VOXEL_GRID_SIZE)
+                    else $fatal("sel coords out of range on load: %0d %0d %0d", sel_x, sel_y, sel_z);
+                sel_x_d      <= sel_x;
+                sel_y_d      <= sel_y;
+                sel_z_d      <= sel_z;
+                sel_active_d <= sel_active;
+            end else begin
+                assert(sel_x == sel_x_d) else $fatal("sel_x changed without sel_load_pulse");
+                assert(sel_y == sel_y_d) else $fatal("sel_y changed without sel_load_pulse");
+                assert(sel_z == sel_z_d) else $fatal("sel_z changed without sel_load_pulse");
+                assert(sel_active == sel_active_d) else $fatal("sel_active changed without sel_load_pulse");
+            end
+        end
+    end
+
+    // Guard against pixels after frame_done.
+    always @(posedge clk) begin
+        if (frame_done) begin
+            assert(!pixel_write_en) else $fatal("pixel_write_en asserted after frame_done");
+        end
+    end
+
+    // HDMI counters/CRC should only change on axis_fire and reset on SOF/reset.
+    reg [31:0] hdmi_crc_d;
+    reg [15:0] hdmi_line_d, hdmi_pix_d;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            hdmi_crc_d <= 32'd0;
+            hdmi_line_d <= 16'd0;
+            hdmi_pix_d <= 16'd0;
+        end else begin
+            if (!axis_fire) begin
+                assert(hdmi_crc_accum == hdmi_crc_d) else $fatal("HDMI CRC changed without axis_fire");
+                assert(hdmi_line_count_r == hdmi_line_d) else $fatal("HDMI line counter changed without axis_fire");
+                assert(hdmi_pixel_in_line_r == hdmi_pix_d) else $fatal("HDMI pixel counter changed without axis_fire");
+            end
+            hdmi_crc_d <= hdmi_crc_accum;
+            hdmi_line_d <= hdmi_line_count_r;
+            hdmi_pix_d <= hdmi_pixel_in_line_r;
+            if (m_axis_tuser && axis_fire) begin
+                assert(hdmi_crc_accum == 32'd0) else $fatal("HDMI CRC not reset at SOF");
+                assert(hdmi_line_count_r == 16'd0) else $fatal("HDMI line count not reset at SOF");
+                assert(hdmi_pixel_in_line_r == 16'd0) else $fatal("HDMI pixel-in-line not reset at SOF");
+            end
+        end
+    end
+
+    // AXI4 master handshake stability (even though the burst writer is stubbed today).
+    always @(posedge clk) begin
+        if (m_axi_awvalid && !m_axi_awready) begin
+            assert($stable(m_axi_awaddr)) else $fatal("AWADDR changed while AWVALID held high");
+            assert($stable(m_axi_awlen))   else $fatal("AWLEN changed while AWVALID held high");
+            assert($stable(m_axi_awsize))  else $fatal("AWSIZE changed while AWVALID held high");
+            assert($stable(m_axi_awburst)) else $fatal("AWBURST changed while AWVALID held high");
+        end
+        if (m_axi_wvalid && !m_axi_wready) begin
+            assert($stable(m_axi_wdata)) else $fatal("WDATA changed while WVALID held high");
+            assert($stable(m_axi_wstrb)) else $fatal("WSTRB changed while WVALID held high");
+            assert($stable(m_axi_wlast)) else $fatal("WLAST changed while WVALID held high");
+        end
+        if (m_axi_arvalid && !m_axi_arready) begin
+            assert($stable(m_axi_araddr)) else $fatal("ARADDR changed while ARVALID held high");
+            assert($stable(m_axi_arlen))  else $fatal("ARLEN changed while ARVALID held high");
+            assert($stable(m_axi_arsize)) else $fatal("ARSIZE changed while ARVALID held high");
+            assert($stable(m_axi_arburst)) else $fatal("ARBURST changed while ARVALID held high");
+        end
+    end
+`endif
 
     // IRQ edge detection for MSI pulse
     always @(posedge clk or negedge rst_n) begin

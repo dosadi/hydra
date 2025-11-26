@@ -139,3 +139,22 @@ Artifacts from CI runs (frame images, frame diff, SDK build log, RTL logs, QEMU 
 - Frame dumps: attach `FRAME_DUMP` PPMs (or numbered `HYDRA_FRAME_BASE` sequence) for visual issues.
 - Env: tool versions (`make env-probe`), OS/display server, SDL backend hints.
 - For driver issues: INT_STATUS/INT_MASK values, DMA/BLIT params, and user tool outputs (`hydra_blit_smoketest`, `hydra_dma_blit_demo`, `hydra_irq_test`).
+
+## Troubleshooting sim build/runs (quick checks)
+- Missing `SDL_ttf`: install `libsdl2-ttf-dev` (or equivalent) and ensure `sdl2-config` is on PATH; HUD will be blank without it.
+- Verilator version: target 5.x; run `make env-probe` to see detected tools. If Verilator changed, run `make purge-obj-dir` to avoid stale builds.
+- Headless runs: set `HYDRA_BACKEND=HEADLESS` or `SDL_VIDEODRIVER=dummy` plus `AUTO_EXIT=1` to avoid display errors in CI.
+- Input capture stuck: press `M` to toggle mouse capture; `HYDRA_MOUSE_CAPTURE=0` forces keyboard-only for headless logs.
+- Frame dump size surprises: 480x360 PPMs are ~520 KiB; reduce resolution via `SCREEN_WIDTH/HEIGHT` build params if needed for logs.
+
+## Negative/edge tests (quick commands)
+- Bad IOCTLs: `HYDRA_IOCTL_DMA` with out-of-range offsets should return `-EINVAL` (Linux) / `EINVAL` (BSD); run `./scripts/hydra_dma_blit_demo --bad-offset` if available, or patch `scripts/hydra_drm_info` to poke RD32/WR32 bounds.
+- INT masking: `./scripts/hydra_irq_test` should show masked interrupts not incrementing irq_count (Linux) or int_status (BSD) until unmasked.
+- Headless frame dump: `FRAME_DUMP=frame.ppm AUTO_EXIT=1 HYDRA_BACKEND=HEADLESS ./sim_voxel` should exit cleanly and write a single PPM without a display server.
+
+## FAQ (common setup/running fixes)
+- **HUD missing text?** Ensure `libsdl2-ttf-dev` installed and `HYDRA_FONT` points to a real TTF; check stderr for font load warnings.
+- **Viewer hangs on start?** Try `SDL_VIDEODRIVER=dummy` or `HYDRA_BACKEND=HEADLESS` to rule out windowing issues; verify `SDL2` and GPU drivers.
+- **Verilator build errors after upgrade?** Run `make purge-obj-dir` then rebuild to clear stale generated files.
+- **Mouse not captured?** Press `M`; HUD shows mouse capture status. In logs, `HYDRA_MOUSE_CAPTURE=0` disables capture for headless.
+- **ABI mismatch tool errors?** Update both kernel driver and userspace headers; `scripts/hydra_drm_info` now checks `HYDRA_IOCTL_VERSION` when supported and will fail on size/version mismatch.

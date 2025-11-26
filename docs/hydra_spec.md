@@ -43,9 +43,36 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `0x0150..` Region-0 automatic extractor (experimental): REGION0_CFG/MIN/MAX/STATUS/SURF_STATS implement a fixed-function per-volume extraction pass that currently only synthesizes stats.
 - Reserved: 0x0170..0xFFFF for future (perf counters, extended extractor controls).
 
+### Reset defaults (expected values after power-on or soft reset)
+- `CTRL` = 0x0000_0000 (soft_reset/start_frame deasserted; flags cleared)
+- `FLAGS` = smooth=1, curvature=1, extra_light=0, diag_slice=0, ray_jitter=0
+- `SEL_ACTIVE` = 0, `SEL_X/Y/Z` = 0
+- `FB_BASE` = 0x0000_0000, `FB_STRIDE` = 0x0000_0000
+- `DMA_STATUS` = 0 (busy/done cleared); `INT_STATUS` = 0; `INT_MASK` = 0
+- Blitter stub registers: CTRL/STATUS/SRC/DST/LEN/STRIDE/SURF_* = 0
+- Debug write addr/data = 0
+
+Driver probe validation (recommended):
+- Read `ID`/`REV` and compare against driver expectations; fail if unknown.
+- Read `FLAGS`, `CTRL`, `INT_STATUS`, `INT_MASK`, `FB_BASE/STRIDE`, `SEL_*`, and `DMA_STATUS` to confirm reset defaults match the above table; if any differ, log and fail probe to catch RTL drift.
+- For BAR1-capable systems, confirm `HYDRA_IOCTL_INFO` reports non-zero BAR1 length before mapping.
+
 ## Frame formats (current / planned)
 - RGBA32: 8 bits per channel, premultiplied alpha optional (current sim output path).
 - Reemissure32 (sidecar): reserved for future emission/extra data; current RTL leaves this field zeroed in the shell.
+
+### Diagnostic slice mode (render_config[1])
+
+Setting `render_config[1]` (the same bit exposed as `FLAGS.diag_slice` via AXI/CTRL) enables an orthographic “diagnostic slice” render path that samples a fixed set of X slices at every pixel instead of marching a single ray to completion.
+- `NUM_SLICES` (currently 7) determines how many equidistant planes are sampled; each pass chooses `cur_x = SLICE_X_START - slice_idx * SLICE_STEP` (currently 56 down by 8) while keeping Y/Z mapped from the screen coordinates.
+- Each sampled voxel update latches occupancy/emissive data; the rasterizer remembers the most-emissive hit across slices and only commits one pixel once all slices are probed.
+- If no slice reports a hit, the HUD emits the sky gradient color (no solid geometry).
+
+This mode is primarily used to inspect the volume along the X axis and verify slice coverage; driver tests can toggle the diag slice flag to make sure the per-slice sampling pattern is observable in logged pixels.
+
+### Ray jitter (render_config[2])
+
+Setting `render_config[2]` / `FLAGS[4]` enables a tiny deterministic sub-voxel jitter on the Y/Z ray positions (derived from the screen coordinate). It smooths banding/artifacts by offsetting the ray start slightly for each pixel; toggle it via the `J` key or `HYDRA_RAY_JITTER=1` in the sim or driver.
 - AXI-Stream video: 24-bit RGB, tuser=start-of-frame, tlast=end-of-frame per line/frame depending on encoder.
 
 ## Interrupts (proposed)

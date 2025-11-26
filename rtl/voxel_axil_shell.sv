@@ -118,6 +118,7 @@ module voxel_axil_shell #(
     wire         flag_curvature;
     wire         flag_extra_light;
     wire         flag_diag_slice;
+    wire         flag_ray_jitter;
 
     wire         sel_load_pulse;
     wire         sel_active;
@@ -187,6 +188,7 @@ module voxel_axil_shell #(
         .flag_curvature (flag_curvature),
         .flag_extra_light(flag_extra_light),
         .flag_diag_slice(flag_diag_slice),
+        .flag_ray_jitter(flag_ray_jitter),
 
         .sel_load_pulse (sel_load_pulse),
         .sel_active     (sel_active),
@@ -541,6 +543,7 @@ module voxel_axil_shell #(
         .flag_curvature_in(flag_curvature),
         .flag_extra_light_in(flag_extra_light),
         .flag_diag_slice_in(flag_diag_slice),
+        .flag_ray_jitter_in(flag_ray_jitter),
         .sel_load       (sel_load_pulse),
         .sel_active_in  (sel_active),
         .sel_voxel_x_in (sel_x),

@@ -248,7 +248,8 @@ int hydra_set_camera_raw(struct hydra_handle* h,
 
 int hydra_set_flags(struct hydra_handle* h,
                     bool smooth, bool curvature,
-                    bool extra_light, bool diag_slice)
+                    bool extra_light, bool diag_slice,
+                    bool ray_jitter)
 {
     if (!h || h->fd < 0)
         return -EINVAL;
@@ -257,6 +258,7 @@ int hydra_set_flags(struct hydra_handle* h,
     if (curvature)   flags |= BIT(1);
     if (extra_light) flags |= BIT(2);
     if (diag_slice)  flags |= BIT(3);
+    if (ray_jitter)  flags |= BIT(4);
     return hydra_wr32(h, HYDRA_REG_FLAGS, flags);
 }
 
@@ -292,7 +294,7 @@ int hydra_apply_state(struct hydra_handle* h,
         if (ret) return ret;
     }
     if (flags) {
-        ret = hydra_set_flags(h, flags->smooth, flags->curvature, flags->extra_light, flags->diag_slice);
+        ret = hydra_set_flags(h, flags->smooth, flags->curvature, flags->extra_light, flags->diag_slice, flags->ray_jitter);
         if (ret) return ret;
     }
     if (sel) {

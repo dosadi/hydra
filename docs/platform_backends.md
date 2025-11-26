@@ -30,3 +30,18 @@ Notes:
 
 - No platform headers are pulled in yet; the stubs are pure C++ and should compile across Linux/Win/macOS.
 - When adding real backends, gate them with `#ifdef` and keep a stub fallback to preserve portability and CI green.
+
+## Backend compatibility matrix (current coverage)
+
+| OS/Env  | SDL (default) | GL | Vulkan | X11 | Wayland | fbdev | Headless/dummy | CI coverage |
+|---------|---------------|----|--------|-----|---------|-------|----------------|-------------|
+| Linux   | ✅ (primary)  | ⚪ stub impl | ⚪ stub impl | ⚪ stub | ⚪ stub  | ⚪ experimental | ✅ (dummy/headless) | Dummy/headless smoke only |
+| FreeBSD | ✅ (SDL path) | ⚪ stub | ⚪ stub | ⚪ stub | ⚪ stub | ⚪ stub | ✅ (dummy/headless) | Not in CI |
+| Windows | ✅ (SDL path) | ⚪ stub | ⚪ stub | n/a | n/a | n/a | ✅ (SDL dummy) | Not in CI |
+| macOS   | ✅ (SDL path) | ⚪ stub | ⚪ stub | n/a | n/a | n/a | ✅ (SDL dummy) | Not in CI |
+
+Legend: ✅ implemented/used, ⚪ placeholder/stub today. SDL dummy/headless is the regression path; GPU backends are not exercised in CI yet.
+
+## CI guidance
+- GL/Vulkan jobs should be skipped (not failed) when drivers/tooling are missing; capture backend capability logs as artifacts when present.
+- Primary regression path uses SDL dummy/headless; enable GL/Vulkan/X11/Wayland jobs best-effort only when runners provide the dependencies.

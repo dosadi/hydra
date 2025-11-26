@@ -24,9 +24,11 @@
 - Expanded TODO files for rendering quality/pipeline, DMA/PCIe, DRAM/AXI, HDMI, ray engine, depth/reemissure, platform backends, and xschem integration.
 
 ## Known Issues / Follow-ups
-- Backend preference/CLI vs. env precedence still needs a unit test; GL/Vulkan paths remain stubbed.
-- DMA/AXI burst/backpressure handling and real hardware paths remain stubbed; RTL backpressure assertions and benches are still TODO.
+- Backend preference/CLI vs. env precedence still needs a unit test; GL/Vulkan paths remain largely stubbed and unvalidated in CI.
+- DMA/AXI burst/backpressure handling and real hardware paths remain stubbed; RTL backpressure assertions exist but the AXI master is still a placeholder.
 - Rendering quality pipeline improvements (fog/AO/AA, reemissure/HUD overlays) remain open.
+- HYDRA_IOCTL_VERSION is supported in Linux/FreeBSD stubs; older drivers may not advertise it, so tools fall back to best-effort.
+- Vulkan/Wayland backends are not exercised in CI; SDL dummy/headless is the primary regression path today.
 
 ## Validation
 - Not run in this cut; recommended checks:

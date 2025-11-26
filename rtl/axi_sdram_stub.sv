@@ -16,7 +16,8 @@ module axi_sdram_stub #(
     parameter integer READ_LATENCY   = 0,   // fixed cycles after AR handshake before first RVALID
     parameter integer WRITE_LATENCY  = 0,   // fixed cycles after AW handshake before WREADY
     parameter integer MAX_OUTSTANDING = 2,  // outstanding transactions per channel (simple queue)
-    parameter integer WAIT_JITTER    = 0    // 0=no jitter, N=max extra cycles of random stall
+    parameter integer WAIT_JITTER    = 0,   // 0=no jitter, N=max extra cycles of random stall
+    parameter         POISON_ON_UNINIT = 0   // return X when reading unwritten words
 )(
     input  wire                     clk,
     input  wire                     rst_n,
@@ -66,21 +67,30 @@ module axi_sdram_stub #(
 );
 
     localparam [1:0] RESP_OKAY = 2'b00;
+    localparam [1:0] RESP_SLVERR = 2'b10;
     localparam [1:0] BURST_INCR = 2'b01;
+    localparam integer MEM_WORD_ADDR_BITS = $clog2(MEM_WORDS);
 
     (* ram_style = "block", ram_decomp = "power" *)
     reg [DATA_WIDTH-1:0] mem [0:MEM_WORDS-1];
+    reg                 mem_valid [0:MEM_WORDS-1];
 
     // Simple FIFOs for outstanding transactions (depth = MAX_OUTSTANDING)
     reg [ID_WIDTH-1:0]    w_id_q     [0:MAX_OUTSTANDING-1];
     reg [ADDR_WIDTH-1:0]  w_addr_q   [0:MAX_OUTSTANDING-1];
     reg [7:0]             w_beats_q  [0:MAX_OUTSTANDING-1];
     reg [7:0]             w_delay_q  [0:MAX_OUTSTANDING-1];
+    reg [2:0]             w_size_q   [0:MAX_OUTSTANDING-1];
+    reg [1:0]             w_burst_q  [0:MAX_OUTSTANDING-1];
+    reg                   w_err_q    [0:MAX_OUTSTANDING-1];
     reg                   w_valid_q  [0:MAX_OUTSTANDING-1];
     reg [ID_WIDTH-1:0]    r_id_q     [0:MAX_OUTSTANDING-1];
     reg [ADDR_WIDTH-1:0]  r_addr_q   [0:MAX_OUTSTANDING-1];
     reg [7:0]             r_beats_q  [0:MAX_OUTSTANDING-1];
     reg [7:0]             r_delay_q  [0:MAX_OUTSTANDING-1];
+    reg [2:0]             r_size_q   [0:MAX_OUTSTANDING-1];
+    reg [1:0]             r_burst_q  [0:MAX_OUTSTANDING-1];
+    reg                   r_err_q    [0:MAX_OUTSTANDING-1];
     reg                   r_valid_q  [0:MAX_OUTSTANDING-1];
     integer w_head, w_tail, r_head, r_tail;
 
@@ -90,12 +100,18 @@ module axi_sdram_stub #(
     reg [7:0] w_beats;
     reg       w_active;
     reg [7:0] w_delay;
+    reg [2:0] w_size;
+    reg [1:0] w_burst;
+    reg       w_err;
 
     reg [ID_WIDTH-1:0] r_id;
     reg [ADDR_WIDTH-1:0] r_addr;
     reg [7:0] r_beats;
     reg       r_active;
     reg [7:0] r_delay;
+    reg [2:0] r_size;
+    reg [1:0] r_burst;
+    reg       r_err;
 
     // Simple pseudo-random jitter (linear feedback shift register)
     reg [7:0] lfsr;
@@ -105,6 +121,8 @@ module axi_sdram_stub #(
     initial begin
         for (i = 0; i < MEM_WORDS; i = i + 1)
             mem[i] = {DATA_WIDTH{1'b0}};
+        for (i = 0; i < MEM_WORDS; i = i + 1)
+            mem_valid[i] = 1'b0;
         s_axi_awready = 1'b0;
         s_axi_wready  = 1'b0;
         s_axi_bvalid  = 1'b0;
@@ -115,8 +133,12 @@ module axi_sdram_stub #(
         s_axi_rlast   = 1'b0;
         w_active      = 1'b0;
         r_active      = 1'b0;
-        w_delay       = 8'd0;
-        r_delay       = 8'd0;
+            w_delay       = 8'd0;
+            r_delay       = 8'd0;
+        w_size        = 3'd0;
+        w_burst       = BURST_INCR;
+        r_size        = 3'd0;
+        r_burst       = BURST_INCR;
         w_head        = 0;
         w_tail        = 0;
         r_head        = 0;
@@ -129,8 +151,9 @@ module axi_sdram_stub #(
     end
 `endif
 
-    wire [ADDR_WIDTH-1:0] w_addr_next = w_addr + (1 << s_axi_awsize);
-    wire [ADDR_WIDTH-1:0] r_addr_next = r_addr + (1 << s_axi_arsize);
+    wire [ADDR_WIDTH-1:0] w_addr_next = w_addr + (1 << w_size);
+    wire [ADDR_WIDTH-1:0] r_addr_next = r_addr + (1 << r_size);
+    localparam integer MEM_ADDR_SHIFT = 3;
     wire [7:0] jitter = (WAIT_JITTER == 0) ? 8'd0 : (lfsr & {8{(WAIT_JITTER!=0)}}) % (WAIT_JITTER+1);
 
     // Write address acceptance
@@ -142,13 +165,18 @@ module axi_sdram_stub #(
             for (i = 0; i < MAX_OUTSTANDING; i = i + 1)
                 w_valid_q[i] <= 1'b0;
         end else begin
-            if (!w_active && !s_axi_awready && ((w_tail + 1) % MAX_OUTSTANDING != w_head))
-                s_axi_awready <= s_axi_awvalid;
+            if (!w_active && !s_axi_awready && ((w_tail + 1) % MAX_OUTSTANDING != w_head)) begin
+                if (s_axi_awvalid === 1'b1)
+                    s_axi_awready <= 1'b1;
+            end
             if (s_axi_awready && s_axi_awvalid) begin
-            w_id_q[w_tail]    <= s_axi_awid;
-            w_addr_q[w_tail]  <= s_axi_awaddr;
-            w_beats_q[w_tail] <= s_axi_awlen;
-            w_delay_q[w_tail] <= WRITE_LATENCY[7:0] + jitter;
+                w_id_q[w_tail]    <= s_axi_awid;
+                w_addr_q[w_tail]  <= s_axi_awaddr;
+                w_beats_q[w_tail] <= s_axi_awlen;
+                w_delay_q[w_tail] <= WRITE_LATENCY[7:0] + jitter;
+                w_size_q[w_tail]  <= s_axi_awsize;
+                w_burst_q[w_tail] <= s_axi_awburst;
+                w_err_q[w_tail]   <= (s_axi_awaddr >> MEM_ADDR_SHIFT) >= MEM_WORDS;
                 w_valid_q[w_tail] <= 1'b1;
                 w_tail            <= (w_tail + 1) % MAX_OUTSTANDING;
                 s_axi_awready     <= 1'b0;
@@ -165,12 +193,18 @@ module axi_sdram_stub #(
             s_axi_bid    <= {ID_WIDTH{1'b0}};
             w_active     <= 1'b0;
             w_delay      <= 8'd0;
+            w_size       <= 3'd0;
+            w_burst      <= BURST_INCR;
+            w_err        <= 1'b0;
         end else begin
             if (!w_active && w_valid_q[w_head]) begin
                 w_id    <= w_id_q[w_head];
                 w_addr  <= w_addr_q[w_head];
                 w_beats <= w_beats_q[w_head];
                 w_delay <= w_delay_q[w_head];
+                w_size  <= w_size_q[w_head];
+                w_burst <= w_burst_q[w_head];
+                w_err   <= w_err_q[w_head];
                 w_active<= 1'b1;
                 w_valid_q[w_head] <= 1'b0;
                 w_head  <= (w_head + 1) % MAX_OUTSTANDING;
@@ -187,20 +221,26 @@ module axi_sdram_stub #(
 
             if (s_axi_wready && s_axi_wvalid) begin
                 // Write with strobes
-                for (i = 0; i < STRB_WIDTH; i = i + 1) begin
+                if (!w_err) begin
+                    for (i = 0; i < STRB_WIDTH; i = i + 1) begin
                     if (s_axi_wstrb[i])
                         mem[w_addr[$clog2(MEM_WORDS)+2:3]][8*i +: 8] <= s_axi_wdata[8*i +: 8];
                 end
+                if (POISON_ON_UNINIT)
+                    mem_valid[w_addr[$clog2(MEM_WORDS)+2:3]] <= 1'b1;
+                end
+
                 if (w_beats != 0)
                     w_beats <= w_beats - 1'b1;
-                w_addr <= (s_axi_awburst == BURST_INCR) ? w_addr_next : w_addr;
+                w_addr <= (w_burst == BURST_INCR) ? w_addr_next : w_addr;
 
                 if (s_axi_wlast || (w_beats == 0)) begin
                     s_axi_bid    <= w_id;
-                    s_axi_bresp  <= RESP_OKAY;
+                    s_axi_bresp  <= w_err ? RESP_SLVERR : RESP_OKAY;
                     s_axi_bvalid <= 1'b1;
                     s_axi_wready <= 1'b0;
                     w_active     <= 1'b0;
+                    w_err        <= 1'b0;
                 end
             end
 
@@ -226,13 +266,18 @@ module axi_sdram_stub #(
             for (i = 0; i < MAX_OUTSTANDING; i = i + 1)
                 r_valid_q[i] <= 1'b0;
         end else begin
-            if (!r_active && !s_axi_arready && ((r_tail + 1) % MAX_OUTSTANDING != r_head))
-                s_axi_arready <= s_axi_arvalid;
+            if (!r_active && !s_axi_arready && ((r_tail + 1) % MAX_OUTSTANDING != r_head)) begin
+                if (s_axi_arvalid === 1'b1)
+                    s_axi_arready <= 1'b1;
+            end
             if (s_axi_arready && s_axi_arvalid) begin
                 r_id_q[r_tail]    <= s_axi_arid;
                 r_addr_q[r_tail]  <= s_axi_araddr;
                 r_beats_q[r_tail] <= s_axi_arlen;
                 r_delay_q[r_tail] <= READ_LATENCY[7:0];
+                r_size_q[r_tail]  <= s_axi_arsize;
+                r_burst_q[r_tail] <= s_axi_arburst;
+                r_err_q[r_tail]   <= (s_axi_araddr >> MEM_ADDR_SHIFT) >= MEM_WORDS;
                 r_valid_q[r_tail] <= 1'b1;
                 r_tail            <= (r_tail + 1) % MAX_OUTSTANDING;
                 s_axi_arready     <= 1'b0;
@@ -253,6 +298,9 @@ module axi_sdram_stub #(
             dbg_rdata    <= {DATA_WIDTH{1'b0}};
             r_delay      <= 8'd0;
             r_active     <= 1'b0;
+            r_size       <= 3'd0;
+            r_burst      <= BURST_INCR;
+            r_err        <= 1'b0;
         end else begin
             if (dbg_we) begin
                 mem[dbg_addr[$clog2(MEM_WORDS)+2:3]] <= dbg_wdata;
@@ -266,6 +314,9 @@ module axi_sdram_stub #(
                 r_addr  <= r_addr_q[r_head];
                 r_beats <= r_beats_q[r_head];
                 r_delay <= r_delay_q[r_head] + jitter;
+                r_size  <= r_size_q[r_head];
+                r_burst <= r_burst_q[r_head];
+                r_err   <= r_err_q[r_head];
                 r_active<= 1'b1;
                 r_valid_q[r_head] <= 1'b0;
                 r_head  <= (r_head + 1) % MAX_OUTSTANDING;
@@ -277,20 +328,25 @@ module axi_sdram_stub #(
                     r_delay      <= r_delay - 1'b1;
                 end else begin
                     s_axi_rid   <= r_id;
-                    s_axi_rdata <= mem[r_addr[$clog2(MEM_WORDS)+2:3]];
-                    s_axi_rresp <= RESP_OKAY;
+                    if (POISON_ON_UNINIT && !r_err && !mem_valid[r_addr[$clog2(MEM_WORDS)+2:3]]) begin
+                        s_axi_rdata <= {DATA_WIDTH{1'bx}};
+                    end else begin
+                        s_axi_rdata <= r_err ? {DATA_WIDTH{1'b0}} : mem[r_addr[$clog2(MEM_WORDS)+2:3]];
+                    end
+                    s_axi_rresp <= r_err ? RESP_SLVERR : RESP_OKAY;
                     s_axi_rlast <= (r_beats == 0);
                     s_axi_rvalid<= 1'b1;
 
                     if (r_beats != 0)
                         r_beats <= r_beats - 1'b1;
-                    r_addr <= (s_axi_arburst == BURST_INCR) ? r_addr_next : r_addr;
+                    r_addr <= (r_burst == BURST_INCR) ? r_addr_next : r_addr;
                 end
             end
             if (s_axi_rvalid && s_axi_rready) begin
                 s_axi_rvalid <= 1'b0;
                 if (s_axi_rlast)
                     r_active <= 1'b0;
+                    r_err    <= 1'b0;
             end
         end
     end

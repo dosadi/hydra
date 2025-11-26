@@ -73,4 +73,19 @@ ${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_dma_stub_direct.vvp \
   sim/tests/rtl/test_dma_stub_direct.sv "${SDRAM_LATENCY_ARGS_DMA[@]}" rtl/axi_dma_stub.sv rtl/axi_sdram_stub.sv
 ${VVP_BIN} sim/tests/rtl/test_dma_stub_direct.vvp
 
+echo "[rtl-tests] Running AXI-Lite CSR smoke bench..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_voxel_axil_csr_simple.vvp \
+  sim/tests/rtl/test_voxel_axil_csr_simple.sv rtl/voxel_axil_csr.sv
+${VVP_BIN} sim/tests/rtl/test_voxel_axil_csr_simple.vvp
+
+echo "[rtl-tests] Running SDRAM stub SLVERR coverage bench..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_axi_sdram_error.vvp \
+  sim/tests/rtl/test_axi_sdram_error.sv rtl/axi_sdram_stub.sv
+${VVP_BIN} sim/tests/rtl/test_axi_sdram_error.vvp
+
+echo "[rtl-tests] Running SDRAM stub poison coverage bench..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_axi_sdram_poison.vvp \
+  sim/tests/rtl/test_axi_sdram_poison.sv rtl/axi_sdram_stub.sv
+${VVP_BIN} sim/tests/rtl/test_axi_sdram_poison.vvp
+
 echo "[rtl-tests] All RTL benches passed."

@@ -394,6 +394,13 @@ sudo ./tools/hydra_fps_benchmark
 - Optionally expose `FB_BASE` as read-only sysfs attribute
 - No IOCTL changes needed (auto-swap handles everything)
 
+## Pixel Packing and CRC (simulation path)
+
+- Pixel format: 24-bit RGB888 packed into `m_axis_tdata[23:0]` as `{R[23:16], G[15:8], B[7:0]}`. No alpha is sent on the HDMI stream.
+- SOF/EOF: `m_axis_tuser` is asserted on the first pixel of a frame (addr 0), and `m_axis_tlast` on the final pixel (`TOTAL_PIXELS-1`).
+- CRC: The current sink accumulates a simple XOR of `m_axis_tdata` across a frame, reset on SOF. The HDMI_CRC CSR mirrors this accumulator for regression checks; hardware should replace this with encoder-side CRC/test patterns.
+- Counters: `HDMI_FR`, `HDMI_LINE`, and `HDMI_PIX` advance only on `axis_fire` (valid && ready) and reset on SOF. They are exposed via CSRs for cocotb/RTL benches.
+
 ## Known Limitations and Future Work
 
 ### Limitation 1: Single Display Output

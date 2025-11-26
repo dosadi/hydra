@@ -18,7 +18,8 @@ module voxel_framebuffer_top #(
     // Test-only: force world_ready to 1 after reset for benches
     parameter integer TEST_FORCE_WORLD_READY = 0,
     // Allow benches to disable auto-run and require host start pulses.
-    parameter integer AUTO_START_FRAMES = 1
+    parameter integer AUTO_START_FRAMES = 1,
+    parameter [31:0]  WORLD_SEED_DEFAULT = 32'h0000_0000
 )(
     input  wire         clk,
     input  wire         rst_n,
@@ -51,6 +52,7 @@ module voxel_framebuffer_top #(
     input  wire         flag_curvature_in,
     input  wire         flag_extra_light_in,
     input  wire         flag_diag_slice_in,
+    input  wire         flag_ray_jitter_in,
 
     input  wire         sel_load,
     input  wire         sel_active_in,
@@ -81,6 +83,7 @@ module voxel_framebuffer_top #(
     reg cfg_curvature;
     reg cfg_extra_light;
     reg cfg_diag_slice;
+    reg cfg_ray_jitter;
 
     // Selection controls
     reg       sel_active;
@@ -92,6 +95,7 @@ module voxel_framebuffer_top #(
     reg [17:0] dbg_write_addr;
     reg        dbg_write_en;
     reg [63:0] dbg_write_data;
+    reg [31:0] world_seed;
 
     // World generator
     reg  world_start;
@@ -118,6 +122,9 @@ module voxel_framebuffer_top #(
     wire [7:0]  cursor_material_id;
     wire [63:0] cursor_voxel_data;
     wire [31:0] core_dbg_hit_count;
+    wire [31:0] core_dbg_ray_steps_total;
+    wire [7:0]  core_dbg_ray_steps_max;
+    wire [31:0] core_dbg_ray_miss_count;
 
     // Expose cursor/regs to Verilator (they are regs/wires in this scope)
     // (No extra ports needed; Verilator can access internal regs/wires.)
@@ -143,6 +150,7 @@ module voxel_framebuffer_top #(
         cfg_curvature       <= 1'b1;
         cfg_extra_light     <= 1'b0;
         cfg_diag_slice      <= 1'b0;
+        cfg_ray_jitter      <= 1'b0;
 
         sel_active   <= 1'b0;
         sel_voxel_x  <= 6'd0;
@@ -152,6 +160,7 @@ module voxel_framebuffer_top #(
         dbg_write_addr <= 18'd0;
         dbg_write_en   <= 1'b0;
         dbg_write_data <= 64'd0;
+        world_seed     <= WORLD_SEED_DEFAULT;
 
         world_start <= 1'b0;
         start       <= 1'b0;
@@ -166,6 +175,7 @@ module voxel_framebuffer_top #(
         .start      (world_start),
         .busy       (world_busy),
         .done       (world_done),
+        .seed       (world_seed),
         .write_addr (world_waddr),
         .write_en   (world_wen),
         .write_data (world_wdata)
@@ -191,7 +201,7 @@ module voxel_framebuffer_top #(
     );
 
     // Core config word
-    wire [31:0] render_config = {30'd0, cfg_diag_slice, cfg_extra_light};
+    wire [31:0] render_config = {29'd0, cfg_ray_jitter, cfg_diag_slice, cfg_extra_light};
 
     voxel_raycaster_core_pipelined #(
         .SCREEN_WIDTH    (SCREEN_WIDTH),
@@ -244,7 +254,10 @@ module voxel_framebuffer_top #(
         .cursor_voxel_z     (cursor_voxel_z),
         .cursor_material_id (cursor_material_id),
         .cursor_voxel_data  (cursor_voxel_data),
-        .dbg_hit_count      (core_dbg_hit_count)
+        .dbg_hit_count      (core_dbg_hit_count),
+        .dbg_ray_steps_total(core_dbg_ray_steps_total),
+        .dbg_ray_steps_max  (core_dbg_ray_steps_max),
+        .dbg_ray_miss_count (core_dbg_ray_miss_count)
     );
 
     assign frame_done = done;
@@ -345,6 +358,7 @@ module voxel_framebuffer_top #(
                 cfg_curvature       <= flag_curvature_in;
                 cfg_extra_light     <= flag_extra_light_in;
                 cfg_diag_slice      <= flag_diag_slice_in;
+                cfg_ray_jitter      <= flag_ray_jitter_in;
             end
 
             if (sel_load) begin

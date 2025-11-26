@@ -1,5 +1,7 @@
-# Minimal kmod Makefile placeholder for Hydra PCI stub on FreeBSD.
-# Adjust KMOD/CFLAGS/SRCS when wiring BAR mapping and IOCTLs.
+# Hydra PCI stub kmod for FreeBSD
+# Build:  make -C drivers/bsd -f Makefile.kmod
+# Install: sudo make -C drivers/bsd -f Makefile.kmod install
+# Clean: make -C drivers/bsd -f Makefile.kmod clean
 
 KMOD    = hydra
 SRCS    = hydra_pci_stub.c device_if.h bus_if.h pci_if.h

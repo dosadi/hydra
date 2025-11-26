@@ -10,8 +10,12 @@
 #include <sys/errno.h>
 #include <sys/malloc.h>
 #include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/sysctl.h>
 #include <sys/rman.h>
 #include <sys/systm.h>
+#include <vm/vm.h>
+#include <vm/pmap.h>
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 #include <machine/bus.h>
@@ -42,6 +46,14 @@ struct hydra_softc {
     uint32_t        int_status;
     uint32_t        int_mask;
     uint32_t        dma_status;
+    uint64_t        dma_count;
+    uint64_t        irq_count;
+    uint64_t        dma_irq_count;
+    uint64_t        test_irq_count;
+    uint64_t        bar0_len;
+    uint64_t        bar1_len;
+    struct sysctl_ctx_list sysctl_ctx;
+    struct sysctl_oid     *sysctl_tree;
 };
 
 static u32
@@ -79,7 +91,17 @@ hydra_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread
         info->bar0_len = rman_get_size(sc->bar0);
         info->bar1_start = sc->bar1 ? rman_get_start(sc->bar1) : 0;
         info->bar1_len = sc->bar1 ? rman_get_size(sc->bar1) : 0;
-        info->irq_count = 0;
+        info->irq_count = sc->irq_count;
+        mtx_unlock(&sc->lock);
+        return (0);
+    }
+    case HYDRA_IOCTL_VERSION: {
+        struct hydra_version *ver = (struct hydra_version *)data;
+        ver->abi_major    = HYDRA_ABI_MAJOR;
+        ver->abi_minor    = HYDRA_ABI_MINOR;
+        ver->sizeof_info  = sizeof(struct hydra_info);
+        ver->sizeof_dma_req = sizeof(struct hydra_dma_req);
+        ver->sizeof_reg_rw  = sizeof(struct hydra_reg_rw);
         mtx_unlock(&sc->lock);
         return (0);
     }
@@ -95,9 +117,9 @@ hydra_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread
             rw->value = sc->dma_status;
         else if (rw->offset == HYDRA_REG_STATUS) {
             uint32_t st = 0;
-            if (sc->dma_status & HYDRA_INT_DMA_DONE)
+            if (sc->dma_status & HYDRA_STATUS_DMA_DONE)
                 st |= HYDRA_STATUS_DMA_DONE;
-            if (sc->dma_status & 0x2)
+            if (sc->dma_status & HYDRA_STATUS_DMA_BUSY)
                 st |= HYDRA_STATUS_DMA_BUSY;
             rw->value = st;
         } else {
@@ -124,6 +146,10 @@ hydra_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread
         if (rw->offset == HYDRA_REG_IRQ_TEST) {
             if (rw->value & 0x1)
                 sc->int_status |= HYDRA_INT_TEST;
+            if (rw->value & 0x1)
+                sc->irq_count++;
+            if (rw->value & 0x1)
+                sc->test_irq_count++;
             mtx_unlock(&sc->lock);
             return (0);
         }
@@ -141,9 +167,15 @@ hydra_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread
             dr->dst + dr->len > HYDRA_BAR0_SIZE)
             goto inval;
         /* Pretend done immediately by setting DMA_STATUS done bit. */
-        sc->dma_status = HYDRA_INT_DMA_DONE;
+        sc->dma_status = HYDRA_STATUS_DMA_DONE;
+        sc->dma_count++;
         if (sc->int_mask & HYDRA_INT_DMA_DONE)
             sc->int_status |= HYDRA_INT_DMA_DONE;
+        if (sc->int_status & HYDRA_INT_DMA_DONE)
+            sc->irq_count++;
+        if (sc->int_status & HYDRA_INT_DMA_DONE)
+            sc->dma_irq_count++;
+        mtx_unlock(&sc->lock);
         return (0); /* pretend success */
     }
     default:
@@ -167,12 +199,39 @@ hydra_close(struct cdev *dev, int fflag, int devtype, struct thread *td)
     return (0);
 }
 
+static int
+hydra_mmap(struct cdev *dev, vm_ooffset_t offset, vm_paddr_t *paddr,
+    int nprot, vm_memattr_t *memattr)
+{
+    struct hydra_softc *sc = dev->si_drv1;
+
+    if (sc == NULL)
+        return (ENODEV);
+
+    if ((offset & PAGE_MASK) != 0)
+        return (EINVAL);
+
+    /* Support contiguous mmap of BAR0 then BAR1. */
+    if (offset < sc->bar0_len) {
+        *paddr = rman_get_start(sc->bar0) + offset;
+    } else {
+        vm_ooffset_t bar1_off = offset - sc->bar0_len;
+        if (sc->bar1 == NULL || bar1_off >= sc->bar1_len)
+            return (EINVAL);
+        *paddr = rman_get_start(sc->bar1) + bar1_off;
+    }
+
+    *memattr = VM_MEMATTR_UNCACHEABLE;
+    return (0);
+}
+
 static struct cdevsw hydra_cdevsw = {
     .d_version = D_VERSION,
     .d_name    = "hydra",
     .d_open    = hydra_open,
     .d_close   = hydra_close,
     .d_ioctl   = hydra_ioctl,
+    .d_mmap    = hydra_mmap,
 };
 
 static int
@@ -192,6 +251,7 @@ hydra_attach(device_t dev)
     struct hydra_softc *sc = device_get_softc(dev);
     int rid;
 
+    bzero(sc, sizeof(*sc));
     sc->dev = dev;
     pci_enable_busmaster(dev);
 
@@ -202,10 +262,15 @@ hydra_attach(device_t dev)
         return (ENXIO);
     }
     sc->bar0_vaddr = rman_get_virtual(sc->bar0);
+    sc->bar0_len = rman_get_size(sc->bar0);
     sc->bar1_rid = PCIR_BAR(1);
     sc->bar1 = bus_alloc_resource_any(dev, SYS_RES_MEMORY, &sc->bar1_rid, RF_ACTIVE);
-    if (sc->bar1)
+    if (sc->bar1) {
         sc->bar1_vaddr = rman_get_virtual(sc->bar1);
+        sc->bar1_len = rman_get_size(sc->bar1);
+    } else {
+        sc->bar1_len = 0;
+    }
 
     rid = rman_get_rid(sc->bar0);
     device_printf(dev, "Hydra stub attached: BAR0 mapped (rid=%d), BAR1 %s\n",
@@ -214,7 +279,42 @@ hydra_attach(device_t dev)
     sc->cdev = make_dev(&hydra_cdevsw, 0, UID_ROOT, GID_WHEEL, 0600, "hydra");
     if (sc->cdev)
         sc->cdev->si_drv1 = sc;
-    /* TODO: register cdev/ioctl hooks and mirror BAR0/1 map from docs/hydra_spec.md. */
+    sc->int_status = 0;
+    sc->int_mask = 0;
+    sc->dma_status = 0;
+    sc->dma_count = 0;
+    sc->irq_count = 0;
+    sc->dma_irq_count = 0;
+    sc->test_irq_count = 0;
+    sysctl_ctx_init(&sc->sysctl_ctx);
+    sc->sysctl_tree = SYSCTL_ADD_NODE(&sc->sysctl_ctx,
+        SYSCTL_STATIC_CHILDREN(_dev),
+        OID_AUTO,
+        device_get_nameunit(dev),
+        CTLFLAG_RD,
+        0,
+        "Hydra device");
+    if (sc->sysctl_tree) {
+        SYSCTL_ADD_U64(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "bar0_len", CTLFLAG_RD, &sc->bar0_len, 0, "BAR0 length");
+        SYSCTL_ADD_U64(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "bar1_len", CTLFLAG_RD, &sc->bar1_len, 0, "BAR1 length");
+        SYSCTL_ADD_U32(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "int_status", CTLFLAG_RD, &sc->int_status, 0, "INT_STATUS RW1C latched bits");
+        SYSCTL_ADD_U32(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "int_mask", CTLFLAG_RD, &sc->int_mask, 0, "INT_MASK");
+        SYSCTL_ADD_U32(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "dma_status", CTLFLAG_RD, &sc->dma_status, 0, "DMA_STATUS stub bits");
+        SYSCTL_ADD_U64(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "dma_count", CTLFLAG_RD, &sc->dma_count, 0, "Number of stub DMA completions");
+        SYSCTL_ADD_UQUAD(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "irq_count", CTLFLAG_RD, &sc->irq_count, "IRQ count (stub)");
+        SYSCTL_ADD_U64(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "dma_irq_count", CTLFLAG_RD, &sc->dma_irq_count, 0, "DMA IRQ pulses (stub)");
+        SYSCTL_ADD_U64(&sc->sysctl_ctx, SYSCTL_CHILDREN(sc->sysctl_tree), OID_AUTO,
+            "test_irq_count", CTLFLAG_RD, &sc->test_irq_count, 0, "IRQ_TEST pulses (stub)");
+    }
+    /* Mirror BAR0/BAR1 map from docs/hydra_spec.md via HYDRA_IOCTL_INFO + RW32. */
     return (0);
 }
 
@@ -224,6 +324,7 @@ hydra_detach(device_t dev)
     struct hydra_softc *sc = device_get_softc(dev);
     if (sc->cdev)
         destroy_dev(sc->cdev);
+    sysctl_ctx_free(&sc->sysctl_ctx);
     mtx_destroy(&sc->lock);
     if (sc->bar0)
         bus_release_resource(dev, SYS_RES_MEMORY, sc->bar0_rid, sc->bar0);

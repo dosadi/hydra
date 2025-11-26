@@ -17,7 +17,7 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 - `drivers/linux/hydra_drm_stub.c`: DRM render-only stub using GEM shmem helpers; binds to PCI ID, maps BAR0, registers a DRM device (no planes/modes yet).
 - `drivers/mesa/`: placeholder Gallium skeleton (`meson.build`, stub C) to guide Mesa integration later.
 - `drivers/libhydra/`: tiny userspace helper library wrapping IOCTLs (info/rd/wr/dma/blit).
-- `drivers/bsd/`: FreeBSD stub (`hydra_pci_stub.c`, `Makefile.kmod`) with BAR0/1 mapping and IOCTLs for INFO/RD32/WR32/DMA (DMA stubbed, sets DMA_STATUS/INT_STATUS). Build with `make -C drivers/bsd -f Makefile.kmod` on a FreeBSD host with kernel sources/headers.
+- `drivers/bsd/`: FreeBSD stub (`hydra_pci_stub.c`, `Makefile.kmod`) with BAR0/1 mapping, `/dev/hydra` mmap (BAR0 then BAR1), sysctl counters for IRQ/DMA stats, and IOCTLs for INFO/RD32/WR32/DMA (DMA stubbed, sets DMA_STATUS/INT_STATUS). Build with `make -C drivers/bsd -f Makefile.kmod` on a FreeBSD host with kernel sources/headers.
 - See `docs/freebsd_qemu.md` for a quick QEMU-based FreeBSD setup to build/load the stub.
 - For a quick maturity snapshot, see `docs/component_status.md`. Windows sim/build notes live in `docs/windows_sim.md`.
 
@@ -38,6 +38,10 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
 - macOS DriverKit (when code exists): install Xcode + Command Line Tools; build with `xcodebuild` on the DriverKit target (signing/provisioning required for deploy).
 - BAR0 register sketch lives in `docs/hydra_spec.md` and mirrored offsets in `drivers/linux/uapi/hydra_regs.h`; keep RTL/driver aligned.
 
+In addition:
+- `scripts/hydra_cam_reset`, `scripts/hydra_irq_test`, and `scripts/hydra_bar1_hexdump` form the core of `scripts/driver_coverage.sh`, which collects logs under `out/driver-coverage/` to flag regressions quickly; see `docs/driver_coverage_guide.md` for usage notes.
+- Running `scripts/setup_macos_env.sh` or `scripts/windows-env.ps1` primes SDL2/Python so that any driver-side cocotb/tooling smoke tests can compile/run on those hosts.
+
 ## Userspace smoke test (Linux)
 - A small helper to exercise BAR0 blitter CSRs lives at `scripts/hydra_blit_smoketest.c`.
 - Build: `gcc -I drivers/linux/uapi -O2 -o hydra_blit_smoketest scripts/hydra_blit_smoketest.c` or `make blit-smoketest` (writes to `scripts/hydra_blit_smoketest`).
@@ -55,3 +59,23 @@ Goal: prepare cross-platform driver scaffolding so the Hydra PCIe device can be 
   - Builds SDK tools via `scripts/setup_sdk.sh` and runs best-effort RTL benches and a cocotb smoke job (Icarus) when tools are available.
   - Optional QEMU smoke job (`qemu-smoke`) exercises a QEMU Hydra PCI stub and guest when configured; a best-effort FreeBSD kmod job (`freebsd-kmod`) builds the BSD stub in a VM.
   - Mesa stub configure step (non-blocking) can be added later to catch wiring mistakes.
+
+## Driver bring-up checklist (Linux / FreeBSD)
+
+Linux (PCIe stub + misc/DRM):
+1. Build and load modules: `make -C drivers/linux` then `sudo insmod hydra_pcie_drv.ko` (and `hydra_drm_stub.ko` if needed).
+2. Confirm devnode: `/dev/hydra_pcie` exists; `dmesg | grep hydra` shows BAR0/1 sizes and MSI/legacy status.
+3. Sanity IOCTLs: `sudo ./scripts/hydra_blit_smoketest /dev/hydra_pcie` and `./scripts/hydra_irq_test /dev/hydra_pcie` (expect INT_STATUS clears and IRQ_TEST pulses).
+4. ABI check: `./scripts/hydra_drm_info` (if libdrm present) reports HYDRA_IOCTL_VERSION match and BAR info; ABI mismatch should fail the tool.
+5. BAR1 (if present): `./scripts/hydra_bar1_hexdump` reads a small range without faults; expect non-zero BAR1 length in INFO.
+
+FreeBSD (PCI stub):
+1. Build: `make -C drivers/bsd -f Makefile.kmod`; load with `sudo kldload ./hydra.ko`.
+2. Confirm devnode: `/dev/hydra` exists; `dmesg | grep hydra` shows BAR0/1 mapping.
+3. Sanity IOCTLs + mmap: `./scripts/hydra_irq_test /dev/hydra` (INFO/RD32/WR32/DMA stubs) and `./scripts/hydra_bsd_info /dev/hydra` for INFO + IRQ_TEST + DMA + sysctl stats; `/dev/hydra` mmap maps BAR0 followed by BAR1 if present.
+4. ABI check: `./scripts/hydra_drm_info /dev/hydra` (best-effort; HYDRA_IOCTL_VERSION supported in the stub) to verify struct sizes.
+5. Unload: `sudo kldunload hydra` cleanly frees BAR resources and cdev; sysctl nodes under `dev.hydra.*` should disappear.
+
+Expected readings at probe (both OSes):
+- `ID`: vendor `0x1BAD`, device `0x2024`; `REV`: rev `0x02`, build `0x01` (for 0.0.3-era map).
+- Reset defaults: `FLAGS` smooth=1, curvature=1, extra_light=0, diag_slice=0; `INT_STATUS`/`INT_MASK`/`DMA_STATUS` zeroed; `FB_BASE`/`FB_STRIDE` zeroed; selection inactive.

@@ -23,6 +23,31 @@
 #include <strings.h>
 #include <unistd.h>
 
+struct ColorRange {
+    uint8_t min_r;
+    uint8_t min_g;
+    uint8_t min_b;
+    uint8_t max_r;
+    uint8_t max_g;
+    uint8_t max_b;
+};
+
+static ColorRange color_range_default() {
+    return ColorRange{0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00};
+}
+
+static void record_color(ColorRange& range, uint32_t argb) {
+    uint8_t r = (argb >> 16) & 0xFF;
+    uint8_t g = (argb >>  8) & 0xFF;
+    uint8_t b = (argb      ) & 0xFF;
+    range.min_r = std::min(range.min_r, r);
+    range.min_g = std::min(range.min_g, g);
+    range.min_b = std::min(range.min_b, b);
+    range.max_r = std::max(range.max_r, r);
+    range.max_g = std::max(range.max_g, g);
+    range.max_b = std::max(range.max_b, b);
+}
+
 static const int   SCREEN_WIDTH  = 480;
 static const int   SCREEN_HEIGHT = 360;
 static const int   HUD_HEIGHT    = 80;
@@ -32,16 +57,87 @@ static bool        g_vsync       = true;
 vluint64_t main_time = 0;
 double sc_time_stamp() { return main_time; }
 
-static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
-    (void)w0; (void)w2;
-    uint8_t r = (w1 >> 24) & 0xFF;
-    uint8_t g = (w1 >> 16) & 0xFF;
-    uint8_t b = (w1 >>  8) & 0xFF;
-    uint8_t a = 0xFF;
-    return (uint32_t(a) << 24) |
+enum class PixelViewMode {
+    Color = 0,
+    Word0,
+    Word2,
+    SidebandMix,
+};
+
+static PixelViewMode g_pixel_view_mode = PixelViewMode::Color;
+
+static const char* pixel_view_mode_name(PixelViewMode m) {
+    switch (m) {
+        case PixelViewMode::Color:      return "color";
+        case PixelViewMode::Word0:      return "word0";
+        case PixelViewMode::Word2:      return "word2";
+        case PixelViewMode::SidebandMix:return "sideband";
+        default:                        return "unknown";
+    }
+}
+
+static PixelViewMode pixel_view_from_string(const char* s) {
+    if (!s) return PixelViewMode::Color;
+    if (strcasecmp(s, "color") == 0)    return PixelViewMode::Color;
+    if (strcasecmp(s, "word0") == 0)    return PixelViewMode::Word0;
+    if (strcasecmp(s, "depth") == 0)    return PixelViewMode::Word0;
+    if (strcasecmp(s, "word2") == 0)    return PixelViewMode::Word2;
+    if (strcasecmp(s, "reemissure") == 0|| strcasecmp(s, "reem") == 0) return PixelViewMode::Word2;
+    if (strcasecmp(s, "sideband") == 0) return PixelViewMode::SidebandMix;
+    return PixelViewMode::Color;
+}
+
+static uint32_t visualize_word(uint32_t w) {
+    uint8_t r = (w >> 24) & 0xFF;
+    uint8_t g = (w >> 16) & 0xFF;
+    uint8_t b = (w >>  8) & 0xFF;
+    // If the upper bytes are zero, fall back to showing the low byte so the view is not blank.
+    if (r == 0 && g == 0 && b == 0) {
+        uint8_t lsb = w & 0xFF;
+        r = g = b = lsb;
+    }
+    return (0xFFu << 24) |
            (uint32_t(r) << 16) |
            (uint32_t(g) << 8)  |
             uint32_t(b);
+}
+
+static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
+    switch (g_pixel_view_mode) {
+        case PixelViewMode::Color: {
+            uint8_t r = (w1 >> 24) & 0xFF;
+            uint8_t g = (w1 >> 16) & 0xFF;
+            uint8_t b = (w1 >>  8) & 0xFF;
+            return (0xFFu << 24) |
+                   (uint32_t(r) << 16) |
+                   (uint32_t(g) << 8)  |
+                    uint32_t(b);
+        }
+        case PixelViewMode::Word0:
+            return visualize_word(w0);
+        case PixelViewMode::Word2:
+            return visualize_word(w2);
+        case PixelViewMode::SidebandMix: {
+            uint8_t depth_like = (w0 >> 16) & 0xFF;
+            uint8_t emissive   = (w2 >> 16) & 0xFF;
+            uint8_t diag_bits  = (w0 >> 8)  & 0xFF;
+            return (0xFFu << 24) |
+                   (uint32_t(emissive)   << 16) |
+                   (uint32_t(depth_like) << 8)  |
+                    uint32_t(diag_bits);
+        }
+        default:
+            return visualize_word(w1);
+    }
+}
+
+static uint32_t spectrum_pixel(uint32_t addr) {
+    uint32_t x = addr % SCREEN_WIDTH;
+    uint32_t y = addr / SCREEN_WIDTH;
+    uint8_t r = (x * 255) / (SCREEN_WIDTH - 1);
+    uint8_t g = (y * 255) / (SCREEN_HEIGHT - 1);
+    uint8_t b = ((x + y) * 255) / ((SCREEN_WIDTH + SCREEN_HEIGHT) - 2);
+    return (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
 }
 
 static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
@@ -56,6 +152,32 @@ static bool env_truthy(const char* key) {
 }
 
 static void apply_cli_overrides(int argc, char** argv) {
+    auto missing_value = [](const char* flag) {
+        std::fprintf(stderr, "[hydra] Missing value for %s\n", flag);
+    };
+    auto set_override = [](const char* key, const char* value, const char* note = nullptr) {
+        if (!value) return;
+        setenv(key, value, 1);
+        if (note) {
+            std::fprintf(stderr, "[hydra] CLI override: %s=%s (%s)\n", key, value, note);
+        } else {
+            std::fprintf(stderr, "[hydra] CLI override: %s=%s\n", key, value);
+        }
+    };
+    auto match_arg = [&](const char* arg, const char* long_flag, int& i) -> const char* {
+        size_t len = std::strlen(long_flag);
+        if (std::strncmp(arg, long_flag, len) != 0)
+            return nullptr;
+        if (arg[len] == '=') {
+            return arg + len + 1;
+        }
+        if (i + 1 < argc) {
+            return argv[++i];
+        }
+        missing_value(long_flag);
+        return nullptr;
+    };
+
     for (int i = 1; i < argc; ++i) {
         const char* arg = argv[i];
         if (!arg) continue;
@@ -63,12 +185,26 @@ static void apply_cli_overrides(int argc, char** argv) {
             const char* val = argv[++i];
             setenv("HYDRA_BACKEND", val, 1);
             std::fprintf(stderr, "[hydra] CLI override: backend=%s\n", val);
-        } else if (std::strncmp(arg, "--backend=", 10) == 0) {
-            const char* val = arg + 10;
-            if (val && *val) {
-                setenv("HYDRA_BACKEND", val, 1);
-                std::fprintf(stderr, "[hydra] CLI override: backend=%s\n", val);
-            }
+        } else if (const char* val = match_arg(arg, "--backend", i)) {
+            set_override("HYDRA_BACKEND", val);
+        } else if (const char* val = match_arg(arg, "--cam-pos", i)) {
+            set_override("HYDRA_CAM_POS", val, "camera position (x,y,z)");
+        } else if (const char* val = match_arg(arg, "--cam-ang", i)) {
+            set_override("HYDRA_CAM_ANG", val, "camera yaw,pitch");
+        } else if (const char* val = match_arg(arg, "--move-speed", i)) {
+            set_override("HYDRA_MOVE_SPEED", val, "move speed");
+        } else if (const char* val = match_arg(arg, "--move-speed-fast", i)) {
+            set_override("HYDRA_MOVE_SPEED_FAST", val, "fast move speed");
+        } else if (const char* val = match_arg(arg, "--turn-speed", i)) {
+            set_override("HYDRA_TURN_SPEED_KEYS", val, "key turn speed");
+        } else if (const char* val = match_arg(arg, "--mouse-sens", i)) {
+            set_override("HYDRA_MOUSE_SENS", val, "mouse sensitivity");
+        } else if (const char* val = match_arg(arg, "--fps-target", i)) {
+            set_override("HYDRA_FPS_TARGET", val, "frame pacing target");
+        } else if (const char* val = match_arg(arg, "--pixel-view", i)) {
+            set_override("HYDRA_PIXEL_VIEW", val, "pixel view mode");
+        } else if (const char* val = match_arg(arg, "--seed", i)) {
+            set_override("HYDRA_WORLD_SEED", val, "world/procedural seed");
         }
     }
 }
@@ -296,6 +432,10 @@ int main(int argc, char** argv) {
     uint64_t prev_mem_write = 0;
     float last_mem_read_util  = 0.0f;
     float last_mem_write_util = 0.0f;
+    ColorRange frame_color_stats = color_range_default();
+    ColorRange last_frame_color_stats = frame_color_stats;
+    bool frame_color_stats_dirty = false;
+    bool last_frame_color_stats_valid = false;
 
     // Ensure SDL grabs keyboard focus; allow renderer selection via SDL hints/env.
     SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
@@ -489,22 +629,76 @@ int main(int argc, char** argv) {
     float turn_speed_keys = getenv_float("HYDRA_TURN_SPEED_KEYS", 0.04f);
     float mouse_sens      = getenv_float("HYDRA_MOUSE_SENS", 0.0025f);
     bool invert_y_mouse   = (std::getenv("HYDRA_INVERT_Y") != nullptr);
+    const float base_move_speed      = move_speed;
+    const float base_move_speed_fast = move_speed_fast;
+    const float base_turn_speed_keys = turn_speed_keys;
+    const float base_mouse_sens      = mouse_sens;
 
     bool smooth_surfaces = true;
     bool curvature       = true;
     bool extra_light     = false;
     bool diag_slice      = false;
+    bool ray_jitter      = env_truthy("HYDRA_RAY_JITTER");
+    bool spectrum_mode   = env_truthy("HYDRA_SPECTRUM_MODE");
     bool hud_enabled     = true;
     bool hud_theme_light = false;
     if (const char* hud_theme_env = std::getenv("HYDRA_HUD_THEME")) {
         if (strcasecmp(hud_theme_env, "light") == 0)
             hud_theme_light = true;
     }
+    const char* pixel_view_env = std::getenv("HYDRA_PIXEL_VIEW");
+    g_pixel_view_mode = pixel_view_from_string(pixel_view_env);
+    bool safe_capture_mode = env_truthy("HYDRA_SAFE_CAPTURE");
+
+    uint32_t world_seed_override = 0;
+    const char* world_seed_env = std::getenv("HYDRA_WORLD_SEED");
+    if (const char* seed_env = world_seed_env) {
+        world_seed_override = static_cast<uint32_t>(std::strtoul(seed_env, nullptr, 0));
+    }
 
     bool mouse_captured  = true;
     const char* mouse_cap_env = std::getenv("HYDRA_MOUSE_CAPTURE");
     if (mouse_cap_env && std::strcmp(mouse_cap_env, "0") == 0)
         mouse_captured = false;
+
+    auto load_autosave_cfg = [&](const char* path) {
+        if (!path || path[0] == '\0') return;
+        FILE* f = std::fopen(path, "r");
+        if (!f) return;
+        char line[256];
+        while (std::fgets(line, sizeof(line), f)) {
+            if (std::strncmp(line, "cam_pos=", 8) == 0) {
+                float lx, ly, lz;
+                if (std::sscanf(line + 8, "%f,%f,%f", &lx, &ly, &lz) == 3) {
+                    pos_x = lx; pos_y = ly; pos_z = lz;
+                }
+            } else if (std::strncmp(line, "cam_ang=", 8) == 0) {
+                float lyaw, lpitch;
+                if (std::sscanf(line + 8, "%f,%f", &lyaw, &lpitch) == 2) {
+                    yaw = lyaw; pitch = lpitch;
+                }
+            } else if (std::strncmp(line, "flags=", 6) == 0) {
+                int fs, fc, fe, fd;
+                if (std::sscanf(line + 6, "%d,%d,%d,%d", &fs, &fc, &fe, &fd) == 4) {
+                    smooth_surfaces = (fs != 0);
+                    curvature       = (fc != 0);
+                    extra_light     = (fe != 0);
+                    diag_slice      = (fd != 0);
+                }
+            } else if (std::strncmp(line, "seed=", 5) == 0) {
+                uint32_t s = 0;
+                if (std::sscanf(line + 5, "%u", &s) == 1) {
+                    world_seed_override = s;
+                }
+            } else if (std::strncmp(line, "safe_capture=", 13) == 0) {
+                int v = 0;
+                if (std::sscanf(line + 13, "%d", &v) == 1) {
+                    safe_capture_mode = (v != 0);
+                }
+            }
+        }
+        std::fclose(f);
+    };
 
     // Camera position clamping (configurable bounds)
     bool cam_clamp_enabled = (std::getenv("HYDRA_CAM_CLAMP") != nullptr);
@@ -518,6 +712,9 @@ int main(int argc, char** argv) {
             cam_max = max_val;
         }
     }
+    const bool base_cam_clamp = cam_clamp_enabled;
+    const float base_cam_min = cam_min;
+    const float base_cam_max = cam_max;
 
     // Apply initial clamping if enabled
     if (cam_clamp_enabled) {
@@ -527,6 +724,9 @@ int main(int argc, char** argv) {
         if (pos_y > cam_max) pos_y = cam_max;
         if (pos_z < cam_min) pos_z = cam_min;
         if (pos_z > cam_max) pos_z = cam_max;
+    }
+    if (autosave_cfg) {
+        load_autosave_cfg(autosave_cfg);
     }
 
     // Frame pacing and timing configuration
@@ -547,6 +747,10 @@ int main(int argc, char** argv) {
     if (auto_exit) std::fprintf(stderr, "[hydra] AUTO_EXIT=1\n");
     if (cam_pos_env) std::fprintf(stderr, "[hydra] HYDRA_CAM_POS=%s\n", cam_pos_env);
     if (cam_ang_env) std::fprintf(stderr, "[hydra] HYDRA_CAM_ANG=%s\n", cam_ang_env);
+    if (const char* v = std::getenv("HYDRA_WORLD_SEED")) std::fprintf(stderr, "[hydra] HYDRA_WORLD_SEED=%s\n", v);
+    if (pixel_view_env) std::fprintf(stderr, "[hydra] HYDRA_PIXEL_VIEW=%s\n", pixel_view_env);
+    if (const char* v = std::getenv("HYDRA_WORLD_SEED")) std::fprintf(stderr, "[hydra] HYDRA_WORLD_SEED=%s\n", v);
+    if (safe_capture_mode) std::fprintf(stderr, "[hydra] HYDRA_SAFE_CAPTURE=1\n");
     std::fprintf(stderr, "[hydra] Camera: pos=(%.1f,%.1f,%.1f) yaw=%.2f pitch=%.2f\n",
                  pos_x, pos_y, pos_z, yaw, pitch);
     std::fprintf(stderr, "[hydra] Move speed: %.3f (fast: %.3f) Mouse sens: %.4f%s\n",
@@ -555,6 +759,8 @@ int main(int argc, char** argv) {
     if (fps_target > 0.0f) std::fprintf(stderr, "[hydra] Frame pacing: target %.1f FPS\n", fps_target);
     if (clear_each_frame) std::fprintf(stderr, "[hydra] HYDRA_CLEAR_EACH_FRAME=1\n");
     if (autosave_cfg) std::fprintf(stderr, "[hydra] HYDRA_AUTOSAVE_CFG=%s\n", autosave_cfg);
+    if (ray_jitter) std::fprintf(stderr, "[hydra] HYDRA_RAY_JITTER=1\n");
+    std::fprintf(stderr, "[hydra] Pixel view: %s\n", pixel_view_mode_name(g_pixel_view_mode));
     std::fprintf(stderr, "[hydra] ==============================\n\n");
 
     bool selection_active = false;
@@ -563,6 +769,12 @@ int main(int argc, char** argv) {
     uint8_t selection_z = 0;
     uint64_t selection_word = 0;
     InputState keys;
+    float help_overlay_timer = 3.5f;
+    if (std::getenv("HYDRA_HELP_STARTUP")) {
+        help_overlay_timer = env_truthy("HYDRA_HELP_STARTUP") ? 3.5f : 0.0f;
+    }
+    bool help_overlay_sticky = false;
+    float sel_miss_timer = 0.0f;
 
     auto update_mouse_capture = [&]() {
         if (SDL_SetRelativeMouseMode(mouse_captured ? SDL_TRUE : SDL_FALSE) != 0) {
@@ -595,6 +807,7 @@ int main(int argc, char** argv) {
         root->voxel_framebuffer_top__DOT__cfg_curvature       = curvature       ? 1 : 0;
         root->voxel_framebuffer_top__DOT__cfg_extra_light     = extra_light     ? 1 : 0;
         root->voxel_framebuffer_top__DOT__cfg_diag_slice      = diag_slice     ? 1 : 0;
+        root->voxel_framebuffer_top__DOT__cfg_ray_jitter      = ray_jitter     ? 1 : 0;
     };
 
     auto apply_selection_to_dut = [&]() {
@@ -604,9 +817,38 @@ int main(int argc, char** argv) {
         root->voxel_framebuffer_top__DOT__sel_voxel_z = selection_z;
     };
 
+    bool safe_defaults_mode = env_truthy("HYDRA_SAFE_DEFAULTS");
+    auto apply_safe_defaults = [&]() {
+        if (safe_defaults_mode) {
+            move_speed      = 0.06f;
+            move_speed_fast = 0.16f;
+            turn_speed_keys = 0.03f;
+            mouse_sens      = 0.0016f;
+            cam_clamp_enabled = true;
+        } else {
+            move_speed      = base_move_speed;
+            move_speed_fast = base_move_speed_fast;
+            turn_speed_keys = base_turn_speed_keys;
+            mouse_sens      = base_mouse_sens;
+            cam_clamp_enabled = base_cam_clamp;
+            cam_min = base_cam_min;
+            cam_max = base_cam_max;
+        }
+    };
+
+    apply_safe_defaults();
+    if (cam_clamp_enabled) {
+        if (pos_x < cam_min) pos_x = cam_min;
+        if (pos_x > cam_max) pos_x = cam_max;
+        if (pos_y < cam_min) pos_y = cam_min;
+        if (pos_y > cam_max) pos_y = cam_max;
+        if (pos_z < cam_min) pos_z = cam_min;
+        if (pos_z > cam_max) pos_z = cam_max;
+    }
     apply_camera_to_dut();
     apply_flags_to_dut();
     apply_selection_to_dut();
+    root->voxel_framebuffer_top__DOT__world_seed = world_seed_override;
     update_mouse_capture();
 
     auto reset_key_state = [&]() { keys = InputState{}; };
@@ -692,9 +934,52 @@ int main(int argc, char** argv) {
                                 ++log_keys_count;
                             }
                             break;
+                        case SDLK_y:
+                            spectrum_mode = !spectrum_mode;
+                            std::fprintf(stderr, "[hydra] spectrum_mode %s\n", spectrum_mode ? "ON" : "OFF");
+                            break;
+                        case SDLK_j:
+                            ray_jitter = !ray_jitter;
+                            apply_flags_to_dut();
+                            std::fprintf(stderr, "[hydra] ray jitter %s\n", ray_jitter ? "ON" : "OFF");
+                            if (log_keys && log_keys_count < 200) {
+                                std::fprintf(stderr, "toggle ray_jitter -> %d\n", ray_jitter ? 1 : 0);
+                                ++log_keys_count;
+                            }
+                            break;
                         case SDLK_m:
                             mouse_captured = !mouse_captured;
                             update_mouse_capture();
+                            break;
+                        case SDLK_F3:
+                            safe_capture_mode = !safe_capture_mode;
+                            std::fprintf(stderr, "[hydra] safe capture %s\n", safe_capture_mode ? "ON" : "OFF");
+                            break;
+                        case SDLK_F2:
+                            safe_defaults_mode = !safe_defaults_mode;
+                            apply_safe_defaults();
+                            if (cam_clamp_enabled) {
+                                if (pos_x < cam_min) pos_x = cam_min;
+                                if (pos_x > cam_max) pos_x = cam_max;
+                                if (pos_y < cam_min) pos_y = cam_min;
+                                if (pos_y > cam_max) pos_y = cam_max;
+                                if (pos_z < cam_min) pos_z = cam_min;
+                                if (pos_z > cam_max) pos_z = cam_max;
+                            }
+                            std::fprintf(stderr, "[hydra] safe defaults %s (move=%.3f/%.3f turn=%.3f mouse=%.4f clamp=%d)\n",
+                                         safe_defaults_mode ? "ON" : "OFF",
+                                         move_speed, move_speed_fast, turn_speed_keys, mouse_sens,
+                                         cam_clamp_enabled ? 1 : 0);
+                            break;
+                        case SDLK_F1:
+                            help_overlay_sticky = !help_overlay_sticky;
+                            if (!help_overlay_sticky && help_overlay_timer <= 0.0f) {
+                                help_overlay_timer = 3.0f;
+                            }
+                            break;
+                        case SDLK_SLASH:
+                            help_overlay_timer = 4.0f;
+                            help_overlay_sticky = false;
                             break;
                         case SDLK_f:
                             if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
@@ -704,6 +989,9 @@ int main(int argc, char** argv) {
                                 selection_z = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_z);
                                 selection_word = static_cast<uint64_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_data);
                                 apply_selection_to_dut();
+                                sel_miss_timer = 0.0f;
+                            } else {
+                                sel_miss_timer = 1.5f;
                             }
                             break;
                         case SDLK_g:
@@ -733,7 +1021,22 @@ int main(int argc, char** argv) {
                             apply_camera_to_dut();
                             apply_flags_to_dut();
                             apply_selection_to_dut();
+                            apply_safe_defaults();
                             break;
+                        case SDLK_v: {
+                            if (g_pixel_view_mode == PixelViewMode::Color) {
+                                g_pixel_view_mode = PixelViewMode::Word0;
+                            } else if (g_pixel_view_mode == PixelViewMode::Word0) {
+                                g_pixel_view_mode = PixelViewMode::Word2;
+                            } else if (g_pixel_view_mode == PixelViewMode::Word2) {
+                                g_pixel_view_mode = PixelViewMode::SidebandMix;
+                            } else {
+                                g_pixel_view_mode = PixelViewMode::Color;
+                            }
+                            std::fprintf(stderr, "[hydra] pixel view -> %s\n",
+                                         pixel_view_mode_name(g_pixel_view_mode));
+                            break;
+                        }
                         case SDLK_p:
                             std::fprintf(stderr,
                                 "State: cam=(%.3f,%.3f,%.3f) yaw=%.3f pitch=%.3f flags[smooth=%d curv=%d extra=%d diag=%d] sel=%d (%u,%u,%u)\n",
@@ -837,7 +1140,7 @@ int main(int argc, char** argv) {
                         }
                     }
                 }
-            } else if (ev.type == SDL_MOUSEMOTION && mouse_captured) {
+            } else if (ev.type == SDL_MOUSEMOTION && mouse_captured && !safe_capture_mode) {
                 int dx = ev.motion.xrel;
                 int dy = ev.motion.yrel;
                 yaw   += dx * mouse_sens;
@@ -857,17 +1160,19 @@ int main(int argc, char** argv) {
 
         float cur_speed = keys.fast ? move_speed_fast : move_speed;
 
-        if (keys.forward)      { pos_x += fdx * cur_speed; pos_y += fdy * cur_speed; cam_changed = true; }
-        if (keys.back)         { pos_x -= fdx * cur_speed; pos_y -= fdy * cur_speed; cam_changed = true; }
-        if (keys.strafe_left)  { pos_x += rdx * cur_speed; pos_y += rdy * cur_speed; cam_changed = true; }
-        if (keys.strafe_right) { pos_x -= rdx * cur_speed; pos_y -= rdy * cur_speed; cam_changed = true; }
-        if (keys.down)         { pos_z -= cur_speed; cam_changed = true; }
-        if (keys.up)           { pos_z += cur_speed; cam_changed = true; }
+        if (!safe_capture_mode) {
+            if (keys.forward)      { pos_x += fdx * cur_speed; pos_y += fdy * cur_speed; cam_changed = true; }
+            if (keys.back)         { pos_x -= fdx * cur_speed; pos_y -= fdy * cur_speed; cam_changed = true; }
+            if (keys.strafe_left)  { pos_x += rdx * cur_speed; pos_y += rdy * cur_speed; cam_changed = true; }
+            if (keys.strafe_right) { pos_x -= rdx * cur_speed; pos_y -= rdy * cur_speed; cam_changed = true; }
+            if (keys.down)         { pos_z -= cur_speed; cam_changed = true; }
+            if (keys.up)           { pos_z += cur_speed; cam_changed = true; }
 
-        if (keys.yaw_left)   { yaw   -= turn_speed_keys; cam_changed = true; }
-        if (keys.yaw_right)  { yaw   += turn_speed_keys; cam_changed = true; }
-        if (keys.pitch_up)   { pitch += turn_speed_keys; cam_changed = true; }
-        if (keys.pitch_down) { pitch -= turn_speed_keys; cam_changed = true; }
+            if (keys.yaw_left)   { yaw   -= turn_speed_keys; cam_changed = true; }
+            if (keys.yaw_right)  { yaw   += turn_speed_keys; cam_changed = true; }
+            if (keys.pitch_up)   { pitch += turn_speed_keys; cam_changed = true; }
+            if (keys.pitch_down) { pitch -= turn_speed_keys; cam_changed = true; }
+        }
 
         if (pitch >  1.50f) pitch =  1.50f;
         if (pitch < -1.50f) pitch = -1.50f;
@@ -907,7 +1212,10 @@ int main(int argc, char** argv) {
                     uint32_t w0 = top->pixel_word0;
                     uint32_t w1 = top->pixel_word1;
                     uint32_t w2 = top->pixel_word2;
-                    framebuffer[addr] = pixel96_to_argb(w0, w1, w2);
+                    uint32_t pixel_value = pixel96_to_argb(w0, w1, w2);
+                    framebuffer[addr] = pixel_value;
+                    record_color(frame_color_stats, pixel_value);
+                    frame_color_stats_dirty = true;
 
                     if (log_frames && log_pixel_samples < 512) {
                         uint32_t x = addr % SCREEN_WIDTH;
@@ -918,7 +1226,7 @@ int main(int argc, char** argv) {
                             std::fprintf(stderr,
                                 "probe x=%u y=%u addr=%u w0=%08x w1=%08x w2=%08x argb=%08x\n",
                                 x, y, addr, w0, w1, w2,
-                                pixel96_to_argb(w0, w1, w2));
+                                pixel_value);
                             ++log_pixel_samples;
                         }
                     }
@@ -934,6 +1242,10 @@ int main(int argc, char** argv) {
 
         if (frame_done) {
              size_t pixels_written_this_frame = pixels_this_frame;
+             last_frame_color_stats = frame_color_stats;
+             last_frame_color_stats_valid = frame_color_stats_dirty;
+             frame_color_stats = color_range_default();
+             frame_color_stats_dirty = false;
              if (auto_exit) {
                  running = false;
              }
@@ -980,6 +1292,8 @@ int main(int argc, char** argv) {
                                  curvature ? 1 : 0,
                                  extra_light ? 1 : 0,
                                  diag_slice ? 1 : 0);
+                    std::fprintf(fcfg, "seed=%u\n", world_seed_override);
+                    std::fprintf(fcfg, "safe_capture=%d\n", safe_capture_mode ? 1 : 0);
                     std::fclose(fcfg);
                 }
             }
@@ -1011,6 +1325,13 @@ int main(int argc, char** argv) {
             }
             last_frame_time = now;
             if (dt > 0.0f) fps = 1.0f / dt;
+
+            if (!help_overlay_sticky && help_overlay_timer > 0.0f && dt > 0.0f) {
+                help_overlay_timer = std::max(0.0f, help_overlay_timer - dt);
+            }
+            if (sel_miss_timer > 0.0f && dt > 0.0f) {
+                sel_miss_timer = std::max(0.0f, sel_miss_timer - dt);
+            }
 
             uint64_t mem_cycle = root->voxel_framebuffer_top__DOT__mem_cycle_count;
             uint64_t mem_read  = root->voxel_framebuffer_top__DOT__mem_read_cycles;
@@ -1050,6 +1371,13 @@ int main(int argc, char** argv) {
 
                 char buf[256];
                 uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
+                uint32_t ray_steps_total = root->voxel_framebuffer_top__DOT__core_dbg_ray_steps_total;
+                uint32_t ray_steps_max   = root->voxel_framebuffer_top__DOT__core_dbg_ray_steps_max;
+                uint32_t ray_miss_count  = root->voxel_framebuffer_top__DOT__core_dbg_ray_miss_count;
+                const float pixel_count = float(SCREEN_WIDTH) * float(SCREEN_HEIGHT);
+                const float ray_steps_avg = pixel_count > 0.0f
+                    ? float(ray_steps_total) / pixel_count
+                    : 0.0f;
                 const int hud_y = SCREEN_HEIGHT - HUD_HEIGHT + 4;
                 int yoff = hud_y;
                 SDL_Color hud_text_color = hud_theme_light ? SDL_Color{0,0,0,255} : SDL_Color{255,255,255,255};
@@ -1081,14 +1409,17 @@ int main(int argc, char** argv) {
                 yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
-                    "[O] Slice %s  [M] Mouse %s",
+                    "[O] Slice %s  [J] Jitter %s  [M] Mouse %s",
                     diag_slice     ? "ON" : "OFF",
+                    ray_jitter     ? "ON" : "OFF",
                     mouse_captured ? "ON" : "OFF");
-                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
+                SDL_Color mouse_line_color = mouse_captured ? hud_text_color : SDL_Color{255, 96, 96, 255};
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, mouse_line_color);
                 yoff += 14;
 
                 std::snprintf(buf, sizeof(buf),
-                    "Hits this frame: %u", hits);
+                    "Hits %u | ray avg %.1f max %u miss %u",
+                    hits, ray_steps_avg, ray_steps_max, ray_miss_count);
                 draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 yoff += 14;
 
@@ -1097,6 +1428,42 @@ int main(int argc, char** argv) {
                     last_mem_read_util * 100.0f,
                     last_mem_write_util * 100.0f);
                 draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
+                yoff += 14;
+
+                if (last_frame_color_stats_valid) {
+                    std::snprintf(buf, sizeof(buf),
+                        "RGB range: R%3u-%3u  G%3u-%3u  B%3u-%3u",
+                        (unsigned)last_frame_color_stats.min_r,
+                        (unsigned)last_frame_color_stats.max_r,
+                        (unsigned)last_frame_color_stats.min_g,
+                        (unsigned)last_frame_color_stats.max_g,
+                        (unsigned)last_frame_color_stats.min_b,
+                        (unsigned)last_frame_color_stats.max_b);
+                } else {
+                    std::snprintf(buf, sizeof(buf), "RGB range: capturing...");
+                }
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "Pixel view: %s  [V] cycle",
+                    pixel_view_mode_name(g_pixel_view_mode));
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "Safe defaults: %s [F2] (move %.3f/%.3f turn %.3f sens %.4f clamp %s)",
+                    safe_defaults_mode ? "ON" : "OFF",
+                    move_speed, move_speed_fast, turn_speed_keys, mouse_sens,
+                    cam_clamp_enabled ? "ON" : "OFF");
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
+                yoff += 14;
+
+                std::snprintf(buf, sizeof(buf),
+                    "Safe capture: %s [F3] (input frozen)",
+                    safe_capture_mode ? "ON" : "OFF");
+                SDL_Color warn_color = safe_capture_mode ? SDL_Color{255, 128, 96, 255} : hud_text_color;
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, warn_color);
                 yoff += 14;
 
                 if (!g_backend_info.empty()) {
@@ -1147,7 +1514,68 @@ int main(int argc, char** argv) {
                         r, g, b, alpha, light,
                         material_type, material_props, emissive);
                     draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
+                    yoff += 14;
+                    std::snprintf(buf, sizeof(buf),
+                        "Edit: [C] material  [X/Z] emissive  [B] brighten");
+                    draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff, hud_text_color);
                 }
+                if (sel_miss_timer > 0.0f) {
+                    std::snprintf(buf, sizeof(buf),
+                        "Selection miss: aim at geometry and press F");
+                    SDL_Color warn = {255, 96, 96, 255};
+                    draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, buf, 6, yoff + 14, warn);
+                }
+            }
+
+            if ((help_overlay_sticky || help_overlay_timer > 0.0f) && font) {
+                const char* help_lines[] = {
+                    "F1: toggle help overlay   /: show briefly",
+                    "Move: WASD/QE + mouse (M toggles capture)  Shift=fast  F2: safe defaults",
+                    "Flags: 1 smooth  2 curvature  3 extra  O diag slice  J jitter  T HUD theme",
+                    "Select: F pick voxel  G clear  Edit: C material, X/Z emissive, B brighten",
+                    "View: V cycle pixel view (color/word0/word2/sideband)  H HUD on/off",
+                    "Misc: S screenshot  P print state  R reset  ESC quit"
+                };
+                int line_count = static_cast<int>(sizeof(help_lines) / sizeof(help_lines[0]));
+                int box_x = 6;
+                int box_y = 6;
+                int box_w = std::min(360, SCREEN_WIDTH - 12);
+                int box_h = line_count * 14 + 10;
+                for (int y = box_y; y < box_y + box_h && y < SCREEN_HEIGHT; ++y) {
+                    for (int x = box_x; x < box_x + box_w && x < SCREEN_WIDTH; ++x) {
+                        uint32_t& px = framebuffer[static_cast<size_t>(y) * SCREEN_WIDTH + x];
+                        uint8_t r = (px >> 16) & 0xFF;
+                        uint8_t g = (px >> 8)  & 0xFF;
+                        uint8_t b =  px        & 0xFF;
+                        if (hud_theme_light) {
+                            r = static_cast<uint8_t>(r + (255 - r) / 2);
+                            g = static_cast<uint8_t>(g + (255 - g) / 2);
+                            b = static_cast<uint8_t>(b + (255 - b) / 2);
+                        } else {
+                            r = static_cast<uint8_t>((r * 2) / 3);
+                            g = static_cast<uint8_t>((g * 2) / 3);
+                            b = static_cast<uint8_t>((b * 2) / 3);
+                        }
+                        px = (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
+                    }
+                }
+
+                SDL_Color help_color = hud_theme_light ? SDL_Color{0, 0, 0, 255} : SDL_Color{255, 255, 255, 255};
+                int help_y = box_y + 4;
+                for (int i = 0; i < line_count; ++i) {
+                    draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font, help_lines[i],
+                                    box_x + 4, help_y, help_color);
+                    help_y += 14;
+                }
+            }
+
+            if (!mouse_captured && font) {
+                SDL_Color warn_color{255, 96, 96, 255};
+                int warn_x = SCREEN_WIDTH - 210;
+                int warn_y = 8;
+                draw_text_to_fb(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, font,
+                                "Mouse capture OFF (press M)",
+                                warn_x, warn_y, warn_color);
             }
 
             if (use_platform_present) {
@@ -1190,6 +1618,11 @@ int main(int argc, char** argv) {
 
     if (use_platform_present)
         shutdown_backend(backend, plat_ctx);
+
+    std::fprintf(stderr, "[hydra] exit summary: backend=%s vsync=%s frames_rendered=%zu\n",
+                 backend_name(backend),
+                 g_vsync ? "on" : "off",
+                 frame_counter);
 
     if (font) TTF_CloseFont(font);
     TTF_Quit();

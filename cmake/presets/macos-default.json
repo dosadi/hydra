@@ -1,0 +1,26 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "macos-default",
+      "displayName": "macOS Default",
+      "description": "Clang/Ninja build tuned for macOS (Homebrew SDL2/TTF).",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
+        "BUILD_LIBHYDRA": "ON",
+        "BUILD_POSIX_TOOLS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "macos",
+      "displayName": "macOS Build",
+      "configurePreset": "macos-default"
+    }
+  ]
+}

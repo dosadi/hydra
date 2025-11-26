@@ -70,7 +70,10 @@ module voxel_raycaster_core_pipelined #(
     output reg [5:0]   cursor_voxel_z,
     output reg [7:0]   cursor_material_id,
     output reg [63:0]  cursor_voxel_data,
-    output reg [31:0]  dbg_hit_count
+    output reg [31:0]  dbg_hit_count,
+    output reg [31:0]  dbg_ray_steps_total,
+    output reg [7:0]   dbg_ray_steps_max,
+    output reg [31:0]  dbg_ray_miss_count
 );
 
     // State machine
@@ -117,6 +120,9 @@ module voxel_raycaster_core_pipelined #(
 
     // Ray/sample accumulators
     localparam ACC_WIDTH = 24;
+    localparam integer JITTER_SHIFT = (FRAC_BITS > 2) ? FRAC_BITS-3 : 0;
+    localparam signed [ACC_WIDTH-1:0] JITTER_STEP = 1 <<< JITTER_SHIFT;
+    localparam signed [ACC_WIDTH-1:0] GRID_MAX_SHIFT = (VOXEL_GRID_SIZE-1) <<< FRAC_BITS;
     reg signed [ACC_WIDTH-1:0] ray_pos_x, ray_pos_y, ray_pos_z;
     reg [5:0] sample_voxel_x, sample_voxel_y, sample_voxel_z;
     reg [5:0] map_voxel_y, map_voxel_z;
@@ -127,6 +133,11 @@ module voxel_raycaster_core_pipelined #(
     reg       best_hit;
     reg [7:0] best_emissive;
     wire diag_slice_mode = render_config[1];
+    wire ray_jitter_mode = render_config[2];
+    wire signed [3:0] jitter_sel_y = {1'b0, pixel_y[2:0]} - 4'sd3;
+    wire signed [3:0] jitter_sel_z = {1'b0, pixel_x[2:0]} - 4'sd3;
+    wire signed [ACC_WIDTH-1:0] jitter_y_delta = ray_jitter_mode ? (jitter_sel_y * JITTER_STEP) : 0;
+    wire signed [ACC_WIDTH-1:0] jitter_z_delta = ray_jitter_mode ? (jitter_sel_z * JITTER_STEP) : 0;
 
     // Simple hard-coded lighting/shadow references for the demo scene.
     localparam [5:0] FLOOR_MIN_Y    = 6'd8;
@@ -173,6 +184,8 @@ module voxel_raycaster_core_pipelined #(
         reg [7:0] out_material_id;
         reg [7:0] out_normal_x, out_normal_y, out_normal_z, out_curvature;
         reg [31:0] out_sidecar;
+        reg [7:0] grad_coord_r, grad_coord_g, grad_coord_b;
+        reg [9:0] mix_r, mix_g, mix_b;
         reg       shadow_hit;
         reg [7:0] shadow_scale;
         reg [15:0] scaled;
@@ -277,10 +290,43 @@ module voxel_raycaster_core_pipelined #(
         apply_advanced_lighting(render_config, out_curvature,
                                 out_r, out_g, out_b);
 
-        // Slab-based top-down shadow has been removed; rely on voxel_light and
-        // baked scene content instead of a separate floor shadow mask.
+        grad_coord_r = {voxel_x, voxel_y[1:0]};
+        grad_coord_g = {voxel_y, voxel_z[1:0]};
+        grad_coord_b = {voxel_z, voxel_x[1:0]};
+        mix_r = (out_r * 3) + grad_coord_r;
+        mix_g = (out_g * 3) + grad_coord_g;
+        mix_b = (out_b * 3) + grad_coord_b;
+        out_r = mix_r[9:2];
+        out_g = mix_g[9:2];
+        out_b = mix_b[9:2];
+
         shadow_hit   = 1'b0;
         shadow_scale = 8'd255;
+        if (voxel_y >= FLOOR_MIN_Y && voxel_y <= FLOOR_MAX_Y) begin
+            sh_dx = $signed({1'b0,voxel_x}) - $signed({1'b0,SHADOW_CX});
+            sh_dz = $signed({1'b0,voxel_z}) - $signed({1'b0,SHADOW_CZ});
+            sh_dist2 = sh_dx * sh_dx + sh_dz * sh_dz;
+            if (sh_dist2 <= SHADOW_OUTER2) begin
+                shadow_hit = 1'b1;
+                if (sh_dist2 <= SHADOW_RADIUS2) begin
+                    shadow_scale = 8'd120;
+                end else begin
+                    sh_delta = sh_dist2 - SHADOW_RADIUS2;
+                    if (sh_delta > SHADOW_SOFT_WIDTH2)
+                        sh_delta = SHADOW_SOFT_WIDTH2;
+                    sh_blend = (sh_delta * 8'd135) / SHADOW_SOFT_WIDTH2;
+                    shadow_scale = 8'd120 + sh_blend;
+                    if (shadow_scale > 8'd255)
+                        shadow_scale = 8'd255;
+                end
+            end
+        end
+
+        if (shadow_hit) begin
+            out_r = (out_r * shadow_scale) >> 8;
+            out_g = (out_g * shadow_scale) >> 8;
+            out_b = (out_b * shadow_scale) >> 8;
+        end
 
         // Selection highlight
         if (sel_active &&
@@ -344,6 +390,9 @@ module voxel_raycaster_core_pipelined #(
             cursor_material_id <= 8'd0;
             cursor_voxel_data  <= 64'd0;
             dbg_hit_count    <= 32'd0;
+            dbg_ray_steps_total <= 32'd0;
+            dbg_ray_steps_max   <= 8'd0;
+            dbg_ray_miss_count  <= 32'd0;
             slice_idx        <= 2'd0;
             best_hit         <= 1'b0;
             best_emissive    <= 8'd0;
@@ -361,6 +410,9 @@ module voxel_raycaster_core_pipelined #(
                         cursor_hit_valid <= 1'b0;
                         cursor_voxel_data<= 64'd0;
                         dbg_hit_count    <= 32'd0;
+                        dbg_ray_steps_total <= 32'd0;
+                        dbg_ray_steps_max   <= 8'd0;
+                        dbg_ray_miss_count  <= 32'd0;
                         state            <= S_RENDER_PIXEL;
                     end
                 end
@@ -377,12 +429,29 @@ module voxel_raycaster_core_pipelined #(
                     begin : dir_calc
                         reg [17:0] map_y;
                         reg [17:0] map_z;
+                        reg signed [ACC_WIDTH-1:0] y_init;
+                        reg signed [ACC_WIDTH-1:0] z_init;
                         map_y = ((SCREEN_HEIGHT-1 - pixel_y) * (VOXEL_GRID_SIZE-1)) / (SCREEN_HEIGHT-1);
                         map_z = (pixel_x * (VOXEL_GRID_SIZE-1)) / (SCREEN_WIDTH-1);
 
-                        ray_pos_x <= (VOXEL_GRID_SIZE-1) <<< FRAC_BITS;
-                        ray_pos_y <= map_y <<< FRAC_BITS;
-                        ray_pos_z <= map_z <<< FRAC_BITS;
+                        y_init = map_y <<< FRAC_BITS;
+                        z_init = map_z <<< FRAC_BITS;
+                        if (ray_jitter_mode) begin
+                            y_init = y_init + jitter_y_delta;
+                            z_init = z_init + jitter_z_delta;
+                        end
+                        if (y_init < 0)
+                            y_init = 0;
+                        else if (y_init > GRID_MAX_SHIFT)
+                            y_init = GRID_MAX_SHIFT;
+                        if (z_init < 0)
+                            z_init = 0;
+                        else if (z_init > GRID_MAX_SHIFT)
+                            z_init = GRID_MAX_SHIFT;
+
+                        ray_pos_x <= GRID_MAX_SHIFT;
+                        ray_pos_y <= y_init;
+                        ray_pos_z <= z_init;
                         map_voxel_y <= map_y[5:0];
                         map_voxel_z <= map_z[5:0];
                     end
@@ -557,6 +626,12 @@ module voxel_raycaster_core_pipelined #(
                 end
 
                 S_WRITE: begin
+                    dbg_ray_steps_total <= dbg_ray_steps_total + ray_steps;
+                    if (ray_steps > dbg_ray_steps_max)
+                        dbg_ray_steps_max <= ray_steps;
+                    if (!hit)
+                        dbg_ray_miss_count <= dbg_ray_miss_count + 1'b1;
+
                     pixel_addr     <= pixel_y * SCREEN_WIDTH + pixel_x;
                     pixel_write_en <= 1'b1;
                     state          <= S_NEXT_PIXEL;

@@ -53,6 +53,7 @@ module voxel_axil_csr #(
     output reg                      flag_curvature,
     output reg                      flag_extra_light,
     output reg                      flag_diag_slice,
+    output reg                      flag_ray_jitter,
 
     // Selection
     output reg                      sel_load_pulse,
@@ -140,8 +141,8 @@ module voxel_axil_csr #(
 
     wire [ADDR_WIDTH-1:0] awaddr_aligned = {s_axil_awaddr[ADDR_WIDTH-1:2], 2'b00};
     wire [ADDR_WIDTH-1:0] araddr_aligned = {s_axil_araddr[ADDR_WIDTH-1:2], 2'b00};
-    wire [7:0] aw_word = awaddr_aligned[9:2]; // 256B window (word addressed)
-    wire [7:0] ar_word = araddr_aligned[9:2];
+    wire [31:0] aw_word = awaddr_aligned >> 2; // 256B window (word addressed)
+    wire [31:0] ar_word = araddr_aligned >> 2;
     wire [2:0] blit_op = blit_ctrl[5:3];
 
     function automatic [31:0] merge_wstrb(input [31:0] cur,
@@ -220,9 +221,17 @@ module voxel_axil_csr #(
     localparam integer W_BLIT_FIFO_DATA = 32'h00000050; // 0x0140
     localparam integer W_BLIT_FIFO_STATUS = 32'h00000051; // 0x0144
 
+    // Automatic region-0 extractor (0x0150 region)
+    localparam integer W_REGION0_CFG        = 32'h00000054; // 0x0150
+    localparam integer W_REGION0_MIN        = 32'h00000055; // 0x0154
+    localparam integer W_REGION0_MAX        = 32'h00000056; // 0x0158
+    localparam integer W_REGION0_STATUS     = 32'h00000057; // 0x015C
+    localparam integer W_REGION0_SURF_STATS = 32'h00000058; // 0x0160
+
     assign irq_out  = |(int_status & int_mask);
 
     wire dma_done_pulse = dma_done_in & ~dma_done_d;
+    wire dma_busy_fall  = dma_busy_d  & ~dma_busy_in;
     wire status_read    = s_axil_arready && s_axil_arvalid && !s_axil_rvalid && (ar_word == W_STATUS);
     wire [31:0] status_word = {26'd0, blit_done, blit_busy, dma_status[0], dma_status[1], frame_done_latched, core_busy};
 
@@ -238,6 +247,7 @@ module voxel_axil_csr #(
     reg [31:0] region0_surf_stats;
     reg [31:0] region0_counter;
     reg [1:0]  region0_state;
+    reg        dma_busy_d;
 
     localparam [1:0] REGION0_IDLE = 2'd0;
     localparam [1:0] REGION0_RUN  = 2'd1;
@@ -275,6 +285,7 @@ module voxel_axil_csr #(
             flag_curvature   <= 1'b1;
             flag_extra_light <= 1'b0;
             flag_diag_slice  <= 1'b0;
+            flag_ray_jitter  <= 1'b0;
 
             sel_active <= 1'b0;
             sel_x <= 6'd0;
@@ -287,6 +298,13 @@ module voxel_axil_csr #(
             int_status         <= 32'd0;
             int_mask           <= 32'd0;
             frame_done_latched <= 1'b0;
+            region0_cfg        <= 32'd0;
+            region0_min        <= 32'd0;
+            region0_max        <= 32'd0;
+            region0_status     <= 32'd0;
+            region0_surf_stats <= 32'd0;
+            region0_counter    <= 32'd0;
+            region0_state      <= REGION0_IDLE;
             fb_base            <= 32'd0;
             fb_stride          <= 32'd0;
             dbg_data_lo        <= 32'd0;
@@ -323,6 +341,7 @@ module voxel_axil_csr #(
             blit_mem_re       <= 1'b0;
             blit_mem_addr     <= 28'd0;
             blit_mem_wdata    <= 64'd0;
+            dma_busy_d         <= 1'b0;
             for (pi = 0; pi < 1024; pi = pi + 1)
                 blit_pix_mem[pi] = 32'd0;
             for (oi = 0; oi < 64; oi = oi + 1)
@@ -353,6 +372,7 @@ module voxel_axil_csr #(
                 dma_status         <= 32'd0;
                 flag_extra_light   <= 1'b0;
                 flag_diag_slice    <= 1'b0;
+                flag_ray_jitter    <= 1'b0;
                 flag_smooth        <= 1'b1;
                 flag_curvature     <= 1'b1;
                 ctrl_shadow[3:2]   <= 2'b00;
@@ -383,16 +403,59 @@ module voxel_axil_csr #(
             // Event capture
             dma_status[1] <= dma_busy_in;
             dma_done_d    <= dma_done_in;
+            dma_busy_d    <= dma_busy_in;
             if (frame_done_pulse)
                 frame_done_latched <= 1'b1;
             if (frame_done_pulse)
                 int_status[0] <= 1'b1; // frame done
-            if (dma_done_pulse)
+            if (dma_done_pulse || dma_busy_fall) begin
                 int_status[1] <= 1'b1; // dma done
+                dma_status[0] <= 1'b1;
+            end
             blit_status[0] <= blit_busy;
             blit_status[1] <= blit_done;
             blit_status[2] <= (blit_fifo_count == 0);
             blit_status[3] <= (blit_fifo_count == 16);
+
+            // Region-0 auto extractor stub: simple delay then synthesized stats.
+            case (region0_state)
+                REGION0_IDLE: begin
+                    region0_status[0] <= 1'b0;
+                    if (region0_cfg[0] && region0_cfg[1]) begin
+                        region0_state     <= REGION0_RUN;
+                        region0_status[0] <= 1'b1; // busy
+                        region0_status[1] <= 1'b0; // valid clear
+                        region0_counter   <= 32'd64;
+                        int_status[5]     <= 1'b0;
+                    end
+                end
+                REGION0_RUN: begin
+                    region0_status[0] <= 1'b1;
+                    if (region0_counter != 0) begin
+                        region0_counter <= region0_counter - 1'b1;
+                    end else begin
+                        reg [11:0] voxels_stub;
+                        reg [11:0] patches_stub;
+                        voxels_stub  = (region0_max[11:0] ^ region0_min[11:0]) + 12'd16;
+                        if (voxels_stub == 0)
+                            voxels_stub = 12'd16;
+                        patches_stub = (voxels_stub >> 4);
+                        if (patches_stub == 0)
+                            patches_stub = 12'd2;
+
+                        region0_status[0]  <= 1'b0;
+                        region0_status[1]  <= 1'b1; // valid/done
+                        region0_state      <= REGION0_IDLE;
+                        region0_cfg[1]     <= 1'b0; // auto-clear kick bit
+                        region0_surf_stats <= {8'd0, patches_stub, voxels_stub};
+                        int_status[5]      <= 1'b1;
+                    end
+                end
+                default: begin
+                    region0_state  <= REGION0_IDLE;
+                    region0_status <= 32'd0;
+                end
+            endcase
 
             // AXI-Lite write: simple, always-ready single-beat model for simulation.
             s_axil_awready <= 1'b1;
@@ -434,6 +497,7 @@ module voxel_axil_csr #(
                         flag_curvature   <= s_axil_wdata[1];
                         flag_extra_light <= s_axil_wdata[2];
                         flag_diag_slice  <= s_axil_wdata[3];
+                        flag_ray_jitter  <= s_axil_wdata[4];
                         flags_load_pulse <= 1'b1;
                         ctrl_shadow[3:2] <= s_axil_wdata[3:2];
                     end
@@ -470,7 +534,12 @@ module voxel_axil_csr #(
                         if (s_axil_wdata[2])
                             dma_status[2] <= 1'b0; // clear err
                     end
-                    W_INT_STATUS: int_status <= int_status & ~s_axil_wdata; // w1c
+                    W_INT_STATUS: begin
+                        int_status <= int_status & ~s_axil_wdata; // w1c
+                        if (s_axil_wdata[5]) begin
+                            region0_status[1] <= 1'b0;
+                        end
+                    end
                     W_INT_MASK:   int_mask   <= s_axil_wdata;
                     W_IRQ_TEST: begin
                         if (s_axil_wdata[0])
@@ -549,6 +618,14 @@ module voxel_axil_csr #(
                             blit_fifo_count <= blit_fifo_count + 1'b1;
                         end
                     end
+                    W_REGION0_CFG: begin
+                        region0_cfg <= merge_wstrb(region0_cfg, s_axil_wdata, s_axil_wstrb);
+                        if (s_axil_wdata[1])
+                            region0_status[1] <= 1'b0; // clear valid on new kick
+                    end
+                    W_REGION0_MIN:    region0_min   <= merge_wstrb(region0_min,   s_axil_wdata, s_axil_wstrb);
+                    W_REGION0_MAX:    region0_max   <= merge_wstrb(region0_max,   s_axil_wdata, s_axil_wstrb);
+                    W_REGION0_STATUS: region0_status<= region0_status & ~s_axil_wdata; // W1C for busy/valid bits
                     default: ;
                 endcase
 
@@ -627,6 +704,9 @@ module voxel_axil_csr #(
                 s_axil_arready <= s_axil_arvalid;
 
             if (s_axil_arready && s_axil_arvalid && !s_axil_rvalid) begin
+                `ifdef CSR_DEBUG
+                    $display("CSR: read ar_word=0x%0h araddr=0x%04h", ar_word, araddr_aligned);
+                `endif
                 case (ar_word)
                     W_ID:      s_axil_rdata <= {VENDOR_ID, DEVICE_ID};
                     W_REV:     s_axil_rdata <= {16'd0, BUILD_ID, REV_ID};
@@ -640,7 +720,7 @@ module voxel_axil_csr #(
                     W_CAM_DIR_Z: s_axil_rdata <= pack_s16(cam_dir_z);
                     W_CAM_PLANE_X: s_axil_rdata <= pack_s16(cam_plane_x);
                     W_CAM_PLANE_Y: s_axil_rdata <= pack_s16(cam_plane_y);
-                    W_FLAGS:   s_axil_rdata <= {28'd0, flag_diag_slice, flag_extra_light, flag_curvature, flag_smooth};
+                    W_FLAGS:   s_axil_rdata <= {27'd0, flag_ray_jitter, flag_diag_slice, flag_extra_light, flag_curvature, flag_smooth};
                     W_SEL_ACTIVE: s_axil_rdata <= {31'd0, sel_active};
                     W_SEL_X:   s_axil_rdata <= {26'd0, sel_x};
                     W_SEL_Y:   s_axil_rdata <= {26'd0, sel_y};
@@ -688,6 +768,11 @@ module voxel_axil_csr #(
                         end
                     end
                     W_BLIT_FIFO_STATUS: s_axil_rdata <= {24'd0, blit_fifo_count, blit_status[3], blit_status[2]};
+                    W_REGION0_CFG:        s_axil_rdata <= region0_cfg;
+                    W_REGION0_MIN:        s_axil_rdata <= region0_min;
+                    W_REGION0_MAX:        s_axil_rdata <= region0_max;
+                    W_REGION0_STATUS:     s_axil_rdata <= region0_status;
+                    W_REGION0_SURF_STATS: s_axil_rdata <= region0_surf_stats;
                     default:     s_axil_rdata <= 32'd0;
                 endcase
                 s_axil_rresp   <= RESP_OKAY;
@@ -698,5 +783,57 @@ module voxel_axil_csr #(
             end
         end
     end
+
+`ifdef VERILATOR
+    // AXI-Lite stability checks: hold address/data/strobes steady while VALID && !READY.
+    always @(posedge clk) begin
+        if (s_axil_awvalid && !s_axil_awready) begin
+            assert($stable(s_axil_awaddr)) else $fatal("AWADDR changed while AWVALID held high");
+        end
+        if (s_axil_wvalid && !s_axil_wready) begin
+            assert($stable(s_axil_wdata)) else $fatal("WDATA changed while WVALID held high");
+            assert($stable(s_axil_wstrb)) else $fatal("WSTRB changed while WVALID held high");
+        end
+        if (s_axil_arvalid && !s_axil_arready) begin
+            assert($stable(s_axil_araddr)) else $fatal("ARADDR changed while ARVALID held high");
+        end
+    end
+
+    // Check reset defaults on rst_n deassertion.
+    reg rst_n_d;
+    always @(posedge clk) begin
+        rst_n_d <= rst_n;
+        if (!rst_n_d && rst_n) begin
+            assert(ctrl_shadow  == 32'd0) else $fatal("CTRL reset default mismatch");
+            assert(int_status   == 32'd0) else $fatal("INT_STATUS reset default mismatch");
+            assert(int_mask     == 32'd0) else $fatal("INT_MASK reset default mismatch");
+            assert(flag_smooth  == 1'b1)  else $fatal("flag_smooth reset default mismatch");
+            assert(flag_curvature == 1'b1) else $fatal("flag_curvature reset default mismatch");
+            assert(flag_extra_light == 1'b0) else $fatal("flag_extra_light reset default mismatch");
+            assert(flag_diag_slice  == 1'b0) else $fatal("flag_diag_slice reset default mismatch");
+            assert(flag_ray_jitter == 1'b0) else $fatal("flag_ray_jitter reset default mismatch");
+            assert(sel_active   == 1'b0) else $fatal("sel_active reset default mismatch");
+            assert(sel_x        == 6'd0) else $fatal("sel_x reset default mismatch");
+            assert(sel_y        == 6'd0) else $fatal("sel_y reset default mismatch");
+            assert(sel_z        == 6'd0) else $fatal("sel_z reset default mismatch");
+            assert(fb_base      == 32'd0) else $fatal("fb_base reset default mismatch");
+            assert(fb_stride    == 32'd0) else $fatal("fb_stride reset default mismatch");
+            assert(dma_status   == 32'd0) else $fatal("dma_status reset default mismatch");
+        end
+    end
+
+    covergroup cg_axi_lite @(posedge clk);
+        coverpoint int_status {
+            bins frame_done = {32'h1};
+        }
+        coverpoint dma_status;
+        coverpoint {frame_done_latched, dma_busy_in, core_busy};
+    endgroup
+    cg_axi_lite axi_cover = new();
+    always @(posedge clk) begin
+        if (!rst_n)
+            axi_cover.sample();
+    end
+`endif
 
 endmodule
