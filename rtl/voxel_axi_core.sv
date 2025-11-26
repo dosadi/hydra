@@ -153,8 +153,11 @@ module voxel_axi_core #(
     reg          irq_out_d;
     assign msi_pulse = irq_out & ~irq_out_d;
 
-    // TODO: Wire DMA/blitter ports to LiteDMA or leave stubbed for now.
-    // For initial bring-up, implement a minimal DMA stub with bounds/error checks.
+    // DMA/Blitter integration note: this module provides a minimal DMA
+    // stub (see `axi_dma_stub` instantiation below) that performs simple
+    // bounded copies for simulation/bring-up. When integrating with
+    // LiteDMA or a host DMA engine, replace or wire these ports to the
+    // upstream DMA implementation.
     localparam integer DMA_ADDR_WIDTH = 24; // 16 MiB default window for stub checks.
     localparam [31:0]  DMA_ADDR_MAX   = (1 << DMA_ADDR_WIDTH);
 
@@ -240,7 +243,10 @@ module voxel_axi_core #(
     end
 `endif
 
-    // TODO: Wire HDMI counters once LiteVideo scanout is integrated
+    // HDMI counters: local CRC/frame/line/pixel counters are implemented
+    // here for diagnostics and simulation. When LiteVideo scanout is
+    // integrated, consider exposing or driving these counters from the
+    // scanout pipeline instead of local logic.
 
     voxel_axil_csr #(
         .ADDR_WIDTH(16),

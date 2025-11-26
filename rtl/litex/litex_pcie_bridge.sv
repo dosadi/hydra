@@ -4,7 +4,9 @@ module litex_pcie_bridge #(
 )(
     input  wire                         clk,
     input  wire                         rst_n,
-    // TODO: connect LiteX PCIe PHY signals here
+    // PCIe PHY signals intentionally left unconnected in this stub.
+    // Integrate the real PHY signals when wiring into a platform with
+    // a LiteX-compatible PCIe PHY.
 
     output wire [AXI_DATA_WIDTH-1:0]    m_axi_awdata,
     output wire [3:0]                   m_axi_awlen,
@@ -26,6 +28,9 @@ assign m_axi_awvalid = 1'b0;
 
 assign s_axi_awready = 1'b0;
 
-// TODO: implement descriptor parsing, address mapping, and MSIX support
+// Deferred: descriptor parsing, address mapping, and MSIX support are
+// future integration tasks for a full LiteX PCIe backend. The current
+// bridge provides safe idle defaults so simulation/tools don't see
+// floating outputs.
 
 endmodule
