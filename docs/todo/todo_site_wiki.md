@@ -14,3 +14,6 @@ Tasks to stand up a lightweight project wiki/website.
 - TODO [P3]: Add a contributors showcase page (photo/name/area) that can highlight people handling small trackers so their effort is visible.
 - TODO [P3]: Publish a lightweight “tracker freshness” badge (last updated timestamp) for each tape so readers know when a tracker was touched.
 - TODO [P3]: Collect the weekly TODO sweep output as a blog post entry and link to the biggest growth stories for the week to highlight momentum.
+- TODO [P2]: Export wiki change logs (page, diff summary, timestamp) into `out/wiki_changes.json` and have `scripts/ai_health_dashboard.py` summarize them so the dashboard reflects doc growth.
+- TODO [P2]: Offer a “wiki sync” automation (via `scripts/todo_metadata.py`) that verifies new files referenced in the site actually exist and update `docs/todo/todo_wiki.md` (or the renamed/alias tracker) so the automation sees the latest structure in real-time.
+- TODO [P3]: Add localized copies of key wiki pages (EN/ES/DE/JP) and note the translation status per page in this tracker, so documentation expands beyond English effectively.
