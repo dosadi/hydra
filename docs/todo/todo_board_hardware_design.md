@@ -203,6 +203,7 @@ Tracks custom PCB design, component selection, connectors/headers, power distrib
 - **TODO [P1]:** Author a VAMS-focused checklist covering setup (license, models), verification steps, and drift detection of analog parameters to run before each analog regression.  
 - **TODO [P2]:** Build converters that produce netlist inputs for VAMS from existing xschem files, documenting any manual mapping or symbol substitutions required.  
 - **TODO [P3]:** Capture the analog verification environment (VM image/container) with VAMS and associated scripts so the analog simulation stack stays reproducible by board engineers.  
+- **TODO [P2]:** Publish `docs/mixed_signal_environment.md` (see `scripts/setup_mixed_signal_env.sh`) to document the mixed-signal workspace, license expectations, and artifact layout so new engineers can reproduce the analog flow.  
 
 - **TODO [P1]:** Select passives (capacitors, resistors, inductors) with appropriate ratings
   - **Effort:** 2 days
