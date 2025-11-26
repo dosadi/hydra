@@ -223,13 +223,34 @@
       "priority": "P2",
       "trackers": [
         "todo_project_structure.md",
-        "todo_ai_development.md",
         "todo_dependency_map.md",
         "todo_rebalance_policy.md",
         "todo_status_overview.md"
       ],
       "dependencies": [],
       "test_commands": ["scripts/todo_sweep.py", "scripts/check_todo_unique.py", "scripts/automation_watchdog.sh"]
+    },
+    "SECTOR-20": {
+      "id": "CLUSTERING",
+      "name": "Clustering & Scale-out",
+      "priority": "P3",
+      "trackers": [
+        "todo_clustering.md"
+      ],
+      "dependencies": ["SECTOR-02", "SECTOR-07", "SECTOR-17"],
+      "test_commands": ["scripts/cluster_deploy_sweep.sh"]
+    },
+    "SECTOR-21": {
+      "id": "AI_AUTOMATION",
+      "name": "AI & Automation",
+      "priority": "P2",
+      "trackers": [
+        "todo_ai_development.md",
+        "todo_ai_dashboard.md",
+        "todo_rebalance_policy.md"
+      ],
+      "dependencies": ["SECTOR-19", "SECTOR-10"],
+      "test_commands": ["scripts/ai_session_report.py", "scripts/todo_metadata.py"]
     }
   }
 }
