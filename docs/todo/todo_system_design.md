@@ -1,0 +1,32 @@
+# Hydra TODO System Design & Modularity
+
+This document reviews how the TODO ecosystem is organized today, how the supporting automation interacts with it, and where the design can be improved to keep the system maintainable and automation-friendly.
+
+## 1. Current Architecture
+
+- **Tracker files** – Each domain (rendering, DMA, drivers, docs, automation, etc.) gets its own Markdown file under `docs/todo/` (see the alphabetical list in `docs/TODO_MASTER_INDEX.md`). Trackers are grouped conceptually: RTL/hardware, rendering, platform/drivers/testing, infrastructure/operations, and miscellaneous topical trackers (`todo_security`, `todo_research_experimental.md`, etc.).
+- **Master metadata** – `docs/TODO_MASTER_INDEX.md`, `docs/TODO_README.md`, and `docs/todo/todo_master.md` act as the roadmap: they describe tracker purposes, priority distributions, and excerpts for cross-cutting items. Automated tooling relies on `[P0/P1/P2/P3]` tags being embedded inside each tracker entry (e.g., see `todo_dma_pcie.md` or `todo_rebalance_policy.md`).
+- **Sector mapping** – `docs/todo/todo_sector_map.json` plus `docs/todo/todo_sector_overview.md` index TODOs by system sector (SIM_TEST, DRIVERS_SDK, etc.), which helps align development areas with documentation areas like `docs/todo/todo_documentation.md` and `docs/todo/todo_build_tooling.md`.
+- **Automation + scripts** – Scripts such as `scripts/todo_sweep.py`, `scripts/check_required_files.py`, and `scripts/ci_todo_rebalance.sh` scan the Markdown files for `TODO`/`DONE` lines, count `[P*]` tags, and produce aggregate reports (`docs/TODO_PRIORITY_ANALYSIS_2025_11_25.md`, `docs/AUTOMATION_WATCHDOG_RESULTS_2025_11_25.md`). `scripts/automation_watchdog.sh` bundles these checks and is currently wired into CI (see `docs/ci_automation_overview.md`). The new `scripts/check_build_requirements.py` now adds an automated environment probe before builds run.
+
+## 2. Modularity Observations
+
+- **High cohesion per file** – Each tracker focuses on a specific domain, reducing merge conflicts and making automation counts precise. The master index and session continuation documents capture meta-level intent; the new `docs/agent_integration_bridge.md` codifies handoffs.
+- **Loose coupling via conventions** – The automation scripts expect consistent naming `todo_<domain>.md` and `[P*]` tags, but there is no schema or formal metadata file; the conventions live in `docs/TODO_README.md` and the scripts themselves. They also expect each tracker to reside in `docs/todo/`, yet several main docs like `docs/TODO_MASTER_INDEX.md` still live at the top level.
+- **Shared tooling** – Scripts parse Markdown line-by-line; they aren't aware of nested structures or dependencies beyond simple regex matching (`TODO_RE`, `PRIORITY_RE`). This simplicity keeps automation reliable but limits expressivity (e.g., no dependency graph, no JSON metadata, no structured status beyond `[P*]`).
+- **Cross-tracker communication** – `docs/todo/todo_dependency_map.md` and `docs/todo/todo_status_overview.md` track dependencies/status, but they require manual updates. Commissioning these files into automation would reduce drift.
+
+## 3. Design Improvements & Automation Ideas
+
+1. **Structured metadata alongside each tracker** – Consider pairing each Markdown tracker with a short `tracker.yaml`/`tracker.json` that lists `priority`, `dependencies`, `owner`, `status`, and `tags`. Automation scripts could ingest the structured metadata for faster aggregation and dependency mapping, leaving detailed prose inside the Markdown. Tools could be updated to scan both sources (`docs/todo/*.md` plus the metadata files) for richer analytics.
+2. **Normalize tracker lifecycle** – Introduce a small templated header/preamble for every tracker (maybe through a shared include or pre-commit linter). The header would assert fields such as `Title`, `Focus`, `Owner`, `Last updated`, and `CI checks` so automation can verify that every tracker has a clear owner and CI expectations.
+3. **Refine automation coupling** – `scripts/todo_sweep.py` currently only counts tags; add annotations so it can also detect when a tracker exceeds the line limit (e.g., >500 lines). Merge split suggestions from `docs/TODO_PRIORITY_ANALYSIS_2025_11_25.md` directly into the script outputs and fail the CI gate when a tracker is too large or lacks `[P*]` tags. That keeps the design principle of modular, bounded trackers true and reduces manual auditing.
+4. **Machine-readable dependency graph** – Leverage `docs/todo/todo_sector_map.json` as the source of truth for dependencies: expand it to reference specific tracker files and their relationships (depends-on, blocking, replaced-by). `scripts/check_todo_unique.py` or a new `scripts/todo_dependency_graph.py` could verify acyclicity and produce visual outputs (`docs/todo/todo_dependency_map.md` currently manual). This work would power automation flows that automatically schedule P1/P2 items once dependencies are met.
+5. **Automated TODO status/runtime updates** – Integrate `scripts/automation_watchdog.sh` with GitHub status checks that patch tracker files or create new in-progress entries. For example, after a CI failure, a script could open `docs/todo/todo_testing_ci.md` and add `IN-PROGRESS [P0]: Investigate failing CI job xyz`. That keeps the TODO system up to date with actual work and reduces manual cross-referencing.
+6. **Documentation-driven automation hooks** – Expand `docs/todo/todo_documentation.md` to include a “Automation Hooks” section that lists scripts (with references) and their inputs/outputs. Add a similar section in `docs/ci_automation_overview.md` so the overall design is captured from both the documentation and automation sides.
+
+## 4. Next Steps
+
+- Migrate the tracker split proposals (see `docs/TODO_PRIORITY_ANALYSIS_2025_11_25.md`) into structured metadata so the rebalance policy can be automated rather than manually audited.
+- Enhance `scripts/todo_sweep.py` to optionally export JSON/YAML summaries; these can feed dashboards, CLI tooling, or summaries embedded back into docs.
+- Use the Agent Coordination Bridge template to log such automation updates so future agents always know which scripts updated which trackers and what remains pending.
