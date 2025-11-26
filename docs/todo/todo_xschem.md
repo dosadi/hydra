@@ -21,3 +21,7 @@ Schematic capture hygiene and symbol/library work to keep RTL ↔ board flow ali
 - TODO [P2]: Automate the symbol/footprint packager that builds `.schlib`/`.pcblib` bundles for downstream vendors.
 - TODO [P2]: Track pin-level timing constraints (PI/PO delays, diff-pair lengths) within xschem and link them back to the board-level TODOs so layout captures the same expectations.
 - TODO [P3]: Document how to re-run the board-level xschem harness inside `tools/` (spacing, GND-grid) to help hardware folks repro the capture for QA.
+- TODO [P3]: Archive a minimal set of `xschem` project files for each release (with README describing versions of symbols/libraries) so reproduction doesn’t depend on live repos.
+- TODO [P2]: Integrate xschem lint results with `scripts/todo_inspect.py` so failing rule checks automatically add a TODO entry for the flagged nets/symbols.
+- TODO [P3]: Add training notes or short onboarding doc (perhaps in `docs/todo/todo_ai_development.md`) outlining how to open/edit the xschem workspace so newcomers can update schematics safely.
+- TODO [P1]: Evaluate migrating critical xschem automations (render, netlist diffing) into a simple Python CLI under `scripts/` so they can be scripted in CI and cross-platform without requiring the GUI.
