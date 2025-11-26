@@ -10,5 +10,6 @@ echo "[automation-watchdog] running repo automation bundle"
 (cd "$ROOT" && python3 scripts/check_todo_unique.py)
 (cd "$ROOT" && python3 scripts/todo_metadata.py)
 (cd "$ROOT" && python3 scripts/ai_health_dashboard.py)
+(cd "$ROOT" && python3 scripts/ai_dashboard_briefing.py)
 
 echo "[automation-watchdog] automation bundle complete"

@@ -18,6 +18,7 @@ This document describes the automated workflows, scripts, and gating policies th
 - Uploads `out/todo_rebalance_report.txt` as a build artifact for reviewers.
 - Runs the `ai-dashboard` job (after `linux`) which rebuilds the metadata, runs `scripts/ai_health_dashboard.py`, and uploads `out/ai_health_dashboard.txt` so reviewers can see the latest AI TODO priorities.
 - Appends the dashboard text to the workflow summary via `actions/github-script`, so you can read the latest unknown/tracker stats directly from the GitHub run page without downloading artifacts.
+- Runs `scripts/ai_dashboard_briefing.py` afterwards to keep `docs/todo/todo_ai_dashboard.md` in sync with the summary (live briefing + follow-up entries).
 - Link the summary contents into `docs/todo/todo_ai_dashboard.md` (see tracker) so reviewers can trace CI summaries to TODO follow-ups.
 - When `RUN_ANALOG=1`, runs `scripts/board_simulate.sh` to collect analog logs (requires analog tool licenses).
 

@@ -110,6 +110,14 @@ def main() -> None:
     append_bridge_entry(bridge_doc, "\n".join(lines))
     print(f"Wrote AI session report to {report_path}")
 
+    subprocess.run(
+        [
+            "python3",
+            str(Path(__file__).resolve().parent / "ai_dashboard_briefing.py"),
+        ],
+        check=True,
+    )
+
 
 if __name__ == "__main__":
     main()

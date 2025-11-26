@@ -15,6 +15,26 @@ This tracker captures work items around the AI health dashboard and ensures the 
 - **TODO [P2]:** Automate a dashboard notice when the unknown count remains above 50 for more than 3 builds (via a quick script that parses `out/ai_health_dashboard.txt`).
 - **TODO [P3]:** Create a short note (HUD or doc) that explains how to interpret “unknown-priority” vs. “TODO-heavy” trackers for the dashboard’s readership (humans and automation).
 
+## Live Briefing
+- Generated: 2025-11-26T05:43:15.178453Z
+- Trackers: 65
+- TODO items: 1477
+- DONE items: 199
+- Priority-tagged items: 1360
+- Unknown-priority items: 117
+- Top unknown-priority trackers:
+  - todo_rendering_pipeline.md (22 unknown)
+  - TODO_SESSION_CONTINUATION_2025_11_25.md (17 unknown)
+  - todo_system_summary_2025_11_25.md (15 unknown)
+- Leading TODO-heavy trackers:
+  - todo_master.md (115 TODOs)
+  - todo_testing_ci.md (75 TODOs)
+  - todo_board_hardware_design.md (64 TODOs)
+
+## Follow-up Actions
+- TODO [P2]: Investigate todo_rendering_pipeline.md (22 unknown) now that it exceeds 20 unknown entries (dashboard flagged it).
+<Follow-up TODO entries generated from the latest dashboard run will appear here.>
+
 ## Usage Notes
 
 - The AI health dashboard summary appears in the workflow run summary for easy consumption—no download required.
