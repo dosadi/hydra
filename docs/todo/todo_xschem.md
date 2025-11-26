@@ -37,3 +37,6 @@ Schematic capture hygiene and symbol/library work to keep RTL ↔ board flow ali
 - TODO [P2]: Add automation to ensure every schematic symbol includes descriptive annotations (function, voltage, doc link) and surface missing annotations as TODOs in a validation report.
 - TODO [P3]: Document how to stage schematic updates for a release branch, including checklist items for audits, test PCB steps, and release tagging, in `docs/todo/todo_release_notes_0_0_8.md` when ready.
 - TODO [P3]: Capture a short “FAQ for schematic reviewers” section describing common pitfalls (wrong pin order, missing power flags, misaligned labels) and add it to this tracker for quick reference.
+- TODO [P2]: Feed xschem change summaries (symbol touched, nets changed) into `out/xschem_changes.json` and have `scripts/ai_health_dashboard.py` and `docs/todo/todo_ai_dashboard.md` highlight schematic churn.
+- TODO [P2]: Add `scripts/xschem_dependency_checker.py` that reads `todo_sector_map.json` and warns when schematic changes touch a tracker not listed as dependent (per `todo_dependency_map.md`), then log the warning as a brief TODO item automatically.
+- TODO [P3]: Add a wiki snippet (per `todo_wiki.md`) summarizing recent schematic updates and automation integration so reviewers know which doc to reference for xschem work.
