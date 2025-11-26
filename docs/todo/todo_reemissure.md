@@ -13,6 +13,8 @@ Focuses on the emissive sideband: semantics, validation, HUD/log coverage, and d
 - **TODO [P2]:** Add CLI/env to dump pixel_word raw values to CSV for offline emissive debugging; mention in docs.
 - **TODO [P2]:** Create per-pixel checksum/log to validate pixel_word stability across frames, and add fixture monitoring first/last pixel data.
 - **TODO [P2]:** Track pixel_word fields resetting to defaults on soft reset and ensure no X/Z/uninit states in non-emissive flows.
+- **TODO [P2]:** Add AI health dashboard hooks that surface experiments when reemissure stats shift (log sideband counts to `out/ai_health_dashboard.txt` via `scripts/ai_dashboard_briefing.py`).
+- **TODO [P2]:** Create a surrogate “reemissure regression monitor” that compares current histogram to stored golden histogram (JSON) and flags diffs for `scripts/automation_watchdog.sh`.
 - **TODO [P3]:** Add reemissure overlay heatmap and value traces tied to selection to evaluate emissive balance quickly.
 - **TODO [P3]:** Provide a debug overlay showing per-voxel emissive intensity or allow toggling emissive-only view.
 - **TODO [P3]:** Build a “reemissure spectrum” viewer (heat map + histogram) toggled from the HUD and exportable to PPM/logs.
