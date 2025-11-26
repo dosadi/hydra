@@ -11,3 +11,7 @@ Focuses on AI-assisted workflows, tooling, prompts, and verification for the Hyd
 - **TODO [P2]:** Build a prompt catalog with approved variants/phrasing plus expected coverage (`PROMPTS.md`) so prompts can be versioned via `docs/todo_ai_development.md`.  
 - **TODO [P3]:** Add a “fail-safe” fallback that emails/captures human reviewers when AI diffs touch RTL/drivers, with guidelines from this tracker.  
 - **TODO [P2]:** Capture dataset/version info (env + Git commit) when AI hits scripts to reproduce reasoning offline and compare across token upgrades.  
+- **TODO [P2]:** Add a “snapshotting” helper that records the working tree + relevant TODO trackers before AI-driven work starts so audits have a baseline to compare.
+- **TODO [P2]:** Author AI-specific lint rules (e.g., verifying TODO counts or required sections) and integrate them into `scripts/check_todo_unique.py` or a companion hook.
+- **TODO [P1]:** Automate prompt validation by running the suggested AI patch through `scripts/todo_sweep.py` and flagging mismatched counts before merging.
+- **TODO [P2]:** Capture a documented “AI debrief” entry (goal/context/outcome) within this tracker whenever an agent applies a change, aiding review and provenance.
