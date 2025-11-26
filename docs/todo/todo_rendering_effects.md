@@ -9,6 +9,7 @@ Focuses on the shading/effect pipeline: fog, AO, bloom, motion blur, LUTs, volum
 - **TODO [P2]:** Provide debug normals/depth display overlay for editing and select toggling.
 - **TODO [P2]:** Add SSAO-lite and SSR-lite toggles for quick experiments.
 - **TODO [P2]:** Implement volumetric light shafts for emissive ceiling in fog mode.
+- **TODO [P2]:** Add HDR pipeline support (scene color grading, HDR output, tone-mapping) with metadata written to `out/hdr_support.json` so automation can verify tone-mapping modes.
 - **TODO [P2]:** Add noise dither, film grain, chromatic aberration, and motion blur options.
 - **TODO [P2]:** Create LUT staging workflow (preview, load, snapshot) so operators can view multiple grading presets quickly.
 - **TODO [P3]:** Add volumetric scattering intensity/decay debug logging for fog/shafts to tune effect parameters.
