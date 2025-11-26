@@ -22,6 +22,6 @@ Tracks cross-cutting housekeeping so the repo stays discoverable, sane, and frie
 
 ## GitHub / CI TODOs
 - **TODO [P1]:** Add a PR template that directs contributors to run `scripts/check_required_files.py`, `scripts/todo_sweep.py`, and `scripts/check_todo_unique.py` whenever they touch README/docs or rtl assets so GH reviewers can focus on logic changes.
-- **TODO [P2]:** Build a GitHub Actions workflow that runs the full `make` + `scripts/check_required_files.py` / `scripts/todo_sweep.py` + `scripts/check_todo_unique.py` matrix plus `scripts/ci_todo_rebalance.sh`, publishing rebalance output artifacts and failing when the balance threshold breaks.
+- **TODO [P2]:** Build a GitHub Actions workflow that runs the full `make` + `scripts/check_required_files.py` / `scripts/todo_sweep.py` + `scripts/check_todo_unique.py` matrix plus `scripts/ci_todo_rebalance.sh` and this new `scripts/automation_watchdog.sh`, publishing rebalance artifacts and failing when trackers slip.
 - **TODO [P3]:** Auto-generate GitHub issue templates tied to key trackers (FPS, rendering, DMA) so triage captures priority/context by referencing `docs/todo/todo_system_fps.md`, `docs/todo/todo_rendering.md`, etc.
 - **TODO [P2]:** Link release notes + session summaries in `.github/README.md` (or a repository-level wiki) so the GitHub UI surfaces the latest state before a stakeholder opens a PR.
