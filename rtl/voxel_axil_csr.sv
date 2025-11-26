@@ -82,7 +82,7 @@ module voxel_axil_csr #(
     output reg [31:0]               dma_src,
     output reg [31:0]               dma_dst,
     output reg [31:0]               dma_len,
-    output reg [31:0]               dma_status, // bit0=done sticky, bit1=busy
+    output reg [31:0]               dma_status, // bit0=busy, bit1=done sticky, bit2=err
 
     // Blitter memory debug path (to SDRAM stub)
     output reg                      blit_mem_we,
@@ -233,7 +233,7 @@ module voxel_axil_csr #(
     wire dma_done_pulse = dma_done_in & ~dma_done_d;
     wire dma_busy_fall  = dma_busy_d  & ~dma_busy_in;
     wire status_read    = s_axil_arready && s_axil_arvalid && !s_axil_rvalid && (ar_word == W_STATUS);
-    wire [31:0] status_word = {26'd0, blit_done, blit_busy, dma_status[0], dma_status[1], frame_done_latched, core_busy};
+    wire [31:0] status_word = {26'd0, blit_done, blit_busy, dma_status[1], dma_status[0], frame_done_latched, core_busy};
 
     integer pi;
     integer oi;
@@ -401,7 +401,7 @@ module voxel_axil_csr #(
             end
 
             // Event capture
-            dma_status[1] <= dma_busy_in;
+            dma_status[0] <= dma_busy_in;
             dma_done_d    <= dma_done_in;
             dma_busy_d    <= dma_busy_in;
             if (frame_done_pulse)
@@ -410,7 +410,7 @@ module voxel_axil_csr #(
                 int_status[0] <= 1'b1; // frame done
             if (dma_done_pulse || dma_busy_fall) begin
                 int_status[1] <= 1'b1; // dma done
-                dma_status[0] <= 1'b1;
+                dma_status[1] <= 1'b1;
             end
             blit_status[0] <= blit_busy;
             blit_status[1] <= blit_done;
@@ -518,19 +518,19 @@ module voxel_axil_csr #(
                             // Require 8-byte alignment on SRC/DST/LEN; flag DMA_ERR on violation.
                             if (dma_src[2:0] != 3'b000 || dma_dst[2:0] != 3'b000 || dma_len[2:0] != 3'b000) begin
                                 dma_status[2] <= 1'b1; // err
-                                dma_status[0] <= 1'b0; // clear done
+                                dma_status[1] <= 1'b0; // clear done
                                 int_status[2] <= 1'b1; // HYDRA_INT_DMA_ERR
                             end else begin
                                 dma_start_pulse <= 1'b1;
-                                dma_status[0]   <= 1'b0; // clear done
+                                dma_status[1]   <= 1'b0; // clear done
                                 dma_status[2]   <= 1'b0; // clear err
                             end
                         end
                     end
                     W_DMA_STATUS: begin
-                        // W1C for done (bit0) and err (bit2); busy (bit1) is read-only mirror of dma_busy_in.
-                        if (s_axil_wdata[0])
-                            dma_status[0] <= 1'b0; // clear done
+                        // W1C for done (bit1) and err (bit2); busy (bit0) is read-only mirror of dma_busy_in.
+                        if (s_axil_wdata[1])
+                            dma_status[1] <= 1'b0; // clear done
                         if (s_axil_wdata[2])
                             dma_status[2] <= 1'b0; // clear err
                     end
