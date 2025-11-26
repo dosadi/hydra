@@ -20,3 +20,12 @@ This tracker documents how key TODO areas rely on one another so work can be seq
 - **Before tackling a dependent tracker**, review the upstream items in the table and note whether their TODOs are marked `[P0/P1]`. This avoids reworking work that relies on unstable foundations.  
 - **When creating new trackers**, add a row here describing their dependencies (use relative links like `todo_xyz.md`).  
 - **Automated tooling** can parse this doc (simple Markdown table) to compute a dependency-weighted backlog for rebalance scripts like `scripts/todo_rebalance.py`.
+
+## Outstanding Work
+
+- **TODO [P0]:** Formalize dependency validation by adding a lightweight parser (`scripts/todo_dependency_graph.py`) that reads `docs/todo/todo_dependency_map.md` and fails CI if any tracker references a non-existent file or introduces a cycle.  
+- **TODO [P1]:** Extend `docs/todo/todo_tracker_metadata.json` to include a `depends_on` list for each tracker (seed from this map) so automation can weight unknowns/priority tags based on upstream stability.  
+- **TODO [P1]:** Create a visual dependency snapshot (SVG/PlantUML) from this table and publish it under `docs/` so reviewers can quickly understand high-risk relationships.  
+- **TODO [P2]:** Add "dependency status" badges/lines to `docs/todo/todo_system_design.md` referencing this map so new contributors can see which upstream trackers are blocking progress.  
+- **TODO [P2]:** Document how the AI dashboard briefing uses this dependency map to highlight high-risk tracker cascades (link to `scripts/ai_dashboard_briefing.py` so the briefing can mention blocked trackers).  
+- **TODO [P3]:** Maintain a lightweight changelog (append-only list) whenever this map changes so automation can re-evaluate dependencies and trigger rebalances or AI briefing updates.
