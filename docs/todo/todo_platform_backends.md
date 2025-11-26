@@ -102,3 +102,11 @@ See `docs/TODO_MASTER_INDEX.md` for complete tracker reference.
 - **P3:** 5 items - Advanced runtime features
 
 **Next Steps:** Focus on P1 unit tests and headless backend for CI regression testing.
+
+## Automation & Reporting Expansion
+
+- **TODO [P2]:** Automate backend capability discovery (SDL/GL/Vulkan/Wayland) and emit `out/backend_capabilities.json` so dashboards know which backends are available per runner.
+- **TODO [P2]:** Log backend selection stats (which backend wins per build) and surface them via `scripts/ai_health_dashboard.py` to highlight flaky paths.
+- **TODO [P2]:** Add a backend triage log (`docs/backend_triage.md`) that correlates backend failures with TODO shifts for rapid triage.
+- **TODO [P2]:** Wire virtualization/compat notes (QEMU, WSL, Parallels, VMware) into this tracker so replicating backend issues inside VMs is easier.
+- **TODO [P3]:** Document multi-backend regression flows (how multiple backends interact) and reference these docs within the AI dashboard summary.
