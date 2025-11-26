@@ -226,6 +226,7 @@
         "todo_dependency_map.md",
         "todo_rebalance_policy.md",
         "todo_status_overview.md"
+        ,"todo_meta_system.md"
       ],
       "dependencies": [],
       "test_commands": ["scripts/todo_sweep.py", "scripts/check_todo_unique.py", "scripts/automation_watchdog.sh"]
