@@ -14,3 +14,7 @@ Tasks to keep the RTL synthesis-friendly with predictable timing closure.
 - TODO [P2]: Add a synthesis power estimation log (per rails) and tie it to `docs/todo/todo_power.md` so power budgeting stays visible across RTL changes.
 - TODO [P3]: Capture a guideline for vendor-tuned synth scripts (Vivado/Quartus) that includes which macros to pass and which XDC constraints to update when top-level ports change.
 - TODO [P3]: Document how to rerun the synthesis flow in Docker/CI (`scripts/synth_docker.sh`) so contributors can reproduce area/timing numbers before shipping.
+- TODO [P2]: Record slack histograms per timing path and link them to `docs/todo/todo_performance.md` so bench runs can catch regressions relative to 0.0.7.
+- TODO [P1]: Add regression plots (FFT or hist) tracking path delay vs. configuration knobs (grid size, DMA width) for release notes.
+- TODO [P3]: Build an incremental synthesis check that only reruns affected modules when core parameters change, reducing turnaround time on small changes.
+- TODO [P2]: Capture a set of golden post-synth netlists (or hashed signatures) to compare against new synth runs before committing.
