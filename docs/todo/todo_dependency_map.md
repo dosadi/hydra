@@ -10,6 +10,10 @@ This tracker documents how key TODO areas rely on one another so work can be seq
 | `todo_dma_trace_artifacts.md` | `todo_dma_pcie.md`, `todo_dma_structured_logging.md` | Trace artifact capture extends the DMA/PCIe coverage area and relies on structured logging APIs to ingest/annotate events. |
 | `todo_build_ci.md` | `todo_testing_ci.md`, `todo_system_fps.md`, `todo_dma_trace_artifacts.md` | CI stability work depends on the broader testing matrix, FPS diagnostics, and DMA tracing so jobs can fail fast with actionable data. |
 | `docs/driver_coverage_guide.md` | `todo_dma_hotplug.md`, `todo_dma_hang_policy.md`, `docs/driver_general_todo.md` | Driver bring-up guidance is incomplete until hotplug/hang policy docs are fleshed out and the general driver TODO list is updated with current foci. |
+| `todo_ai_development.md` | `docs/mathematical_surface_analysis.md`, `todo_rendering_pipeline.md`, `todo_debugging_tools.md` | AI work touching rendering needs to reference the math analysis and debugging tool guidelines so the automation log remains consistent. |
+| `todo_board_hardware_design.md` | `docs/mixed_signal_environment.md`, `scripts/board_simulate.sh` | Board/analog TODOs should wait for the mixed-signal environment doc and automation scripts to land so regressions produce reproducible artifacts. |
+| `todo_debugging_tools.md` | `scripts/automation_watchdog.sh`, `scripts/ci_todo_rebalance.sh`, `scripts/board_simulate.sh` | Debug tooling often depends on automation scripts being wired into CI so new logs/artifacts are available before instrumentation work continues. |
+| `todo_system_summary_2025_11_25.md` | `docs/todo/todo_session_continuation_2025_11_25.md`, `todo_project_structure.md` | Session summaries leverage continuation notes and project-structure TODOs to show next actions and automation context for future work. |
 
 ### How to Use this Map
 
