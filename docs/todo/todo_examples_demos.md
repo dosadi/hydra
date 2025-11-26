@@ -41,6 +41,15 @@ Complements documentation with hands-on examples and performance baseline data.
   - **Dependencies:** libhydra
   - **Validation:** Camera moves smoothly
   - **Deliverable:** `examples/camera_path/camera_path.c`
+- **TODO [P1]:** Add scripted demo generator that records sequences of HUD flags/preset cameras and exposes them in `docs/demo_sequences.md` so automation can replay them during CI or demos.
+  - **Coverage:**
+    - Capture key sequences + camera positions
+    - Save to JSON file
+    - Provide helper to replay recorded sequences
+  - **Effort:** Medium (2 days)
+  - **Dependencies:** HUD logging + camera APIs
+  - **Validation:** Recorded demo replays deterministically
+  - **Deliverable:** `scripts/demo_recorder.py`, `docs/demo_sequences.md`
 
 ---
 
@@ -110,6 +119,16 @@ Complements documentation with hands-on examples and performance baseline data.
   - **Validation:** Metrics match expected values
   - **Deliverable:** `scripts/visual_compare.py`
 
+- **TODO [P2]:** Create an “examples health” script that verifies each demo preset runs, dumps HUD metrics, and pushes results to `out/demo_health/` for the AI dashboard to consume.
+  - **Coverage:**
+    - Run all preset scenes
+    - Validate no errors/timeouts
+    - Collect frame stats
+  - **Effort:** Medium (2 days)
+  - **Dependencies:** Demo presets and scripts
+  - **Validation:** Reports generated for each build
+  - **Deliverable:** `scripts/demo_health_check.sh`
+
 ### Demo Content
 
 - TODO [P2]: Create showcase demo scene
@@ -141,6 +160,12 @@ Complements documentation with hands-on examples and performance baseline data.
   - **Dependencies:** Frame dump, ffmpeg
   - **Validation:** Video quality acceptable
   - **Deliverable:** `scripts/record_demo.sh`
+
+- **TODO [P2]:** Build a demo leaderboard (JSON/txt) that records best frame rates, interesting scenes, and render flags so contributors can compare improvements; surface it via the AI health dashboard artifact when updated.
+  - **Effort:** Medium (1 day)
+  - **Dependencies:** Benchmark scripts, dashboard automation
+  - **Validation:** Leaderboard data available after CI run
+  - **Deliverable:** `docs/demo_leaderboard.md` + scoreboard generator
 
 ---
 
@@ -198,6 +223,12 @@ Complements documentation with hands-on examples and performance baseline data.
     - Voiceover explanations
     - Upload to YouTube
   - **Effort:** Very Large (20-30 days, includes editing)
+
+- **TODO [P3]:** Create story-driven demo timeline (scenario, goals, key flags) and link it to `docs/ai_resource_strategy.md` so AI agents can recommend which demos to run during experiments.
+  - **Effort:** Large (3 days)
+  - **Dependencies:** Demo documentation, AI strategy doc
+  - **Validation:** Timeline used in onboarding sessions
+  - **Deliverable:** `docs/demo_timeline.md`
   - **Dependencies:** Written tutorials complete
   - **Validation:** Videos published
   - **Deliverable:** YouTube playlist
