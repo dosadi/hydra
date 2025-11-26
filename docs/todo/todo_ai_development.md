@@ -6,3 +6,8 @@ Focuses on AI-assisted workflows, tooling, prompts, and verification for the Hyd
 - **TODO [P2]:** Build a pair of scripts (`scripts/ai_diff_summary.py`, `scripts/ai_todo_sync.py`) that summarize AI-driven diffs and reconcile tracker entries (auto-suggest entries when files change).  
 - **TODO [P2]:** Add logging/citation metadata (e.g., `README` section) for AI-authored changes so reviewers know when to give extra scrutiny or request human follow-up.  
 - **TODO [P3]:** Draft a lightweight “AI dev roster” guideline that states which areas the AI focuses on (docs, TODOs, instrumentation) and what needs hand-off to humans (RTL, drivers).  
+- **TODO [P2]:** Add a workflow that captures AI tool output (diffs, logs) and creates a lightweight “AI work log” entry in `docs/ai_changelog.md` whenever an agent touches a tracker or doc.  
+- **TODO [P1]:** Provide a regression harness (`scripts/ai_verify.sh`) that replays AI-applied patches in isolation and runs `scripts/todo_sweep.py` + `scripts/check_required_files.py` so we can gate prompts behind verification.  
+- **TODO [P2]:** Build a prompt catalog with approved variants/phrasing plus expected coverage (`PROMPTS.md`) so prompts can be versioned via `docs/todo_ai_development.md`.  
+- **TODO [P3]:** Add a “fail-safe” fallback that emails/captures human reviewers when AI diffs touch RTL/drivers, with guidelines from this tracker.  
+- **TODO [P2]:** Capture dataset/version info (env + Git commit) when AI hits scripts to reproduce reasoning offline and compare across token upgrades.  
