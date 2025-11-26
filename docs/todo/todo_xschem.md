@@ -12,3 +12,8 @@ Schematic capture hygiene and symbol/library work to keep RTL ↔ board flow ali
 - TODO [P3]: Publish a short “symbol change log” within the tracker so new design engineers can see which blocks were touched that week.
 - TODO [P3]: Add a "schematic smoke test" summarize (screenshots + steps) to the tracker so reviewers can reproduce the latest electrical revisions.
 - TODO [P3]: Outline a cross-team review process (EEs + RTL) to approve schematic updates and tie it to `docs/todo/todo_board_hardware_design.md`.
+- TODO [P1]: Version-control the library with curated commits (tag versions when symbol sets change) and document how to sync `xschem/lib` with the system repo so new branches share the same baseline.
+- TODO [P1]: Add regression comparisons for netlist outputs (hash + size) whenever symbols change so `scripts/todo_sweep.py` can flag a library bump before the release.
+- TODO [P2]: Automate the symbol/footprint packager that builds `.schlib`/`.pcblib` bundles for downstream vendors.
+- TODO [P2]: Track pin-level timing constraints (PI/PO delays, diff-pair lengths) within xschem and link them back to the board-level TODOs so layout captures the same expectations.
+- TODO [P3]: Document how to re-run the board-level xschem harness inside `tools/` (spacing, GND-grid) to help hardware folks repro the capture for QA.
