@@ -8,6 +8,25 @@ This repo currently sees work from multiple AI instances/teams. To keep the hand
 - **Reference existing session docs** (e.g., `docs/archive/session_2025_11_25/README.md` or `docs/TODO_SESSION_CONTINUATION_2025_11_25.md`) so we avoid duplicate work.
 - **Share actionable next steps** with a clear owner or priority. Prefer one bullet per item, referencing specific files or scripts.
 
+## Inter-AI Client Interaction
+
+- **Align on the shared instructions** before tinkering: review `AGENTS.md`, `CLAUDE.md`, and `docs/ai_resource_strategy.md` to understand the repo structure, build/test commands, and AI probe requirements each client should honor.
+- **Keep the TODO trackers synchronized** by updating `docs/TODO_SESSION_CONTINUATION_2025_11_25.md`, `docs/TODO_MASTER_INDEX.md`, and the relevant tracker file (e.g., `docs/todo/todo_ai_development.md`, `docs/todo/todo_extension_interface.md`) with your priority tag and next action(s) before handing back control.
+- **Document exclusive or high-risk work** (e.g., sim outputs, automation changes) with a reference to `docs/issue_draft_lock_coordination.md`, noting if you temporarily “lock” a resource or run long jobs so future agents can coordinate without stepping on each other.
+- **Actionable handoff checklist**:
+  1. Run `scripts/todo_sweep.py`, `scripts/check_required_files.py`, and `scripts/ai_session_report.py`; archive the outputs in `out/` (e.g., `out/ai_health_dashboard.txt`) and cite them in the continuity log along with the edited files.
+  2. Tag the affected tracker entry with the `[P*]` priority (and owner if known) and mention the next logical task plus any blockers in the bridge’s continuity notes.
+  3. Point the next client at the scripts or docs they should keep in sync (e.g., `docs/todo/todo_status_overview.md`, `out/meta_dependency_failures.txt`) so they can re-run the same probes if needed.
+  4. If you hit missing tooling or conflicting edits, log the failure in `docs/todo/todo_status_overview.md` and mention it here so a follow-up agent knows why they might need to take a different approach.
+
+## Inter-AI Coordination Log
+
+- **Session Date:** 2025-11-26 (this update)
+  - **Files Touched:** `docs/agent_integration_bridge.md`
+  - **Key Actions:** Added the Inter-AI Client Interaction section to relate `AGENTS.md`/`CLAUDE.md`/`docs/ai_resource_strategy.md` to the TODO coordination workflow plus the actionable checklist.
+  - **Next Priorities:** Tag the relevant tracker(s) you touched (e.g., `docs/todo/todo_ai_development.md`) with a `[P*]` bullet describing the follow-up research or doc cross-link you expect the next client to handle.
+  - **Blockers / Notes:** None beyond the usual automation probes invoked by this session.
+
 ## Handoff Template
 
 Use this template in the docs below or in git comments so the next agent can resume quickly:
