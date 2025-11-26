@@ -22,7 +22,14 @@ def summarize(metadata: dict) -> str:
     for level in ("P0", "P1", "P2", "P3", "unknown"):
         lines.append(f"  {level}: {prio.get(level, 0)}")
     top = sorted(
-        ((name, stats["priority"]["P0"]) for name, stats in metadata.items() if name != "_aggregate"),
+        (
+            (
+                name,
+                stats.get("priority", {}).get("P0", 0),
+            )
+            for name, stats in metadata.items()
+            if name != "_aggregate"
+        ),
         key=lambda item: item[1],
         reverse=True,
     )[:5]
