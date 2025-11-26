@@ -13,6 +13,10 @@ See `docs/todo/todo_prioritization.md` for sprint plan. Most items are P2 (nice-
 - TODO: Implement soft shadowing in the raystep loop (penumbra approximation) without large perf hit.
 - TODO [P2]: Add a “surface extractor” pipeline stage that records the first hit’s normal/depth/color into a separate buffer, then expose it via the viewer for downstream debug or SSAO tooling.
 - TODO [P2]: Instrument the surface extractor to emit CSV logs of hit normals/curvature for a fixed sample column so offline scripts can verify shading changes across render updates.
+- TODO [P1]: Model the surface extractor shading weight as a nonlinear summation of neighboring voxel normals (e.g., Shepard interpolation) and expose the recomputed normal vector via the debug overlay.
+- TODO [P2]: Add a CLI config (`SURFACE_BAND_MODE=[linear|nonlinear]`) to switch between normal-based smoothing modes and tune the banding curves; log those settings in `scripts/todo_inspect.py`.
+- TODO [P2]: Build a test harness that renders the same column at multiple angle increments to verify the smooth shading wrap produced by the normal summation and compare to the expected banded curve.
+- TODO [P3]: Document the math used (normal vector summation, weighting kernel) so shaders can be tuned in sync with the viewer/hardware definitions; add to the surface extractor doc.
 - TODO: Add ambient occlusion term in the ray marcher (raystep-based heuristic) with tunable radius/strength.
 - TODO: Integrate temporal accumulation/denoise (with motion reset) to smooth noisy frames.
 - TODO [P3]: Build a surface-export helper that saves the surface/extractor buffer as a raw image (normal/depth map) plus metadata, so automation can compare successive commits automatically.
