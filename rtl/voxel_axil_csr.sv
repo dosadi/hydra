@@ -79,6 +79,7 @@ module voxel_axil_csr #(
     output reg                      dma_start_pulse,
     input  wire                     dma_busy_in,
     input  wire                     dma_done_in,
+    input  wire                     dma_err_in,
     output reg [31:0]               dma_src,
     output reg [31:0]               dma_dst,
     output reg [31:0]               dma_len,
@@ -232,6 +233,7 @@ module voxel_axil_csr #(
 
     wire dma_done_pulse = dma_done_in & ~dma_done_d;
     wire dma_busy_fall  = dma_busy_d  & ~dma_busy_in;
+    wire dma_err_pulse  = dma_err_in  & ~dma_err_d;
     wire status_read    = s_axil_arready && s_axil_arvalid && !s_axil_rvalid && (ar_word == W_STATUS);
     wire [31:0] status_word = {26'd0, blit_done, blit_busy, dma_status[1], dma_status[0], frame_done_latched, core_busy};
 
@@ -248,6 +250,7 @@ module voxel_axil_csr #(
     reg [31:0] region0_counter;
     reg [1:0]  region0_state;
     reg        dma_busy_d;
+    reg        dma_err_d;
 
     localparam [1:0] REGION0_IDLE = 2'd0;
     localparam [1:0] REGION0_RUN  = 2'd1;
@@ -342,6 +345,7 @@ module voxel_axil_csr #(
             blit_mem_addr     <= 28'd0;
             blit_mem_wdata    <= 64'd0;
             dma_busy_d         <= 1'b0;
+            dma_err_d          <= 1'b0;
             for (pi = 0; pi < 1024; pi = pi + 1)
                 blit_pix_mem[pi] = 32'd0;
             for (oi = 0; oi < 64; oi = oi + 1)
@@ -404,12 +408,19 @@ module voxel_axil_csr #(
             dma_status[0] <= dma_busy_in;
             dma_done_d    <= dma_done_in;
             dma_busy_d    <= dma_busy_in;
+            dma_err_d     <= dma_err_in;
             if (frame_done_pulse)
                 frame_done_latched <= 1'b1;
             if (frame_done_pulse)
                 int_status[0] <= 1'b1; // frame done
             if (dma_done_pulse || dma_busy_fall) begin
                 int_status[1] <= 1'b1; // dma done
+                dma_status[1] <= 1'b1;
+            end
+            if (dma_err_pulse) begin
+                int_status[2] <= 1'b1;
+                int_status[1] <= 1'b1;
+                dma_status[2] <= 1'b1;
                 dma_status[1] <= 1'b1;
             end
             blit_status[0] <= blit_busy;

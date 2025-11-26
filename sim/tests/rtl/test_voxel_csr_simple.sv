@@ -113,6 +113,7 @@ module test_voxel_csr_simple;
         .dma_dst(dma_dst),
         .dma_len(dma_len),
         .dma_status(dma_status),
+        .dma_err_in(1'b0),
         .blit_mem_we(blit_mem_we),
         .blit_mem_re(blit_mem_re),
         .blit_mem_addr(blit_mem_addr),

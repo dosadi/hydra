@@ -16,12 +16,12 @@ This tracker captures work items around the AI health dashboard and ensures the 
 - **TODO [P3]:** Create a short note (HUD or doc) that explains how to interpret “unknown-priority” vs. “TODO-heavy” trackers for the dashboard’s readership (humans and automation).
 
 ## Live Briefing
-- Generated: 2025-11-26T18:07:45.766441Z
-- Trackers: 98
-- TODO items: 2025
-- DONE items: 205
-- Priority-tagged items: 1913
-- Unknown-priority items: 112
+- Generated: 2025-11-26T19:15:49.905143Z
+- Trackers: 101
+- TODO items: 1996
+- DONE items: 200
+- Priority-tagged items: 1883
+- Unknown-priority items: 113
 - Top unknown-priority trackers:
   - TODO_SESSION_CONTINUATION_2025_11_25.md (17 unknown)
   - todo_system_summary_2025_11_25.md (15 unknown)

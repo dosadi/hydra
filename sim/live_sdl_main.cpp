@@ -181,6 +181,10 @@ static bool env_truthy(const char* key) {
     return false;
 }
 
+static void platform_log_capabilities() {
+    std::fprintf(stderr, "[hydra] platform capabilities: SDL default\n");
+}
+
 static void apply_cli_overrides(int argc, char** argv) {
     auto missing_value = [](const char* flag) {
         std::fprintf(stderr, "[hydra] Missing value for %s\n", flag);
@@ -530,8 +534,108 @@ static void draw_text_to_fb(std::vector<uint32_t>& fb, int fb_w, int fb_h,
         }
     }
 
-    SDL_FreeSurface(surf);
+SDL_FreeSurface(surf);
 }
+
+static std::string flatten_cli_args(int argc, char** argv) {
+    std::string out;
+    for (int i = 0; i < argc; ++i) {
+        if (i) out += ' ';
+        if (argv[i]) {
+            out += argv[i];
+        }
+    }
+    return out;
+}
+
+struct RenderInstrumentationConfig {
+    float cam_pos_x = 0.0f;
+    float cam_pos_y = 0.0f;
+    float cam_pos_z = 0.0f;
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+    bool smooth_surfaces = false;
+    bool curvature = false;
+    bool extra_light = false;
+    bool diag_slice = false;
+    bool ray_jitter = false;
+    bool hud_enabled = true;
+    float fps_target = 0.0f;
+    bool vsync = true;
+    std::string backend_name;
+    std::string backend_info;
+    std::string pixel_view;
+};
+
+struct RenderInstrumentation {
+    RenderInstrumentation(bool enabled, std::string command_line)
+        : enabled_(enabled), command_line_(std::move(command_line)) {
+        if (!enabled_)
+            return;
+        std::filesystem::path out_dir;
+        if (const char* override_out = std::getenv("HYDRA_OUT_DIR")) {
+            out_dir = override_out;
+        } else {
+            out_dir = std::filesystem::current_path();
+            if (out_dir.filename() == "sim") {
+                out_dir = out_dir.parent_path();
+            }
+            out_dir /= "out";
+        }
+        std::filesystem::create_directories(out_dir);
+        out_dir_ = out_dir;
+        csv_.open((out_dir_ / "render_pipeline_baseline.csv").string(), std::ios::app);
+        if (!csv_)
+            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
+        if (csv_.tellp() == 0)
+            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
+    }
+
+    bool active() const { return enabled_; }
+
+    void write_config(const RenderInstrumentationConfig& cfg) {
+        if (!enabled_)
+            return;
+        std::ofstream cfg_out((out_dir_ / "render_pipeline_baseline.cfg").string());
+        if (!cfg_out)
+            die("failed to write out/render_pipeline_baseline.cfg");
+        cfg_out << "instrument_command=" << command_line_ << "\n";
+        cfg_out << "backend=" << cfg.backend_name << "\n";
+        cfg_out << "backend_info=" << cfg.backend_info << "\n";
+        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
+        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
+        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
+        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
+                << ",curvature:" << (cfg.curvature ? "1" : "0")
+                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
+                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
+                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
+        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
+        cfg_out << "fps_target=" << cfg.fps_target << "\n";
+        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
+    }
+
+    void record(uint64_t frame,
+                double fps,
+                double ray_loop_ms,
+                double hud_present_ms,
+                double framebuffer_copy_ms,
+                double frame_total_ms) {
+        if (!enabled_)
+            return;
+        auto now = std::chrono::system_clock::now();
+        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        csv_ << frame << ',' << ts_ms << ',' << fps << ','
+             << ray_loop_ms << ',' << hud_present_ms << ','
+             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
+        csv_.flush();
+    }
+
+private:
+    bool enabled_;
+    std::ofstream csv_;
+    std::string command_line_;
+};
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
@@ -1609,13 +1713,6 @@ int main(int argc, char** argv) {
             last_frame_time = now;
             if (dt > 0.0f) fps = 1.0f / dt;
 
-            if (render_instrument.active()) {
-                double ray_loop_ms = std::chrono::duration<double, std::milli>(sim_loop_end - sim_loop_start).count();
-                double hud_present_ms = std::chrono::duration<double, std::milli>(hud_present_end - hud_present_start).count();
-                double framebuffer_copy_ms = std::chrono::duration<double, std::milli>(copy_end - copy_start).count();
-                render_instrument.record(frame_counter, fps, ray_loop_ms, hud_present_ms, framebuffer_copy_ms, static_cast<double>(dt * 1000.0f));
-            }
-
             if (!help_overlay_sticky && help_overlay_timer > 0.0f && dt > 0.0f) {
                 help_overlay_timer = std::max(0.0f, help_overlay_timer - dt);
             }
@@ -1899,6 +1996,13 @@ int main(int argc, char** argv) {
 
             if (render_instrument.active())
                 copy_end = std::chrono::high_resolution_clock::now();
+
+            if (render_instrument.active()) {
+                double ray_loop_ms = std::chrono::duration<double, std::milli>(sim_loop_end - sim_loop_start).count();
+                double hud_present_ms = std::chrono::duration<double, std::milli>(hud_present_end - hud_present_start).count();
+                double framebuffer_copy_ms = std::chrono::duration<double, std::milli>(copy_end - copy_start).count();
+                render_instrument.record(frame_counter, fps, ray_loop_ms, hud_present_ms, framebuffer_copy_ms, static_cast<double>(dt * 1000.0f));
+            }
 
             // Clear framebuffer for next frame to avoid stale pixels if the RTL stalls early
             // or when explicit per-frame clearing is requested.

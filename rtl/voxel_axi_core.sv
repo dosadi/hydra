@@ -90,6 +90,7 @@ module voxel_axi_core #(
     // ========================================================================
     output wire        irq_out,
     output wire        msi_pulse,
+    output wire        dma_err_out,
     output wire        frame_done,
     output wire        core_busy
 );
@@ -131,10 +132,12 @@ module voxel_axi_core #(
     wire         dma_start_pulse;
     reg          dma_busy;
     reg          dma_done;
+    reg          dma_err;
     wire [31:0]  dma_src;
     wire [31:0]  dma_dst;
     wire [31:0]  dma_len;
     wire [31:0]  dma_status_out;
+    output wire  dma_err_out;
 
     // Blitter memory access (for 3D blitter bring-up)
     wire         blit_mem_we;
@@ -151,6 +154,8 @@ module voxel_axi_core #(
 
     reg          irq_out_d;
     assign msi_pulse = irq_out & ~irq_out_d;
+    assign dma_status_out = {29'd0, dma_err, dma_done, dma_busy};
+    assign dma_err_out = dma_err;
 
     // TODO: Wire DMA/blitter ports to LiteDMA or leave stubbed for now.
     // For initial bring-up, implement a minimal DMA stub with bounds/error checks.
@@ -162,7 +167,6 @@ module voxel_axi_core #(
             dma_busy    <= 1'b0;
             dma_done    <= 1'b0;
             dma_err     <= 1'b0;
-            dma_status  <= 32'd0;
             dma_state   <= DMA_IDLE;
             dma_stub_start <= 1'b0;
         end else begin
