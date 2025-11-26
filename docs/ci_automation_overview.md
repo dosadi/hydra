@@ -7,6 +7,7 @@ This document describes the automated workflows, scripts, and gating policies th
 - `scripts/todo_rebalance.py`: computes tracker averages, fails when any tracker drops below 65% of the mean, and writes a report.
 - `scripts/ci_todo_rebalance.sh`: runs the rebalance script and emits `out/todo_rebalance_report.txt`.
 - `scripts/automation_watchdog.sh`: bundles the CI checks (rebalancer + sweeps) so a single command can gate a workflow.
+- `scripts/ai_health_dashboard.py`: consumes `docs/todo/todo_tracker_metadata.json` (regenerated via `scripts/todo_metadata.py`) and writes an AI health dashboard (`out/ai_health_dashboard.txt`) that highlights unknown priority clusters and TODO counts.
 - `scripts/test_litex_stubs.sh`: lint-checks the new LiteX bridge/DMA stubs via Verilator.
 - `scripts/board_simulate.sh`: dry-run analog regressions after `scripts/setup_mixed_signal_env.sh` ensures the workspace is configured.
 - `scripts/finish_release.sh`: automates the release build/lint/tag/push steps when you are ready to cut a version.
@@ -15,6 +16,7 @@ This document describes the automated workflows, scripts, and gating policies th
 - Runs `scripts/test_litex_stubs.sh` on every push/PR to keep stub RTL clean.
 - Executes `scripts/automation_watchdog.sh` to produce TODO rebalance + sanity outputs.
 - Uploads `out/todo_rebalance_report.txt` as a build artifact for reviewers.
+- Runs the `ai-dashboard` job (after `linux`) which rebuilds the metadata, runs `scripts/ai_health_dashboard.py`, and uploads `out/ai_health_dashboard.txt` so reviewers can see the latest AI TODO priorities.
 - When `RUN_ANALOG=1`, runs `scripts/board_simulate.sh` to collect analog logs (requires analog tool licenses).
 
 ## How to Run Locally

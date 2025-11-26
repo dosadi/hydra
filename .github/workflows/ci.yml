@@ -116,3 +116,24 @@ jobs:
           run: |
             cd $GITHUB_WORKSPACE
             gmake -C drivers/bsd -f Makefile.kmod
+
+  ai-dashboard:
+    runs-on: ubuntu-latest
+    needs: linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate tracker metadata
+        run: |
+          python3 scripts/todo_metadata.py
+
+      - name: Build AI health dashboard
+        run: |
+          python3 scripts/ai_health_dashboard.py --output out/ai_health_dashboard.txt
+
+      - name: Upload AI dashboard artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-health-dashboard
+          path: out/ai_health_dashboard.txt
