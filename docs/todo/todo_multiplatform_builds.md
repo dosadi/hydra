@@ -11,3 +11,7 @@ Improve parity across Linux, FreeBSD, macOS, and Windows host builds.
 - TODO [P2]: Bundle a minimal CI smoke script to run `sim_voxel --help`, `hydra_* --help`, and libhydra unit tests on each platform where available.
 - TODO [P2]: Create a platform capability table (supported backends/features per OS) and link it from README.
 - DONE [P1]: Add dedicated CMake presets/scripts for macOS (`cmake/presets/macos-default.json`) and Windows (`cmake/presets/windows-msvc.json`) and register them in `CMakePresets.json`.
+- TODO [P1]: Add a Hydra cross-platform bootstrap script that sets up per-platform toolchains (Linux, FreeBSD, macOS, Windows) via `scripts/bootstrap_build_env.sh` and records the commands in `docs/ai_resource_strategy.md` for AI prep.
+- TODO [P2]: Provide sanitized Docker + Nix containers for each platform that can run `cmake --preset` and ensure `scripts/ai_health_dashboard.py` sees the platform-specific tracker updates.
+- TODO [P2]: Create cross-platform unit/regression wrappers (`scripts/build_matrix.sh`) that iterate over `CMakePresets` and record successes/failures in `out/build_matrix.log` with quick summaries for the AI dashboard.
+- TODO [P3]: Add virtualization support notes (QEMU for FreeBSD, Parallels for macOS, WSL for Windows) describing how to run Hydra builds/test frameworks inside each virtualization/compatibility layer.
