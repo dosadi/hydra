@@ -18,3 +18,7 @@ Tasks to keep the RTL synthesis-friendly with predictable timing closure.
 - TODO [P1]: Add regression plots (FFT or hist) tracking path delay vs. configuration knobs (grid size, DMA width) for release notes.
 - TODO [P3]: Build an incremental synthesis check that only reruns affected modules when core parameters change, reducing turnaround time on small changes.
 - TODO [P2]: Capture a set of golden post-synth netlists (or hashed signatures) to compare against new synth runs before committing.
+- TODO [P2]: Track register pipe/util toggle coverage in synthesis reports to know which macros are still pulling area and identify unused registers.
+- TODO [P1]: Tie synthesis flows to `scripts/todo_rebalance.py` so when timing numbers slip the tracker automatically surfaces the cause and suggests related TODO entries.
+- TODO [P3]: Document the path-specific constraints that should be suppressed when we run the viewer at debug settings, ensuring gating doesn’t affect the release bitstream.
+- TODO [P2]: Build an automated warning when the synthesis build size (LUT/FF utilization) exceeds a threshold recorded in `docs/todo/todo_build_devtools.md`.
