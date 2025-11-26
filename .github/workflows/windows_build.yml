@@ -10,7 +10,7 @@ jobs:
   windows-driver:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup automation
         run: |
           git config --global --add safe.directory ${{ github.workspace }}
