@@ -197,7 +197,9 @@ Tracks testing infrastructure expansion, CI pipeline hardening, regression test 
   - **Dependencies:** Driver input validation complete
   - **Validation:** All negative cases return expected errors
   - **Deliverable:** Negative kselftest suite
-  - **Notes:** Include TOCTOU, race conditions
+- **Notes:** Include TOCTOU, race conditions
+- **TODO [P1]:** Feed test failure metadata (failed suites, runtime, logs) into `scripts/ai_health_dashboard.py` so the automation dashboard highlights flaky suites when tests regress.
+- **TODO [P1]:** Create a “test health” ledger inside this tracker that notes when automation reruns (frame regression, RTL tests, CI) touched the tracker so future contributors know which suites recently bit them.
 
 ### Visual and HDMI Testing
 - **TODO [P1]:** Add HDMI timing validator bench (hsync/vsync/pixel counts)
@@ -675,6 +677,18 @@ Tracks testing infrastructure expansion, CI pipeline hardening, regression test 
 3. **Keep tests fast** (< 10 min for unit tests)
 4. **Make tests deterministic** (no flaky tests in CI)
 5. **Test failures must be actionable** (clear error messages)
+
+**Testing Philosophy:**
+1. **Write tests first** (TDD where feasible)
+2. **Test at the right level** (unit vs. integration vs. E2E)
+3. **Keep tests fast** (< 10 min for unit tests)
+4. **Make tests deterministic** (no flaky tests in CI)
+5. **Test failures must be actionable** (clear error messages)
+
+**Automation Feedback:**
+- **TODO [P2]:** Record test failure metadata in `out/test_health.json` and have `scripts/ai_health_dashboard.py` highlight regressing suites.
+- **TODO [P2]:** Maintain a `docs/todo/test_triage_log.md` that lists automation-detected flakes and the TODOs spawned to fix them, pointing AI agents at the right follow ups.
+- **TODO [P3]:** Note when suites are “quick fix” vs “large expansion” inside this tracker so future contributors can document work scope without assumptions.
 
 **Next Actions:**
 1. Refresh golden_frame.ppm (P0)
