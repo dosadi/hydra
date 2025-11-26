@@ -12,10 +12,15 @@ Focuses on AI-assisted workflows, tooling, prompts, and verification for the Hyd
 - **TODO [P2]:** Build a prompt catalog with approved variants/phrasing plus expected coverage (`PROMPTS.md`) so prompts can be versioned via `docs/todo_ai_development.md`.  
 - **TODO [P3]:** Add a “fail-safe” fallback that emails/captures human reviewers when AI diffs touch RTL/drivers, with guidelines from this tracker.  
 - **TODO [P2]:** Capture dataset/version info (env + Git commit) when AI hits scripts to reproduce reasoning offline and compare across token upgrades.  
-- **TODO [P2]:** Add a “snapshotting” helper that records the working tree + relevant TODO trackers before AI-driven work starts so audits have a baseline to compare.
-- **TODO [P2]:** Author AI-specific lint rules (e.g., verifying TODO counts or required sections) and integrate them into `scripts/check_todo_unique.py` or a companion hook.
-- **TODO [P1]:** Automate prompt validation by running the suggested AI patch through `scripts/todo_sweep.py` and flagging mismatched counts before merging.
-- **TODO [P2]:** Capture a documented “AI debrief” entry (goal/context/outcome) within this tracker whenever an agent applies a change, aiding review and provenance.
-- **TODO [P2]:** Link this tracker to `docs/mathematical_surface_analysis.md` when AI agents touch the surface extractor doc so the math provenance stays attached to the automation workflow.
+- **TODO [P2]:** Add a “snapshotting” helper that records the working tree + relevant TODO trackers before AI-driven work starts so audits have a baseline to compare.  
+- **TODO [P2]:** Author AI-specific lint rules (e.g., verifying TODO counts or required sections) and integrate them into `scripts/check_todo_unique.py` or a companion hook.  
+- **TODO [P1]:** Automate prompt validation by running the suggested AI patch through `scripts/todo_sweep.py` and flagging mismatched counts before merging.  
+- **TODO [P2]:** Capture a documented “AI debrief” entry (goal/context/outcome) within this tracker whenever an agent applies a change, aiding review and provenance.  
+- **TODO [P2]:** Link this tracker to `docs/mathematical_surface_analysis.md` when AI agents touch the surface extractor doc so the math provenance stays attached to the automation workflow.  
+- **TODO [P1]:** Create an “AI health dashboard” (docs/todo/todo_ai_development.md section or new markdown) that shows weekly probe pass rates, priority sweeps completed, and automation failures so you can spot drift early.  
+- **TODO [P2]:** Add automated tagging to `docs/todo/todo_ai_development.md` entries by running `scripts/todo_metadata.py` and checking for missing owner/priority combinations; log results as new bullets.  
+- **TODO [P2]:** Draft a playbook describing when AI should author docs vs. trigger automation (e.g., `docs/ai_resource_strategy.md` extension) and include an escalation path when automation fails.  
+- **TODO [P3]:** Pilot a “AI companion reviewer” script that summarizes diffs and suggests TODO updates (using `scripts/todo_metadata.py` + git diff) for human reviewers before merging.  
+- **TODO [P1]:** Build a lightweight CLI (`scripts/ai_session_report.py`) that aggregates the probes, metadata, and `git status` into a JSON/txt snippet so your paid AI time starts with a precise dataset.  
 - **TODO [P1]:** Formalize the “efficient AI resource usage” workflow documented in `docs/ai_resource_strategy.md` so each agent runs the recommended probes and logs state snapshots before/after work. Tie the document back to this tracker for quick reference.
 - **TODO [P2]:** Automate updates to `docs/ai_resource_strategy.md` by adding a script that, after the probes succeed, appends a short entry to this tracker (owner/time/probes) so the log stays current.
