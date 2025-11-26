@@ -2,7 +2,7 @@
 
 Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROGRESS`, `DONE`, `WONTFIX-0.0.7` (with a short rationale). Keep entries concise; add owner/notes inline if useful.
 
-**Note:** 0.0.6 released 2025-11-24. Focus areas for 0.0.7: RTL hardening (backpressure, SVAs), visual quality Phase 2+3, hardware bring-up infrastructure. See `docs/todo_prioritization.md` for strategic prioritization and sprint plan.
+**Note:** 0.0.6 released 2025-11-24. Focus areas for 0.0.7: RTL hardening (backpressure, SVAs), visual quality Phase 2+3, hardware bring-up infrastructure. See `docs/toodo/todo_prioritization.md` for strategic prioritization and sprint plan.
 
 ## Simulation / Viewer
 - IN-PROGRESS: Diagnose 'o' key (diagnostic slice toggle) not responding - added debug output (commit 708a373), awaiting user test results.
@@ -77,7 +77,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - TODO: Surface or assert the `pixel_reemissure` sideband in `rtl/voxel_axi_core.sv` so the 96-bit format stays exercised.
 - DONE: Add simple AXI-Lite SVAs in `rtl/voxel_axil_csr.sv` (handshake stability on AW/AR/W when VALID stalls).
 - DONE: Add a lightweight SV testbench that drives AXI-Lite writes/reads over the BAR0 map to flag regressions when CSRs change (`sim/tests/rtl/test_voxel_axil_csr_simple.sv`).
-- TODO: Keep AXI-Lite coverage tracked in `docs/todo_axi_lite_coverage.md` and add regression scripts/tests as coverage requirements evolve.
+- TODO: Keep AXI-Lite coverage tracked in `docs/toodo/todo_axi_lite_coverage.md` and add regression scripts/tests as coverage requirements evolve.
 - TODO: Add compile-time parameters or CSRs for VOXEL_GRID_SIZE/SCREEN dims that propagate into the sim HUD for consistency.
 - TODO: Add an assertion or coverage point for `frame_done` cadence vs. expected pixel count to catch truncated frames in RTL.
 - DONE: Add reset-value checks for key CSRs (flags, selection, CTRL) to match the spec and fail sim if mismatched (Verilator assertions in voxel_axil_csr.sv).
@@ -195,11 +195,11 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a `make quick` target that just builds C++ harness without re-verilating (for fast HUD tweaks).
 - DONE: Add a small unit test for `scripts/check_frame.py` (golden vs shifted image) to lock thresholds.
 - DONE: Add caching/ccache setup for the C++ harness in CI to reduce rebuild times.
-- DONE: Add a GitHub issue template that links to `docs/todo_master.md` to keep work items centralized.
+- DONE: Add a GitHub issue template that links to `docs/toodo/todo_master.md` to keep work items centralized.
 - DONE: Add a `make fmt` target (C/C++/SV) that mirrors CI formatting to reduce friction.
 - DONE: Add a Verilator version pin/check in CI to flag drift vs. recommended 5.x baseline.
 - DONE: Add a `make distclean` that also nukes `out/` and other generated artifacts (PPMs, proto builds).
-- DONE: Stand up new domain TODO trackers: board-level (`docs/todo_board_level.md`), xschem (`docs/todo_xschem.md`), DRAM stub (`docs/todo_dram_stub.md`), synthesis (`docs/todo_synthesis.md`), FPGA (`docs/todo_fpga.md`), multiplatform builds (`docs/todo_multiplatform_builds.md`), and site/wiki (`docs/todo_site_wiki.md`); keep them updated alongside this master list.
+- DONE: Stand up new domain TODO trackers: board-level (`docs/toodo/todo_board_level.md`), xschem (`docs/toodo/todo_xschem.md`), DRAM stub (`docs/toodo/todo_dram_stub.md`), synthesis (`docs/toodo/todo_synthesis.md`), FPGA (`docs/toodo/todo_fpga.md`), multiplatform builds (`docs/toodo/todo_multiplatform_builds.md`), and site/wiki (`docs/toodo/todo_site_wiki.md`); keep them updated alongside this master list.
 - DONE: Add a CI job that runs `make -C sim test_frame` with `LOG_FRAMES=1` to ensure logging paths compile.
 - DONE: Add a script to summarize git diff stats and link them to TODO items for PR descriptions.
 - DONE: Add an automated spellcheck/lint for docs to keep wording clean.
@@ -216,7 +216,7 @@ Shared list so we stay aligned across runs/agents. Status tags: `TODO`, `IN-PROG
 - DONE: Add a `make package` target to bundle sim binaries/tests/docs into an artifact tarball.
 - TODO: Add a minimal “host-only” CI job that just builds CMake preset without RTL to guard host tools.
 - DONE: Add a .clang-tidy/.verible config checked into the repo and referenced by lint targets (.clang-tidy, .verible-format).
-- DONE: Add a script to ensure `docs/todo_master.md` stays sorted/unique (no duplicate TODOs).
+- DONE: Add a script to ensure `docs/toodo/todo_master.md` stays sorted/unique (no duplicate TODOs).
 - TODO: Add a CI check that running `make clean` leaves the tree tidy (no staged changes).
 - TODO: Add CI to run Python linters (ruff/black-check) on scripts/ to catch style issues early.
 - DONE: Add a simple “env probe” script that prints tool versions (verilator, gcc, sdl2-config) in CI logs.

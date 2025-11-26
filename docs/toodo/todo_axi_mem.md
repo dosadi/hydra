@@ -14,6 +14,6 @@ Complements `todo_dram_axi.md` by focusing on streaming/AXI memory interfaces, D
   - Effort: 1 day
   - Deliverable: Section in this tracker with cleanup steps
 
-- **TODO [P2]:** Tie AXI metrics (backpressure counts, stalled cycles) into `docs/todo_performance.md` and cross-link to `scripts/todo_sweep.py` for automated reporting.
+- **TODO [P2]:** Tie AXI metrics (backpressure counts, stalled cycles) into `docs/toodo/todo_performance.md` and cross-link to `scripts/todo_sweep.py` for automated reporting.
   - Effort: 1 day
   - Deliverable: Cross-reference doc plus script mention

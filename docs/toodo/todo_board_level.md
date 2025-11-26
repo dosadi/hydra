@@ -12,5 +12,5 @@ Focus on bring-up checklists, schematics/PCB hygiene, and lab workflows. Tags: `
 - TODO [P2]: Add BOM sanity script (lint footprints, check alternates) and store outputs alongside schematics.
 - TODO [P3]: Build a “lab log” template for recording board bring-up sessions, timestamp, operator, issue/resolution, and result so regression history is preserved.
 - TODO [P3]: Document how to use the Hydra board with FPGA dev tools (Vivado tcl scripts, openocd config) and include quick links to recorded sessions.
-- TODO [P3]: Create a hazard log for board-level ESD/power events and tie it to `docs/todo_board_hardware_design.md` for reuse.
+- TODO [P3]: Create a hazard log for board-level ESD/power events and tie it to `docs/toodo/todo_board_hardware_design.md` for reuse.
 - TODO [P3]: Assemble a short “lab readiness” checklist describing the oscilloscope/logic analyzer setup for verifying PCIe lanes and dump it to the tracker.

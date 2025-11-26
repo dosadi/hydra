@@ -4,7 +4,7 @@ Tasks to stand up a lightweight project wiki/website.
 
 - TODO [P1]: Choose hosting (GitHub Pages/internal) and scaffold a simple static site with nav for docs/release notes/downloads.
 - TODO [P1]: Add “Getting Started” page (build deps, `make` flow, viewer controls) and link to key docs (controls, rendering pipeline, driver integration).
-- TODO [P1]: Publish a “Known Issues / FAQs” page sourced from `docs/todo_master.md`/release notes with dates and workarounds.
+- TODO [P1]: Publish a “Known Issues / FAQs” page sourced from `docs/toodo/todo_master.md`/release notes with dates and workarounds.
 - TODO [P2]: Add auto-generated API docs for libhydra (Doxygen/sphinx) and link them from the wiki.
 - TODO [P2]: Add a gallery section (screenshots/clips) with attribution and build/env settings for reproducibility.
 - TODO [P2]: Wire a changelog feed (syndicate release notes) and a “How to contribute” page with coding style/testing expectations.

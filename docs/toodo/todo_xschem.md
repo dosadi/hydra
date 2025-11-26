@@ -11,4 +11,4 @@ Schematic capture hygiene and symbol/library work to keep RTL ↔ board flow ali
 - TODO [P3]: Capture a lightweight “xschem freshness” script that verifies each symbol references the latest RTL port order; run it before releasing new RTL.
 - TODO [P3]: Publish a short “symbol change log” within the tracker so new design engineers can see which blocks were touched that week.
 - TODO [P3]: Add a "schematic smoke test" summarize (screenshots + steps) to the tracker so reviewers can reproduce the latest electrical revisions.
-- TODO [P3]: Outline a cross-team review process (EEs + RTL) to approve schematic updates and tie it to `docs/todo_board_hardware_design.md`.
+- TODO [P3]: Outline a cross-team review process (EEs + RTL) to approve schematic updates and tie it to `docs/toodo/todo_board_hardware_design.md`.

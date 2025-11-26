@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Brief utility to inspect docs/todo_*.md trackers and summarize TODO counts.
+Brief utility to inspect docs/toodo/todo_*.md trackers and summarize TODO counts.
 
 Usage:
   python scripts/todo_sweep.py

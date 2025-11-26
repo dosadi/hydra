@@ -5,8 +5,8 @@
 **Related Trackers:** `todo_testing_ci.md`, `todo_multiplatform_builds.md`, `todo_deployment_operations.md`
 
 This tracker now serves as an overview landing page linking to focused sub-trackers.  
-For critical CI/build work see `docs/todo_build_ci.md`.  
-For developer tools/build system automation, see `docs/todo_build_devtools.md`.
+For critical CI/build work see `docs/toodo/todo_build_ci.md`.  
+For developer tools/build system automation, see `docs/toodo/todo_build_devtools.md`.
 
 ## Advanced / Low-Priority Work (P3)
 

@@ -1,7 +1,7 @@
 # Hydra Ray Engine TODOs (0.0.7 Cycle)
 
 **Focus:** Ray math validation, debug visualization, performance profiling.
-See `docs/todo_prioritization.md` for sprint plan. Most items are P2/P3 (defer advanced features).
+See `docs/toodo/todo_prioritization.md` for sprint plan. Most items are P2/P3 (defer advanced features).
 
 - TODO: Add a “ray math” spec note documenting coordinate system, handedness, and plane vectors to keep code/tests aligned.
 - TODO: Provide a tiny fixed-scene golden test that logs first N ray hits/misses for reproducibility in CI.

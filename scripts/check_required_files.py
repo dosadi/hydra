@@ -10,7 +10,7 @@ from typing import List
 
 REQUIRED_FILES: List[str] = [
     "README.md",
-    "docs/todo_master.md",
+    "docs/toodo/todo_master.md",
     "sim/Makefile",
     "Makefile",
     "CMakeLists.txt",

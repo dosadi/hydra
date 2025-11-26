@@ -1,7 +1,7 @@
 # Hydra Platform Backends TODOs (SDL/GL/Vulkan/Wayland/X11/Headless) - 0.0.7 Cycle
 
 **Focus:** Backend testing and validation, multi-platform stability.
-See `docs/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
+See `docs/toodo/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
 
 **Completed in 0.0.6:** CLI backend override, HUD info display, backend probe script, triage guide, window resize handling.
 

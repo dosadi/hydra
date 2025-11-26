@@ -1,7 +1,7 @@
 # Hydra DMA / PCIe Path TODOs (0.0.7 Cycle)
 
 **Focus:** Protocol compliance, backpressure handling, hardware validation infrastructure.
-See `docs/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
+See `docs/toodo/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
 
 - DONE: Define a minimal DMA/PCIe bring-up checklist (BAR sizes, MSI on/off, kselftest run) and add to docs/README (`docs/dma_pcie_bringup.md`).
 - TODO: Add an IOMMU/VT-d friendly path (dma_map/unmap helpers in driver) and document how to enable on distros.
@@ -48,7 +48,7 @@ See `docs/todo_prioritization.md` for sprint plan. Items marked with priority ta
 - TODO: Provide a PCI capability dump in driver probe logs (MSI/MSI-X/PCIe caps) for bring-up.
 - TODO: Add a CI artifact to capture dmesg snippets on DMA test failures for quicker triage.
 - TODO: Integrate DMA blit/IRQ tests into a single userspace harness for consolidated reporting.
-- TODO: Document the DMA hang/retry policy and bring-up actions (`docs/todo_dma_hang_policy.md`).
-- TODO: Define structured DMA logging schema and ingestion scripts (`docs/todo_dma_structured_logging.md`).
-- TODO: Capture PCIe hotplug workflows and ensure DMA state cleans up (`docs/todo_dma_hotplug.md`).
-- TODO: Build a DMA trace artifact pipeline for CI and nightly runs (`docs/todo_dma_trace_artifacts.md`).
+- TODO: Document the DMA hang/retry policy and bring-up actions (`docs/toodo/todo_dma_hang_policy.md`).
+- TODO: Define structured DMA logging schema and ingestion scripts (`docs/toodo/todo_dma_structured_logging.md`).
+- TODO: Capture PCIe hotplug workflows and ensure DMA state cleans up (`docs/toodo/todo_dma_hotplug.md`).
+- TODO: Build a DMA trace artifact pipeline for CI and nightly runs (`docs/toodo/todo_dma_trace_artifacts.md`).

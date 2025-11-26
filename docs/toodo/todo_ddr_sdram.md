@@ -25,4 +25,4 @@ Focus: stub → real DRAM path, waitstate modeling, and validation for DDR/SDRAM
 - Integrate a formal/proof-of-concept AXI memory model to check protocol compliance against the SDRAM bridge.
 - Add multi-port arbitration tests if/when additional masters (e.g., HDMI reader) are introduced.
 
-Related trackers: `docs/todo_dram_axi.md` (AXI compliance/backpressure), `docs/todo_dma_pcie.md` (DMA path), `docs/todo_hdmi.md` (framebuffer scanout), `docs/todo_hardware_validation` (when reintroduced).***
+Related trackers: `docs/toodo/todo_dram_axi.md` (AXI compliance/backpressure), `docs/toodo/todo_dma_pcie.md` (DMA path), `docs/toodo/todo_hdmi.md` (framebuffer scanout), `docs/toodo/todo_hardware_validation` (when reintroduced).***

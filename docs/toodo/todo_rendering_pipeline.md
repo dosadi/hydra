@@ -1,7 +1,7 @@
 # Hydra Rendering Pipeline TODOs (Raycaster / Shader Path) - 0.0.7 Cycle
 
 **Focus:** Pipeline profiling, BRDF refinement, shader debugging.
-See `docs/todo_prioritization.md` for sprint plan. Most items are P2 (nice-to-have).
+See `docs/toodo/todo_prioritization.md` for sprint plan. Most items are P2 (nice-to-have).
 
 - TODO [P2]: Add a microbenchmark/profiler pass to break down time spent in ray loop vs. framebuffer copy vs. HUD (baseline numbers in docs).
 - TODO: Separate render pipeline config into a struct and plumb through env/HUD so presets can toggle AA/fog/tonemap in one place.

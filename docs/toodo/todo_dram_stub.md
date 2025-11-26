@@ -10,4 +10,4 @@ Simulation SDRAM/DDR stub improvements and coverage targets.
 - TODO [P2]: Parameterize memory size/stride for BAR1 vs. framebuffer windows and document expected address maps for FPGA builds.
 - TODO [P2]: Add ECC parity stub hooks (optional) with a simple single-bit error injector for resilience testing.
 - TODO [P2]: Provide waveform checkpoints/guides for common bugs (WLAST missing, ARLEN off-by-one) in `docs/dram_stub_debug.md`.
-- TODO [P2]: Document the word-valid / poison-on-uninit mode in `docs/todo_dram_stub.md` (the RTL can now flag/read unwritten data as X to help catch bugs) and add a dedicated test (`sim/tests/rtl/test_axi_sdram_poison.sv`).
+- TODO [P2]: Document the word-valid / poison-on-uninit mode in `docs/toodo/todo_dram_stub.md` (the RTL can now flag/read unwritten data as X to help catch bugs) and add a dedicated test (`sim/tests/rtl/test_axi_sdram_poison.sv`).

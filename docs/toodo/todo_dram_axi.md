@@ -1,7 +1,7 @@
 # Hydra DRAM / AXI Path TODOs (0.0.7 Cycle)
 
 **Focus:** Protocol compliance (SVAs), backpressure handling, formal validation.
-See `docs/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
+See `docs/toodo/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
 
 - DONE: Publish a DRAM/AXI integration note (clock/reset domains, address map, latency knobs) for FPGA bring-up (`docs/dram_axi_integration.md`).
 - TODO: Add a cocotb-based AXI protocol checker wrapper (or hook up axi-lite-bfm) to automate handshake validation.

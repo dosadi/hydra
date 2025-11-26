@@ -1,7 +1,7 @@
 # Hydra HDMI / Video Output TODOs (0.0.7 Cycle)
 
 **Focus:** Protocol validation, CRC correctness, backpressure handling.
-See `docs/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
+See `docs/toodo/todo_prioritization.md` for sprint plan. Items marked with priority tags: `[P0]` critical, `[P1]` high, `[P2]` medium.
 
 - TODO: Write a quick HDMI bring-up guide (clocking, expected CRC values, sink requirements) for FPGA/hw testing.
 - TODO: Add an HDMI “quiet mode” that suppresses verbose logs unless CRC mismatches occur (env/hotkey).

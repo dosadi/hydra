@@ -17,9 +17,9 @@ Focuses on documenting driver/PCIe hang detection, retry/reset behavior, and aut
 
 - **TODO [P3]:** Document how the sim/stub handles hang detection (DMA status bits + watchdog) so cocotb/RTL tests can reproduce the scenario.
   - Effort: 1 day
-  - Deliverable: Section in `docs/todo_dma_pcie.md` referencing this file
+  - Deliverable: Section in `docs/toodo/todo_dma_pcie.md` referencing this file
 - **TODO [P2]:** Pull hang-event log entries into debug tools (with `scripts/todo_inspect.py`) to keep the policy fresh and visible.
-- **TODO [P3]:** Add a lab-ready checklist (LED indicators, watchdog thresholds to observe) for DMA hang recovery, link to `docs/todo_build_devtools.md`.
+- **TODO [P3]:** Add a lab-ready checklist (LED indicators, watchdog thresholds to observe) for DMA hang recovery, link to `docs/toodo/todo_build_devtools.md`.
 
 - **TODO [P1]:** Record hang/retry events in structured logs so `scripts/todo_inspect.py` can chart hang frequencies and surface flaky DMA resets on the HUD.
   - Effort: 1 day
