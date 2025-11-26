@@ -19,3 +19,6 @@ Focuses on the emissive sideband: semantics, validation, HUD/log coverage, and d
 - **TODO [P3]:** Provide a debug overlay showing per-voxel emissive intensity or allow toggling emissive-only view.
 - **TODO [P3]:** Build a “reemissure spectrum” viewer (heat map + histogram) toggled from the HUD and exportable to PPM/logs.
 - **TODO [P3]:** Add a script that parses frame dumps and alerts when emissive values exceed defined thresholds (structured log mention).
+- **TODO [P2]:** Record per-frame reemissure sums in `out/reemissure_histogram.json` so the AI dashboard can detect trending bias/banding without manual inspection.
+- **TODO [P2]:** Provide configuration to treat objects as “hollow vs solid” through LUT metadata so asset pipelines can target optimal emissive vs base ratios (link to `docs/todo/todo_rle_compression.md`).
+- **TODO [P3]:** Maintain an emissive intensity catalogue that maps content creation tools to Hydra reemissure registers (document via `docs/design_gaming_integration.md`).
