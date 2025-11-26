@@ -23,3 +23,6 @@
 - **TODO [P2]:** Add `scripts/todo_inspect.py` hooks that consume the new ray stats + color-range data from the HUD, flagging when RGB coverage collapses after RTL tweaks.
 - **TODO [P3]:** Document the timing budget for the ray loop (cycles per pixel) and instrument the viewer to report slow frames when ray iterations spike.
 - **TODO [P3]:** Expose a HUD toggle or env var that weakens/heightens the coordinate-based color bias so user-visible spikes in the spectrum can be dialed in without recompiling.
+- **TODO [P2]:** Feed ray mechanics diagnostics (step counts, misses) into `scripts/ai_health_dashboard.py` so the AI dashboard highlights regressions when the mechanical heuristic distribution shifts.
+- **TODO [P2]:** Build a ray profiler that dumps per-frame step histograms to `out/ray_mechanichs_profile.json`, letting automation track changes across bugfixes vs. big feature pushes.
+- **TODO [P3]:** Maintain a ray mechanics changelog (versions, racks, per-todo impact) and link to this tracker, so the history captures everything from quick fixes to radical rewrites.
