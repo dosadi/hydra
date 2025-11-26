@@ -263,3 +263,10 @@ Shared list so we stay aligned across runs/agents. Status tags: `todo`, `in-prog
 - DONE: Add a section on how to interpret INT_STATUS/INT_MASK bits in the docs/hydra_spec.md narrative.
 - TODO [P2]: Add a “developer workflow” doc tying together dev_loop, test_frame, cocotb, and TODO tracker updates.
 - TODO [P2]: Add sample PR descriptions/commit message examples that align with repo guidance.
+
+## Master Follow-ups
+- TODO [P1]: Link the AI health dashboard summary into this master tracker by referencing `out/ai_health_dashboard.txt` and the new `docs/todo/todo_ai_dashboard.md`, so this file reflects the latest unknown tracker priorities automatically.
+- TODO [P1]: Persist the dependency graph insights from `docs/todo/todo_dependency_map.md` here (e.g., highlight blockers) so reviewers can see cross-file dependencies without leaving the master index.
+- TODO [P2]: Add a short script that refreshes `docs/todo/todo_tracker_metadata.json` and updates this master list's summary statistics (total TODOs/unknowns) whenever new trackers are added.
+- TODO [P2]: Document the preferred AI prep flow (calls to `scripts/check_build_requirements.py`, `scripts/todo_metadata.py`, `scripts/ai_session_report.py`) here so contributors can see the overall automation chain before editing any tracker.
+- TODO [P3]: Include a section that lists deprecated/archived TODO files (e.g., earlier sessions moved to `docs/archive/`) so we know which trackers no longer require updates.
