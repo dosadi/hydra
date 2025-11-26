@@ -135,6 +135,22 @@ python3 scripts/check_todo_unique.py
 python3 scripts/check_required_files.py
 ```
 
+## TODO Rebalance Follow-up
+
+- TODO [P1]: Describe the `scripts/todo_rebalance.py` failure mode in `docs/ci_automation_overview.md` so automation consumers know why the watchdog aborts and how to address the rebalance suggestions.
+- TODO [P2]: Add a visual note linking `out/todo_rebalance_report.txt` into `docs/todo/todo_status_overview.md` to surface the under-populated tracker names automatically.
+- TODO [P2]: Create a small guide in `docs/todo/todo_rebalance_policy.md` that explains how to interpret the ratio threshold (0.65) and what counts as an acceptable rebalance action.
+- TODO [P1]: Log the current priority distribution summary (P0-P3 counts) from this analysis into `out/todo_budget_log.txt` so future runs can compare deltas before/after they edit trackers.
+- TODO [P1]: For each tracker flagged here (`TODO_PRIORITY_ANALYSIS_2025_11_25.md`), add two follow-up tasks to its respective TODO file describing the concrete work needed (e.g., `docs/todo/todo_testing_ci.md` and `docs/todo/todo_board_hardware_design.md` should both reference this analysis).
+- TODO [P2]: Document the `scripts/todo_rebalance.py` thresholds in `docs/issue_draft_lock_coordination.md` so agents understand why some files trigger coordination alerts.
+- TODO [P3]: Seed a reminder under `docs/todo/todo_status_overview.md` to rerun `scripts/todo_rebalance.py` after finishing every new TODO sprint so automation stats are fresh.
+- TODO [P2]: Update `docs/TODO_MASTER_INDEX.md` to reference this analysis document in the section that lists tracker health checks, keeping the cross-links consistent.
+- TODO [P2]: Add a `docs/todo/todo_rebalance_followup.md` entry that captures the current rebalance checklist and links to these automation artifacts, so future maintainers can see the rebalance story in one place.
+- TODO [P1]: Push a note into `docs/todo/todo_ai_development.md` explaining that the AI dashboard should re-run `scripts/todo_rebalance.py` after it adjusts TODO counts to avoid leaving trackers under-populated.
+- TODO [P2]: Capture a follow-up entry in `docs/TODO_SESSION_CONTINUATION_2025_11_25.md` describing which trackers were rebalanced so future agents can trace the reason for this report.
+- TODO [P2]: Add a short checklist to `docs/todo/todo_status_overview.md` with the expected actions when `todo_rebalance.py` suggests a tracker (e.g., add P1 TODOs, rerun scripts).
+- TODO [P3]: Embellish `docs/todo/todo_master.md` with a pointer to this analysis, so reviewers know that huge master trackers feed the average and what to do about them.
+
 ---
 
 **Next Review:** After Sprint 1 (2 weeks)
