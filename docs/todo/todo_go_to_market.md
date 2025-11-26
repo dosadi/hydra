@@ -22,4 +22,4 @@
 - **TODO [P3]:** Draft press/briefing notes (speaking points, roadmap) for Hydra in `docs/marketing_notes.md`, linking back to this tracker so every mention ties to TODOs.
 - **TODO [P3]:** Build a community engagement calendar (meetups, demos, social posts) and sync it with `todo_community_contributors.md` to highlight who runs each event.
 - **TODO [P3]:** Outline analyst/developer outreach (webinars, benchmarks, guest tutorials) and note any automated fields (like AI dashboard data) used in those materials.
-
+- **TODO [P3]:** Reference `docs/design_gaming_integration.md` inside this tracker so go-to-market plans explicitly mention engine integrations, APIs, and demo assets for Unity/Unreal/Godot.

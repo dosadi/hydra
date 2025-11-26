@@ -19,6 +19,7 @@ Tracks pipelines for exporting voxel scenes, automating render capture, and keep
 - **TODO [P2]:** Create regression scripts that load exported assets into Blender and replay them, generating frame dumps to compare against golden assets (`scripts/check_export_assets.sh` + AI dashboard).
 - **TODO [P2]:** Capture HDR/config differences across tools (Blender vs Maya vs 3ds Max) and record them in `docs/camera_constants.md` for release notes; feed differences into AI automation.
 - **TODO [P2]:** Add an asset dependency map linking Blender/Maya files to TODO trackers (rendering, demos, docs) inside `docs/todo/todo_dependency_map.md`.
+- **TODO [P2]:** Reference `docs/design_gaming_integration.md` from this tracker and add TODO rows describing retained APIs we plan to expose for Unity/Unreal/Godot integrations.
 - **TODO [P2]:** Automate asset metadata publishing (`scripts/export_asset_metadata.py`) that writes summary JSON consumed by `scripts/ai_health_dashboard.py` so asset health appears on the dashboard alongside code TODOs.
 - **TODO [P2]:** Add a “content consistency” tracker in `docs/todo/todo_dependency_map.md` referencing Blender/Maya scenes tied to reemissure/hardening TODOs so the board knows when content updates need follow-up in performance/renderer trackers.
 
