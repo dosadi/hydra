@@ -13,6 +13,8 @@ drivers/libhydra/libhydra.a
 # local artifacts and sim build outputs
 artifacts/
 sim/build/
+# Verilator generated simulation obj dir
+sim/obj_dir/
 build/
 out/
 scripts/hydra_blit_smoketest
