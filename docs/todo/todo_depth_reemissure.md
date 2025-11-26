@@ -14,4 +14,4 @@ Depth and reemissure belong to two different signal domains—fog/depth processi
 - File: `docs/todo/todo_reemissure.md`
 - Focus: emissive sideband instrumentation, differential assertions, math-driven shading improvements, and emissive histograms.
 - Priority: P1 for emitter validation (reprojection, energy conservation), P2/P3 for advanced histogram tooling and narrative docs.
-- For testing: capture emissive-region dumps via `sim/live_sdl_main.cpp` HUD overlays and archive to `docs/render_pipeline_layers.md` when adjusting shading logic.
+- For testing: capture emissive-region dumps via `sim/viewer.cpp` HUD overlays and archive to `docs/render_pipeline_layers.md` when adjusting shading logic.

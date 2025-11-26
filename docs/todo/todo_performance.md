@@ -70,7 +70,7 @@ Tracks performance optimization across RTL, simulation, and software. Focus area
   - **Priority:** P2 - Sim speed
   - **Dependencies:** Profiling complete
   - **Validation:** Eval loop 10% faster
-  - **Deliverable:** Optimized live_sdl_main.cpp
+  - **Deliverable:** Optimized sim/viewer.cpp
   - **Notes:** Check for unnecessary work per cycle
 
 - **TODO [P2]:** Add fast-forward mode (skip rendering, just run RTL for perf testing)

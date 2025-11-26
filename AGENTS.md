@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 - `rtl/` houses the SystemVerilog core; `voxel_framebuffer_top.sv` is the top.
-- `sim/` contains the Verilator + SDL viewer; harness in `live_sdl_main.cpp`, platform backends in `sim/platform/`, outputs to `sim/obj_dir/` and `sim/sim_voxel`.
+- `sim/` contains the Verilator + SDL viewer; harness in `sim/viewer.cpp`, platform backends in `sim/platform/`, outputs to `sim/obj_dir/` and `sim/sim_voxel`.
 - `drivers/` host stubs (`drivers/libhydra`, `drivers/linux`, `drivers/bsd`); `scripts/` utility tools; `docs/` platform notes; `third_party/` vendored IP; `docker/` dev images.
 - CMake presets build host libs/tools into `build/linux` or `build/windows`; RTL/SDL sim stays in `sim/` via Make.
 

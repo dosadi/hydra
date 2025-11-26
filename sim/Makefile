@@ -4,7 +4,7 @@ SIM_DIR      := $(PROJECT_ROOT)/sim
 
 TOP_MODULE   := voxel_framebuffer_top
 
-CXX_SRCS     := live_sdl_main.cpp \
+CXX_SRCS     := viewer_main.cpp \
                  platform/platform_stub.cpp \
                  platform/backend_selector.cpp \
                  platform/backend_sdl.cpp \

@@ -91,3 +91,20 @@ void present_backend(PlatformBackend backend, PlatformContext& ctx, const uint32
 void shutdown_backend(PlatformBackend backend, PlatformContext& ctx) {
     platform_shutdown(backend, ctx);
 }
+
+void platform_log_capabilities() {
+    std::fprintf(stderr, "[hydra] compiled backends: SDL");
+#ifdef HYDRA_ENABLE_GL
+    std::fprintf(stderr, " GL");
+#endif
+#ifdef HYDRA_ENABLE_VULKAN
+    std::fprintf(stderr, " Vulkan");
+#endif
+#ifdef HYDRA_ENABLE_WAYLAND
+    std::fprintf(stderr, " Wayland");
+#endif
+#ifdef HYDRA_ENABLE_X11
+    std::fprintf(stderr, " X11");
+#endif
+    std::fprintf(stderr, " Headless\n");
+}

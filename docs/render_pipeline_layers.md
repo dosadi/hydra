@@ -11,9 +11,9 @@ This document maps the shader-like stack from the HDK world generator through th
 2. **Raycast Compute Layer (`rtl/voxel_framebuffer_top.sv:206-260`, `rtl/voxel_raycaster_core_pipelined.sv:203-380`)**  
    - Camera vectors, config flags (`cfg_smooth_surfaces`, `cfg_extra_light`, `cfg_diag_slice`), cursor state, and the sampled voxel data feed the pipelined raycaster. The core computes lighting (Lambert + curvature boost), coordinate-based color bias, shadows (with smooth falloff), selection highlights, and packs results into `pixel_word0/1/2` + sidecar data (reemissure, normals, stats). Cursor hits and ray statistics stream back via debug outputs for the HUD.
 
-3. **Framebuffer Output / Viewer Layer (`sim/live_sdl_main.cpp:1189-1495`)**  
+3. **Framebuffer Output / Viewer Layer (`sim/viewer.cpp:1189-1495`)**  
    - The simulator loop runs 2k Verilog ticks per chunk, listens to `pixel_write_en`, converts packed words via `pixel96_to_argb`, and stores RGBA pixels into the SDL buffer. Per-frame counters (`record_color`, lines 26-49/1212-1247) track the min/max RGB range so the HUD can show spectrum coverage.
-   - HUD drawing (`sim/live_sdl_main.cpp:1350-1495`) shades the bottom band per theme, prints camera/stats lines, draws help overlays, and reports the latest RGB range. Input handlers (lines 820-1140) toggle raster modes, `ray_jitter`, spectrum mode, and selection editing, providing runtime control over the pipeline.
+   - HUD drawing (`sim/viewer.cpp:1350-1495`) shades the bottom band per theme, prints camera/stats lines, draws help overlays, and reports the latest RGB range. Input handlers (lines 820-1140) toggle raster modes, `ray_jitter`, spectrum mode, and selection editing, providing runtime control over the pipeline.
 
 ## Optimization & Fastpath Targets
 

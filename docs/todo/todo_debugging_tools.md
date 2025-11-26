@@ -19,7 +19,7 @@ Improves developer productivity and debugging efficiency.
   - **Effort:** Small (4 hours)
   - **Dependencies:** Verilator VCD support
   - **Validation:** VCD dumps correctly, GTKWave opens
-  - **Deliverable:** Waveform dump in `sim/live_sdl_main.cpp`
+  - **Deliverable:** Waveform dump in `sim/viewer.cpp`
 
 - TODO [P1]: Add signal probe infrastructure
   - **Coverage:**

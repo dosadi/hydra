@@ -10,3 +10,5 @@ PlatformBackend select_default_backend();
 bool init_backend(PlatformBackend backend, const PlatformConfig& cfg, PlatformContext& ctx);
 void present_backend(PlatformBackend backend, PlatformContext& ctx, const uint32_t* pixels, int w, int h);
 void shutdown_backend(PlatformBackend backend, PlatformContext& ctx);
+// Log available platform/backend capabilities to stderr (used by --caps).
+void platform_log_capabilities();

@@ -134,6 +134,33 @@ static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
     }
 }
 
+// Depth-fog configuration and application
+static bool g_fog_enabled = false;
+static uint32_t g_fog_color = 0xFFE0E0E0; // ARGB
+static float g_fog_density = 1.0f; // linear density multiplier
+
+static uint32_t apply_fog(uint32_t src_argb, uint8_t depth_byte) {
+    if (!g_fog_enabled) return src_argb;
+    float d = static_cast<float>(depth_byte) / 255.0f; // 0..1, 0=near,1=far
+    // simple linear/exponential blend control
+    float factor = d * g_fog_density;
+    if (factor > 1.0f) factor = 1.0f;
+
+    uint8_t sr = (src_argb >> 16) & 0xFF;
+    uint8_t sg = (src_argb >> 8)  & 0xFF;
+    uint8_t sb =  src_argb        & 0xFF;
+
+    uint8_t fr = (g_fog_color >> 16) & 0xFF;
+    uint8_t fg = (g_fog_color >> 8)  & 0xFF;
+    uint8_t fb =  g_fog_color        & 0xFF;
+
+    uint8_t rr = static_cast<uint8_t>(sr * (1.0f - factor) + fr * factor);
+    uint8_t gg = static_cast<uint8_t>(sg * (1.0f - factor) + fg * factor);
+    uint8_t bb = static_cast<uint8_t>(sb * (1.0f - factor) + fb * factor);
+
+    return (0xFFu << 24) | (uint32_t(rr) << 16) | (uint32_t(gg) << 8) | uint32_t(bb);
+}
+
 static uint32_t spectrum_pixel(uint32_t addr) {
     uint32_t x = addr % SCREEN_WIDTH;
     uint32_t y = addr / SCREEN_WIDTH;
@@ -235,6 +262,98 @@ static void apply_cli_overrides(int argc, char** argv) {
         std::exit(0);
     }
 }
+
+static std::string flatten_cli_args(int argc, char** argv) {
+    std::string out;
+    for (int i = 0; i < argc; ++i) {
+        if (i) out += ' ';
+        if (argv[i]) {
+            out += argv[i];
+        }
+    }
+    return out;
+}
+
+// Forward declarations used by instrumentation helpers
+static void die(const std::string& s);
+
+struct RenderInstrumentationConfig {
+    float cam_pos_x = 0.0f;
+    float cam_pos_y = 0.0f;
+    float cam_pos_z = 0.0f;
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+    bool smooth_surfaces = false;
+    bool curvature = false;
+    bool extra_light = false;
+    bool diag_slice = false;
+    bool ray_jitter = false;
+    bool hud_enabled = true;
+    float fps_target = 0.0f;
+    bool vsync = true;
+    std::string backend_name;
+    std::string backend_info;
+    std::string pixel_view;
+};
+
+struct RenderInstrumentation {
+    RenderInstrumentation(bool enabled, std::string command_line)
+        : enabled_(enabled), command_line_(std::move(command_line)) {
+        if (!enabled_)
+            return;
+        std::filesystem::create_directories("out");
+        csv_.open("out/render_pipeline_baseline.csv", std::ios::app);
+        if (!csv_)
+            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
+        if (csv_.tellp() == 0)
+            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
+    }
+
+    bool active() const { return enabled_; }
+
+    void write_config(const RenderInstrumentationConfig& cfg) {
+        if (!enabled_)
+            return;
+        std::ofstream cfg_out("out/render_pipeline_baseline.cfg");
+        if (!cfg_out)
+            die("failed to write out/render_pipeline_baseline.cfg");
+        cfg_out << "instrument_command=" << command_line_ << "\n";
+        cfg_out << "backend=" << cfg.backend_name << "\n";
+        cfg_out << "backend_info=" << cfg.backend_info << "\n";
+        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
+        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
+        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
+        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
+                << ",curvature:" << (cfg.curvature ? "1" : "0")
+                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
+                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
+                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
+        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
+        cfg_out << "fps_target=" << cfg.fps_target << "\n";
+        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
+    }
+
+    void record(uint64_t frame,
+                double fps,
+                double ray_loop_ms,
+                double hud_present_ms,
+                double framebuffer_copy_ms,
+                double frame_total_ms) {
+        if (!enabled_)
+            return;
+        auto now = std::chrono::system_clock::now();
+        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        csv_ << frame << ',' << ts_ms << ',' << fps << ','
+             << ray_loop_ms << ',' << hud_present_ms << ','
+             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
+        csv_.flush();
+    }
+
+private:
+    bool enabled_;
+    std::ofstream csv_;
+    std::string command_line_;
+};
 
 static std::string g_backend_info;
 
@@ -467,6 +586,22 @@ int main(int argc, char** argv) {
     bool frame_color_stats_dirty = false;
     bool last_frame_color_stats_valid = false;
 
+    // Configure depth fog from environment
+    g_fog_enabled = env_truthy("HYDRA_FOG");
+    if (const char* fog_col = std::getenv("HYDRA_FOG_COLOR")) {
+        // accept formats like "0xRRGGBB" or "RRGGBB"
+        unsigned long v = std::strtoul(fog_col, nullptr, 0);
+        g_fog_color = 0xFF000000u | (uint32_t(v) & 0x00FFFFFFu);
+    }
+    if (const char* fog_den = std::getenv("HYDRA_FOG_DENSITY")) {
+        char* endptr = nullptr;
+        float d = std::strtof(fog_den, &endptr);
+        if (endptr && endptr != fog_den) g_fog_density = d;
+    }
+    if (g_fog_enabled) {
+        std::fprintf(stderr, "[hydra] Depth fog enabled color=%08x density=%.3f\n", g_fog_color, g_fog_density);
+    }
+
     // Ensure SDL grabs keyboard focus; allow renderer selection via SDL hints/env.
     SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1");
@@ -483,96 +618,7 @@ int main(int argc, char** argv) {
         // Force SDL to a dummy driver so no window/display server is required.
         setenv("SDL_VIDEODRIVER", "dummy", 0);
         setenv("SDL_AUDIODRIVER", "dummy", 0);
-}
-
-static std::string flatten_cli_args(int argc, char** argv) {
-    std::string out;
-    for (int i = 0; i < argc; ++i) {
-        if (i) out += ' ';
-        if (argv[i]) {
-            out += argv[i];
-        }
     }
-    return out;
-}
-
-struct RenderInstrumentationConfig {
-    float cam_pos_x = 0.0f;
-    float cam_pos_y = 0.0f;
-    float cam_pos_z = 0.0f;
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    bool smooth_surfaces = false;
-    bool curvature = false;
-    bool extra_light = false;
-    bool diag_slice = false;
-    bool ray_jitter = false;
-    bool hud_enabled = true;
-    float fps_target = 0.0f;
-    bool vsync = true;
-    std::string backend_name;
-    std::string backend_info;
-    std::string pixel_view;
-};
-
-struct RenderInstrumentation {
-    RenderInstrumentation(bool enabled, std::string command_line)
-        : enabled_(enabled), command_line_(std::move(command_line)) {
-        if (!enabled_)
-            return;
-        std::filesystem::create_directories("out");
-        csv_.open("out/render_pipeline_baseline.csv", std::ios::app);
-        if (!csv_)
-            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
-        if (csv_.tellp() == 0)
-            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
-    }
-
-    bool active() const { return enabled_; }
-
-    void write_config(const RenderInstrumentationConfig& cfg) {
-        if (!enabled_)
-            return;
-        std::ofstream cfg_out("out/render_pipeline_baseline.cfg");
-        if (!cfg_out)
-            die("failed to write out/render_pipeline_baseline.cfg");
-        cfg_out << "instrument_command=" << command_line_ << "\n";
-        cfg_out << "backend=" << cfg.backend_name << "\n";
-        cfg_out << "backend_info=" << cfg.backend_info << "\n";
-        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
-        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
-        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
-        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
-                << ",curvature:" << (cfg.curvature ? "1" : "0")
-                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
-                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
-                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
-        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
-        cfg_out << "fps_target=" << cfg.fps_target << "\n";
-        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
-    }
-
-    void record(uint64_t frame,
-                double fps,
-                double ray_loop_ms,
-                double hud_present_ms,
-                double framebuffer_copy_ms,
-                double frame_total_ms) {
-        if (!enabled_)
-            return;
-        auto now = std::chrono::system_clock::now();
-        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        csv_ << frame << ',' << ts_ms << ',' << fps << ','
-             << ray_loop_ms << ',' << hud_present_ms << ','
-             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
-        csv_.flush();
-    }
-
-private:
-    bool enabled_;
-    std::ofstream csv_;
-    std::string command_line_;
-};
 
     log_input_caps();
 
@@ -1429,6 +1475,7 @@ private:
         const int cycles_per_chunk = 2000;
         bool frame_done = false;
         std::chrono::high_resolution_clock::time_point sim_loop_start;
+        std::chrono::high_resolution_clock::time_point hud_present_start, hud_present_end, copy_start, copy_end;
         if (render_instrument.active())
             sim_loop_start = std::chrono::high_resolution_clock::now();
 
@@ -1442,6 +1489,10 @@ private:
                     uint32_t w1 = top->pixel_word1;
                     uint32_t w2 = top->pixel_word2;
                     uint32_t pixel_value = pixel96_to_argb(w0, w1, w2);
+                    uint8_t depth_byte = (w0 >> 16) & 0xFF;
+                    if (g_fog_enabled) {
+                        pixel_value = apply_fog(pixel_value, depth_byte);
+                    }
                     framebuffer[addr] = pixel_value;
                     record_color(frame_color_stats, pixel_value);
                     frame_color_stats_dirty = true;
@@ -1586,7 +1637,6 @@ private:
                 last_mem_write_util = float(dw) / float(dc);
             }
 
-            std::chrono::high_resolution_clock::time_point hud_present_start;
             if (render_instrument.active())
                 hud_present_start = std::chrono::high_resolution_clock::now();
             if (hud_enabled && font) {
@@ -1825,11 +1875,9 @@ private:
                                 SCREEN_WIDTH, SCREEN_HEIGHT);
             }
 
-            std::chrono::high_resolution_clock::time_point hud_present_end;
             if (render_instrument.active())
                 hud_present_end = std::chrono::high_resolution_clock::now();
 
-            std::chrono::high_resolution_clock::time_point copy_start;
             if (render_instrument.active())
                 copy_start = std::chrono::high_resolution_clock::now();
             void* pixels = nullptr;
@@ -1849,7 +1897,6 @@ private:
             SDL_RenderCopy(ren, tex, nullptr, nullptr);
             SDL_RenderPresent(ren);
 
-            std::chrono::high_resolution_clock::time_point copy_end;
             if (render_instrument.active())
                 copy_end = std::chrono::high_resolution_clock::now();
 

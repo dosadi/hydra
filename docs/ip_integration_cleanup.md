@@ -109,7 +109,7 @@ See Phase 5 below for scanout-from-DRAM model.
 
 ### For Verilator Sim (No Change)
 - `sim/Makefile` still uses `voxel_framebuffer_top` directly
-- Interactive viewer (`live_sdl_main.cpp`) unchanged
+- Interactive viewer (`sim/viewer.cpp`) unchanged
 - Can optionally switch to `voxel_sim_harness` for more realistic testing
 
 ## Remaining Work (Phases 3-5)

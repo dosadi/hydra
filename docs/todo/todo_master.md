@@ -9,10 +9,10 @@ Shared list so we stay aligned across runs/agents. Status tags: `todo`, `in-prog
 - DONE: Phase 1 visual quality improvements (commit 2e7d710) - desaturated scene colors, added procedural floor texture. See `docs/phase1_implementation_notes.md`.
 - TODO [P2]: Phase 2 visual quality - add depth fog and ambient occlusion approximation (depends on Phase 1 validation).
 - TODO [P2]: Phase 3 visual quality - wire up `pixel_reemissure` sidecar to framebuffer output and viewer.
-- DONE: Guard `FRAME_DUMP` handling in `sim/live_sdl_main.cpp` so only the first frame (or a bounded count) writes a PPM to avoid runaway disk writes (HYDRA_MAX_FRAME_DUMPS, default=1).
-- DONE: Clear the framebuffer each frame in `sim/live_sdl_main.cpp` (or when fewer than NPIX pixels are produced) to prevent stale pixels if the RTL stalls early (HYDRA_CLEAR_EACH_FRAME, HYDRA_CLEAR_COLOR).
-- DONE: Add env/CLI overrides for initial camera pos/yaw/pitch, move speed, and mouse sensitivity in `sim/live_sdl_main.cpp` for scriptable demos/regressions (HYDRA_CAM_POS, HYDRA_CAM_ANG, HYDRA_MOVE_SPEED, HYDRA_MOUSE_SENS).
-- DONE: Allow font path override (env) in `sim/live_sdl_main.cpp` to avoid silent HUD loss when DejaVuSans is absent (HYDRA_FONT).
+-- DONE: Guard `FRAME_DUMP` handling in `sim/viewer.cpp` so only the first frame (or a bounded count) writes a PPM to avoid runaway disk writes (HYDRA_MAX_FRAME_DUMPS, default=1).
+-- DONE: Clear the framebuffer each frame in `sim/viewer.cpp` (or when fewer than NPIX pixels are produced) to prevent stale pixels if the RTL stalls early (HYDRA_CLEAR_EACH_FRAME, HYDRA_CLEAR_COLOR).
+-- DONE: Add env/CLI overrides for initial camera pos/yaw/pitch, move speed, and mouse sensitivity in `sim/viewer.cpp` for scriptable demos/regressions (HYDRA_CAM_POS, HYDRA_CAM_ANG, HYDRA_MOVE_SPEED, HYDRA_MOUSE_SENS).
+-- DONE: Allow font path override (env) in `sim/viewer.cpp` to avoid silent HUD loss when DejaVuSans is absent (HYDRA_FONT).
 - DONE: Expose a debug/HUD toggle to visualize the 96-bit pixel sidebands (`pixel_word0/2`) instead of dropping them in `pixel96_to_argb` (HYDRA_PIXEL_VIEW + `V` cycles color/word0/word2/sideband).
 - DONE: Relax/case-fold `HYDRA_BACKEND` parsing and prefer compiled GPU backends ahead of SDL in `sim/platform/backend_selector.cpp` (uses strcasecmp for case-insensitive matching).
 - DONE: Add a headless/no-window mode switch to `sim_voxel` (reuse the dummy backend) so regression runs don’t need a display server.

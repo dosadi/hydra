@@ -84,7 +84,7 @@ HYDRA_BACKEND=SDL ./sim_voxel
   - `axi_*.sv` - AXI/AXI-Lite stubs for DMA/SDRAM/stream interfaces (sim only)
 
 - **`sim/`** - Verilator+SDL viewer and test harness
-  - `live_sdl_main.cpp` - Main sim harness
+  - `sim/viewer.cpp` - Main sim harness
   - `platform/` - Backend implementations (SDL, GL, Vulkan, Wayland, X11, fbdev, Win32, macOS)
   - `tests/` - Frame regression, RTL benches, cocotb tests, QEMU PCI stub
   - Outputs: `obj_dir/` (Verilated C++), `sim_voxel` (executable)
@@ -132,7 +132,7 @@ UAPI headers: `drivers/linux/uapi/hydra_regs.h`
 2. **Raycaster core**: `voxel_raycaster_core_pipelined.sv` performs fixed-point ray marching, outputs 96-bit extended pixels
 3. **Framebuffer output**: Pixel interface writes RGBA32 + reemissure32 sidecar to host memory or AXI-Stream video sink
 4. **Host control**: AXI-Lite CSR block (`voxel_axil_csr.sv`) exposes camera, flags, selection, DMA to driver
-5. **Sim loop**: `live_sdl_main.cpp` drives clock, reads pixel stream, updates SDL window with HUD
+5. **Sim loop**: `sim/viewer.cpp` drives clock, reads pixel stream, updates SDL window with HUD
 
 ## RTL Development Notes
 
@@ -148,7 +148,7 @@ UAPI headers: `drivers/linux/uapi/hydra_regs.h`
 - **4-space indents**, **snake_case locals**, minimal globals
 - **Include order**: standard library, third-party (SDL2), project headers
 - **Backend abstraction**: `platform/backend_selector.cpp` dispatches to SDL/GL/Vulkan/Wayland/X11 based on runtime `HYDRA_BACKEND` env var
-- **Verilator integration**: `V<TOP_MODULE>` class instantiated in `live_sdl_main.cpp`; clock driven via `eval()`
+- **Verilator integration**: `V<TOP_MODULE>` class instantiated in `sim/viewer.cpp`; clock driven via `eval()`
 - **HUD rendering**: SDL2_ttf used for FPS, camera coords, flags, hit count overlay
 
 ## Testing Strategy

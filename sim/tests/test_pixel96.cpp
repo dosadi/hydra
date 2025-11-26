@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <cassert>
 
-// Copy of the function from live_sdl_main.cpp
+// Copy of the function from viewer.cpp
 static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
     (void)w0; (void)w2;
     uint8_t r = (w1 >> 24) & 0xFF;

@@ -101,7 +101,7 @@ Some useful targeted commands:
 ## Where to touch what
 
 - `rtl/` – core voxel framebuffer and shell RTL. Top is `voxel_framebuffer_top.sv`.
-- `sim/` – Verilator+SDL viewer and platform backends; main is `live_sdl_main.cpp`.
+- `sim/` – Verilator+SDL viewer and platform backends; main is `sim/viewer.cpp`.
 - `drivers/` – Linux/FreeBSD/Windows/macOS driver stubs and `drivers/libhydra` userspace helper lib.
 - `scripts/` – helper tools (frame diffing, SDK build, QEMU smoke, etc.).
 - `docs/` – spec, driver integration, platform backends, hardware test plan, release plans.

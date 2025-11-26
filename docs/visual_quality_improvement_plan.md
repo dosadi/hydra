@@ -41,7 +41,7 @@ pixel_word2 [31:0]:  normal_x | normal_y | normal_z | curvature
 pixel_sidecar [31:0]: material_props | emissive | light | alpha  // reemissure32
 ```
 
-**Currently Displayed** (from `live_sdl_main.cpp`):
+**Currently Displayed** (from `sim/viewer.cpp`):
 ```cpp
 static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
     (void)w0; (void)w2;  // IGNORED!
@@ -231,7 +231,7 @@ assign pixel_sidecar = core.pixel_sidecar;
 Capture and optionally display sidecar data:
 
 ```cpp
-// In live_sdl_main.cpp
+// In sim/viewer.cpp
 uint32_t w0 = top->pixel_word0;
 uint32_t w1 = top->pixel_word1;
 uint32_t w2 = top->pixel_word2;
@@ -502,7 +502,7 @@ floor_b = (floor_b > 8'd102) ? 8'd102 : floor_b;
 Move effects from RTL to C++ for faster iteration:
 
 ```cpp
-// In live_sdl_main.cpp, after pixel96_to_argb()
+// In sim/viewer.cpp, after pixel96_to_argb()
 framebuffer[addr] = apply_post_fx(framebuffer[addr], w0, w2, sc);
 
 uint32_t apply_post_fx(uint32_t argb, uint32_t w0, uint32_t w2, uint32_t sc) {
