@@ -35,6 +35,17 @@ Ensures the project is easy to install and run in production environments.
   - **Validation:** Instructions work on each platform
   - **Deliverable:** `docs/installation.md`
 
+- TODO [P1]: Define release bundle checklist (tarball naming, version metadata, checksums, GPG signatures) so each release can be reproduced from the CI pipeline.
+  - **Effort:** Medium (1 day)
+  - **Dependencies:** Release note process, CI artifacts
+  - **Validation:** Checklist used during next release
+  - **Deliverable:** Section in `docs/release_notes_0_0_7.md` or a dedicated `docs/release_checklist.md`
+- TODO [P1]: Add a CI validation stage that runs `scripts/check_build_requirements.py` and `scripts/todo_metadata.py` before packaging so deployments only proceed when tooling/trackers are healthy (tie into `tools/ai-dashboard` job).
+  - **Effort:** Small (half day)
+  - **Dependencies:** Existing CI automation
+  - **Validation:** Job passes before packaging
+  - **Deliverable:** CI job definition and documentation reference
+
 ---
 
 ## P2: Medium Priority Deployment (Nice-to-Have)
@@ -405,6 +416,29 @@ Ensures the project is easy to install and run in production environments.
   - **Deliverable:** `docs/runbook.md`
 
 ---
+
+## Managed Deployment & Monitoring
+
+- **TODO [P2]:** Publish a deployment playbook (preflight checks, driver install, service enablement, rollback steps) that links to `docs/todo/todo_ai_dashboard.md` so the AI dashboard can highlight missing prerequisites during operations.
+  - **Effort:** Medium (1 day)
+  - **Dependencies:** Deployment requirements, monitoring scripts
+  - **Validation:** Playbook used for next demo deployment
+  - **Deliverable:** `docs/deployment_playbook.md`
+- **TODO [P2]:** Build a Hydra monitoring stub that collects FPS/DMA/count metrics and feeds them into `scripts/ci_collect_logs.sh`, so CI dashboard artifacts include operational snapshots; document in `docs/hardware_validation.md`.
+  - **Effort:** Medium (2 days)
+  - **Dependencies:** CI log collection pipeline
+  - **Validation:** Logs show Hydra metrics in CI artifacts
+  - **Deliverable:** `scripts/monitor_hydra.sh` + doc section
+- **TODO [P3]:** Add a remote update helper (SSH + rsync) that deploys new artifacts to lab machines, restarts Hydra services, and validates health via `scripts/monitor_hydra.sh`.
+  - **Effort:** Large (3 days)
+  - **Dependencies:** SSH deployment targets
+  - **Validation:** Remote update run on lab machine
+  - **Deliverable:** `scripts/remote_deploy.sh` + update guide
+- **TODO [P3]:** Document rollback/recovery procedures for corrupted installs, linking to `docs/backup_restore.md` so teams can respond when deployment fails.
+  - **Effort:** Medium (1 day)
+  - **Dependencies:** Backup/recovery docs
+  - **Validation:** Rollback tested during deployment drill
+  - **Deliverable:** Section in `docs/runbook.md`
 
 ## Cross-References
 
