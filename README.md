@@ -152,6 +152,8 @@ Comprehensive documentation is available in the `docs/` directory:
 - **`docs/sim_controls.md`** - sim_voxel keybinds and editing shortcuts
 - **`docs/PACKAGE_REQUIREMENTS.md`** - Comprehensive package/dependency requirements across all platforms
 
+For automated validation of the listed packages, run `python3 scripts/check_build_requirements.py` before building or running CI.
+
 **TODO Tracking System:**
 - **`docs/TODO_README.md`** - Quick start guide to the TODO tracking system
 - **`docs/TODO_MASTER_INDEX.md`** - Complete reference of all 60 TODO tracker files

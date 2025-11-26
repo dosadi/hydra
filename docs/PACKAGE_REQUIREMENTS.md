@@ -122,6 +122,18 @@ sudo apt-get install -y yosys nextpnr-xilinx
 - Drivers: SECTOR-07 (DRIVERS_SDK)
 - FPGA: SECTOR-05 (FPGA_BOARD), SECTOR-04 (IP_INTEGRATION)
 
+## Automated Requirement Probe
+
+Hydra ships with `scripts/check_build_requirements.py`, which looks for the commands and Python modules listed above so you can validate an environment before compiling or testing.
+
+```bash
+python3 scripts/check_build_requirements.py
+# or limit the scope
+python3 scripts/check_build_requirements.py --component "Simulation"
+```
+
+The script exits non-zero if a requirement is missing and prints installation hints pulled from this document. Run it any time you finish installing packages or before gating CI/automation workflows.
+
 ---
 
 ## macOS
