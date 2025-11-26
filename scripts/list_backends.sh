@@ -126,102 +126,78 @@ fi
 
 # Output format
 if [ $JSON_OUTPUT -eq 1 ]; then
-    python3 - <<PY
-import json
-
-backends = [
+    cat <<EOF
+{
+  "platform": "$SYSNAME",
+  "os": "$OS",
+  "compiled_backends": "${COMPILED_BACKENDS:-}",
+  "backends": [
     {
-        "name": "SDL",
-        "description": "${BACKENDS[SDL]}",
-        "compiled": "${COMPILED[SDL]:-unknown}",
-        "status": "${sdl_status:-unknown}",
-        "version": "${sdl_version:-}",
-        "detail": "${sdl_driver:-}",
-        "runtime": "${RUNTIME_OK[SDL]:-untested}",
+      "name": "SDL",
+      "description": "${BACKENDS[SDL]}",
+      "compiled": "${COMPILED[SDL]:-unknown}",
+      "status": "${COMPILED[SDL]:-unknown}",
+      "runtime": "${RUNTIME_OK[SDL]:-untested}"
     },
     {
-        "name": "Headless",
-        "description": "${BACKENDS[Headless]}",
-        "compiled": "${COMPILED[Headless]:-unknown}",
-        "status": "compiled",
-        "version": "",
-        "detail": "",
-        "runtime": "${RUNTIME_OK[Headless]:-untested}",
+      "name": "Headless",
+      "description": "${BACKENDS[Headless]}",
+      "compiled": "${COMPILED[Headless]:-unknown}",
+      "status": "${COMPILED[Headless]:-unknown}",
+      "runtime": "${RUNTIME_OK[Headless]:-untested}"
     },
     {
-        "name": "OpenGL",
-        "description": "${BACKENDS[OpenGL]}",
-        "compiled": "${COMPILED[OpenGL]:-unknown}",
-        "status": "${gl_status:-unknown}",
-        "version": "${gl_version:-}",
-        "detail": "${gl_renderer:-}",
-        "runtime": "${RUNTIME_OK[OpenGL]:-untested}",
+      "name": "OpenGL",
+      "description": "${BACKENDS[OpenGL]}",
+      "compiled": "${COMPILED[OpenGL]:-unknown}",
+      "status": "${COMPILED[OpenGL]:-unknown}",
+      "runtime": "${RUNTIME_OK[OpenGL]:-untested}"
     },
     {
-        "name": "Vulkan",
-        "description": "${BACKENDS[Vulkan]}",
-        "compiled": "${COMPILED[Vulkan]:-unknown}",
-        "status": "${vk_status:-unknown}",
-        "version": "${vk_version:-}",
-        "detail": "${vk_devices:-}",
-        "runtime": "${RUNTIME_OK[Vulkan]:-untested}",
+      "name": "Vulkan",
+      "description": "${BACKENDS[Vulkan]}",
+      "compiled": "${COMPILED[Vulkan]:-unknown}",
+      "status": "${COMPILED[Vulkan]:-unknown}",
+      "runtime": "${RUNTIME_OK[Vulkan]:-untested}"
     },
     {
-        "name": "Wayland",
-        "description": "${BACKENDS[Wayland]}",
-        "compiled": "${COMPILED[Wayland]:-unknown}",
-        "status": "compiled",
-        "version": "",
-        "detail": "",
-        "runtime": "${RUNTIME_OK[Wayland]:-untested}",
+      "name": "Wayland",
+      "description": "${BACKENDS[Wayland]}",
+      "compiled": "${COMPILED[Wayland]:-unknown}",
+      "status": "${COMPILED[Wayland]:-unknown}",
+      "runtime": "${RUNTIME_OK[Wayland]:-untested}"
     },
     {
-        "name": "X11",
-        "description": "${BACKENDS[X11]}",
-        "compiled": "${COMPILED[X11]:-unknown}",
-        "status": "compiled",
-        "version": "",
-        "detail": "",
-        "runtime": "${RUNTIME_OK[X11]:-untested}",
+      "name": "X11",
+      "description": "${BACKENDS[X11]}",
+      "compiled": "${COMPILED[X11]:-unknown}",
+      "status": "${COMPILED[X11]:-unknown}",
+      "runtime": "${RUNTIME_OK[X11]:-untested}"
     },
     {
-        "name": "fbdev",
-        "description": "${BACKENDS[fbdev]}",
-        "compiled": "${COMPILED[fbdev]:-unknown}",
-        "status": "compiled",
-        "version": "",
-        "detail": "",
-        "runtime": "${RUNTIME_OK[fbdev]:-untested}",
+      "name": "fbdev",
+      "description": "${BACKENDS[fbdev]}",
+      "compiled": "${COMPILED[fbdev]:-unknown}",
+      "status": "${COMPILED[fbdev]:-unknown}",
+      "runtime": "${RUNTIME_OK[fbdev]:-untested}"
     },
     {
-        "name": "Win32",
-        "description": "${BACKENDS[Win32]}",
-        "compiled": "${COMPILED[Win32]:-unknown}",
-        "status": "compiled",
-        "version": "",
-        "detail": "",
-        "runtime": "${RUNTIME_OK[Win32]:-untested}",
+      "name": "Win32",
+      "description": "${BACKENDS[Win32]}",
+      "compiled": "${COMPILED[Win32]:-unknown}",
+      "status": "${COMPILED[Win32]:-unknown}",
+      "runtime": "${RUNTIME_OK[Win32]:-untested}"
     },
     {
-        "name": "macOS",
-        "description": "${BACKENDS[macOS]}",
-        "compiled": "${COMPILED[macOS]:-unknown}",
-        "status": "compiled",
-        "version": "",
-        "detail": "",
-        "runtime": "${RUNTIME_OK[macOS]:-untested}",
-    },
-]
-
-data = {
-    "platform": "$SYSNAME",
-    "os": "$OS",
-    "compiled_backends": "${COMPILED_BACKENDS:-}",
-    "backends": backends,
+      "name": "macOS",
+      "description": "${BACKENDS[macOS]}",
+      "compiled": "${COMPILED[macOS]:-unknown}",
+      "status": "${COMPILED[macOS]:-unknown}",
+      "runtime": "${RUNTIME_OK[macOS]:-untested}"
+    }
+  ]
 }
-
-print(json.dumps(data, indent=2))
-PY
+EOF
     exit 0
 else
     echo -e "${BOLD}=== Hydra Backends ===${NC}"
