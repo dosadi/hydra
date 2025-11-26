@@ -15,6 +15,7 @@
 - **TODO [P2]:** Profile `cycles_per_chunk` vs. `frame_time` to detect when the ray loop exceeds the budget; if a frame is taking too long, automatically reduce `RAY_STEP_SHIFT` or limit extra-light passes for that frame only.
 - **TODO [P2]:** Add an `fps_guard` flag that clamps camera updates or pauses `ray_jitter` when FPS dips below a threshold, giving users gradual control to restore smoothness without restarting the sim.
 - **TODO [P3]:** Instrument `framebuffer` coverage (how many pixels were actually written) and log when the raycaster fails to write all 480×360 pixels, highlighting wasted cycles or early exits that kill throughput.
+- **TODO [P2]:** Implement double-buffered framebuffer swaps that guarantee the host reads a complete frame (no tearing) before the next frame draws, and log buffer toggles in `out/framebuffer_buffers.json` for automation visibility.
 - **TODO [P2]:** Add a dynamic priority knob (env or CLI) that lets AI automation decide whether to treat GPU/CPU work as “quick fix” (minor FPS tweak) vs. “large experiment” and log the chosen scale in the dashboard or `docs/todo/todo_master.md`.
 
 ## Benchmarks & Regression Tasks
