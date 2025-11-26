@@ -13,3 +13,9 @@ documents overlays, stats, heatmaps, comparison views, and visualization helpers
 - **TODO [P3]:** Implement HUD layer toggles (inputs/memory/ray stats) to reduce overlay clutter.
 - **TODO [P3]:** Log HUD overlay usage (which toggles/overlays were enabled) per run to help tune what should stay visible.
 - **TODO [P3]:** Provide a quick “overlay snapshot” script that captures the HUD state as JSON so regressions can be replayed.
+
+## View Frustum Awareness
+
+- **TODO [P2]:** Add camera frustum visualization (lines/planes) to the HUD so artists can see what region is being ray marched.
+- **TODO [P2]:** Log view frustum plane data via CSRs or HUD files so `scripts/ai_health_dashboard.py` can warn when scenes fall outside the active frustum.
+- **TODO [P3]:** Implement frustum culling hints (color-coded distances) and capture frame metric differences when culling engages, surfacing them as TODOs when regressions occur.
