@@ -4,6 +4,8 @@
 **Owner:** Documentation Team
 **Related Trackers:** `todo_testing_ci.md`, `todo_examples_demos.md`, `todo_community_contributors.md`
 
+**Session Reference:** See [`docs/TODO_SESSION_CONTINUATION_2025_11_25.md`](../TODO_SESSION_CONTINUATION_2025_11_25.md) "Immediate (Sprint 1)" section for P0 documentation action items (spec updates, CSR defaults, AXI-Stream backpressure documentation).
+
 ---
 
 ## Overview

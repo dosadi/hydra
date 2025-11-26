@@ -38,7 +38,7 @@ repos:
         entry: ./scripts/check_todo_unique.py
         language: script
         pass_filenames: false
-        files: 'docs/toodo/todo_master\.md$'
+        files: 'docs/todo/todo_master\.md$'
 
       - id: verilator-check
         name: Verify Verilator version

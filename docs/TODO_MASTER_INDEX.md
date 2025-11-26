@@ -12,8 +12,8 @@
 ## Quick Navigation
 
 - **Start Here:** [`TODO_README.md`](./TODO_README.md) - Quick start guide
-- **Strategic Planning:** [`todo_prioritization.md`](./todo/todo_prioritization.md) - 8-week sprint plan
-- **This Session:** [`todo_system_summary_2025_11_25.md`](./todo/todo_system_summary_2025_11_25.md) - Summary of today's work
+- **Recent Updates:** [`TODO_SESSION_CONTINUATION_2025_11_25.md`](./TODO_SESSION_CONTINUATION_2025_11_25.md) - Latest session work
+- **System Metrics:** [`todo_system_summary_2025_11_25.md`](./todo/todo_system_summary_2025_11_25.md) - Comprehensive metrics
 
 ---
 
@@ -25,11 +25,11 @@
 |------|---------|-------|
 | `TODO_README.md` | Quick start, navigation, system overview | ~320 |
 | `TODO_MASTER_INDEX.md` | This file - complete tracker reference | ~300 |
-| `todo_prioritization.md` | Strategic roadmap, 8-week sprint plan | ~765 |
+| `TODO_SESSION_CONTINUATION_2025_11_25.md` | Recent session updates, cleanup work | ~480 |
 | `todo_dependency_map.md` | Tracker dependency matrix | ~100 |
 | `todo_ai_development.md` | AI tooling/workflow TODOs | ~40 |
 | `todo_system_summary_2025_11_25.md` | Session summary, metrics, recommendations | ~350 |
-| Additional meta docs may exist | | |
+| `todo_rebalance_policy.md` | Guidelines for tracker rebalancing | ~50 |
 
 ### Domain-Specific Trackers (25+ files)
 
@@ -271,7 +271,7 @@
 ### Releases
 - Archive `DONE` items
 - Promote valuable P2→P1 items
-- Update `todo_prioritization.md`
+- Update `TODO_MASTER_INDEX.md` priority distribution
 
 ---
 
@@ -344,7 +344,7 @@ These run in parallel with software development and have their own timeline.
 
 ### For 0.0.7 Software Release (Primary Track)
 
-1. **`todo_prioritization.md`** - Strategic roadmap and sprint plan
+1. **`TODO_MASTER_INDEX.md`** - This file - Complete tracker reference with priorities
 2. **`todo_build_tooling.md`** ✅ NEW - Build system, CI, formatting (P0/P1)
 3. **`todo_documentation.md`** ✅ NEW - Spec updates, guides, tutorials (P0/P1)
 4. **`todo_testing_ci.md`** - Testing infrastructure, kselftests (P0/P1)
@@ -370,8 +370,8 @@ These run in parallel with software development and have their own timeline.
 ## Additional Resources
 
 - **Quick Start:** [`TODO_README.md`](./TODO_README.md)
-- **Sprint Plan:** [`todo_prioritization.md`](./todo/todo_prioritization.md)
-- **Session Summary:** [`todo_system_summary_2025_11_25.md`](./todo/todo_system_summary_2025_11_25.md)
+- **Recent Updates:** [`TODO_SESSION_CONTINUATION_2025_11_25.md`](./TODO_SESSION_CONTINUATION_2025_11_25.md)
+- **System Metrics:** [`todo_system_summary_2025_11_25.md`](./todo/todo_system_summary_2025_11_25.md)
 - **Master Tracker:** [`todo_master.md`](./todo/todo_master.md)
 
 ---

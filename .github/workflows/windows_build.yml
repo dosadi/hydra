@@ -1,0 +1,34 @@
+name: Windows Build & Automation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  windows-driver:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup automation
+        run: |
+          git config --global --add safe.directory ${{ github.workspace }}
+      - name: Run LiteX stub tests
+        run: |
+          ./scripts/test_litex_stubs.sh
+      - name: Run automation watchdog
+        run: |
+          ./scripts/automation_watchdog.sh
+      - name: Windows build
+        run: |
+          ./scripts/windows-build.sh
+      - name: Build installer bundle
+        run: |
+          ./scripts/windows-installer.sh
+      - name: Upload rebalance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: todo-rebalance-report
+          path: out/todo_rebalance_report.txt

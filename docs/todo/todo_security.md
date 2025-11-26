@@ -4,6 +4,8 @@
 **Owner:** Security Team
 **Related Trackers:** `todo_mesa_drivers.md`, `todo_testing_ci.md`, `todo_documentation.md`
 
+**Session Reference:** See [`docs/TODO_SESSION_CONTINUATION_2025_11_25.md`](../TODO_SESSION_CONTINUATION_2025_11_25.md) "Near-Term (Sprint 2-3)" section for P1 security hardening action items (ioctl input validation, capability checks, libhydra API hardening).
+
 ---
 
 ## Overview

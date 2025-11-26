@@ -8,24 +8,23 @@
 
 ## TL;DR
 
-- **Quick start:** Read [`todo_prioritization.md`](./todo/todo_prioritization.md) for the 8-week sprint plan
+- **Quick start:** Read [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) for complete tracker reference
 - **Daily work:** Check [`todo_master.md`](./todo/todo_master.md) for IN-PROGRESS items
-- **Navigation:** Use [`todo_guide.md`](./todo/todo_guide.md) to find work by area
-- **What's new:** See [`todo_changelog_0_0_7.md`](./todo/todo_changelog_0_0_7.md) for changes since 0.0.6
+- **Navigation:** Use [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) to find work by area
+- **What's new:** See [`TODO_SESSION_CONTINUATION_2025_11_25.md`](./TODO_SESSION_CONTINUATION_2025_11_25.md) for recent updates
 
 ---
 
 ## File Index
 
 ### Meta Documents (Start Here)
-1. **`todo_prioritization.md`** - Strategic roadmap with P0/P1/P2 priorities, 4-sprint plan
-2. **`todo_guide.md`** - Navigation guide, quick start by area
-3. **`todo_changelog_0_0_7.md`** - Changes from 0.0.6 → 0.0.7, migration guide
+1. **`TODO_MASTER_INDEX.md`** - Complete tracker reference with P0/P1/P2/P3 priorities
+2. **`TODO_README.md`** - This file - Quick start guide
+3. **`TODO_SESSION_CONTINUATION_2025_11_25.md`** - Recent session updates and improvements
 4. **`todo_dependency_map.md`** - Dependency lookup table for high-level trackers
 5. **`todo_ai_development.md`** - AI tooling/workflow TODOs
-6. **`todo_session_summary_2025_11_25.md`** - Detailed session notes
-7. **`TODO_README.md`** - This file
-8. **`todo_rebalance_policy.md`** - Guidelines for keeping tracker volumes balanced
+6. **`todo_system_summary_2025_11_25.md`** - Comprehensive TODO system metrics
+7. **`todo_rebalance_policy.md`** - Guidelines for keeping tracker volumes balanced
 
 ### Master Tracker
 6. **`todo_master.md`** - Cross-cutting items (sim/viewer, drivers, build/CI, docs)
@@ -166,7 +165,7 @@ Lists per-tracker TODO counts and priority distribution so you can spot high-pri
 | **Sprint 3** | 5-6 | Visual quality + docs | 6 | 8 |
 | **Sprint 4** | 7-8 | Polish + release | 0 | 10 |
 
-**See [`todo_prioritization.md`](./todo/todo_prioritization.md) for detailed task lists per sprint.**
+**See [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) for detailed tracker reference and priority breakdown.**
 
 ---
 
@@ -198,14 +197,14 @@ Lists per-tracker TODO counts and priority distribution so you can spot high-pri
 ## How to Use This System
 
 ### If you're new to the project:
-1. Read [`todo_guide.md`](./todo/todo_guide.md) - "Quick Start" section
+1. Read [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) - Complete tracker reference
 2. Find your area (RTL, rendering, drivers, testing)
 3. Check the relevant domain tracker
 4. Pick a P0 or P1 item, mark it IN-PROGRESS
 5. Update status as you work
 
 ### If you're planning sprints:
-1. Review [`todo_prioritization.md`](./todo/todo_prioritization.md)
+1. Review [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) priority distribution
 2. Assign owners to Sprint 1 P0 items
 3. Track progress in weekly standups
 4. Update `IN-PROGRESS` and `DONE` tags
@@ -215,12 +214,12 @@ Lists per-tracker TODO counts and priority distribution so you can spot high-pri
 2. Assign priority tag (`[P0]`, `[P1]`, `[P2]`)
 3. Add effort estimate (Small/Medium/Large)
 4. Cross-reference if it affects sprint plan
-5. Consider updating [`todo_prioritization.md`](./todo/todo_prioritization.md) if it's P0/P1
+5. Consider updating priority in tracker if it's P0/P1
 
 ### If you completed an item:
 1. Mark it `DONE` in the tracker
 2. Add commit reference or release note
-3. Update [`todo_prioritization.md`](./todo/todo_prioritization.md) if it was on the sprint plan
+3. Update tracker status and priority if needed
 4. Remove from active sprint board
 
 ---
@@ -240,11 +239,11 @@ Lists per-tracker TODO counts and priority distribution so you can spot high-pri
 | File | Lines | Items | Primary Priority |
 |------|-------|-------|------------------|
 | **Meta Documents** | | | |
-| `todo_prioritization.md` | 692 | N/A | Meta (sprint plan) |
-| `todo_guide.md` | 280 | N/A | Meta (navigation) |
-| `todo_changelog_0_0_7.md` | 385 | N/A | Meta (changes) |
-| `todo_session_summary...md` | ~500 | N/A | Meta (session notes) |
-| `TODO_README.md` | ~280 | N/A | Meta (this file) |
+| `TODO_MASTER_INDEX.md` | ~380 | N/A | Meta (index) |
+| `TODO_README.md` | ~340 | N/A | Meta (this file) |
+| `TODO_SESSION_CONTINUATION...md` | ~480 | N/A | Meta (recent updates) |
+| `todo_system_summary_2025_11_25.md` | ~500 | N/A | Meta (metrics) |
+| `todo_dependency_map.md` | ~100 | N/A | Meta (dependencies) |
 | **Master Tracker** | | | |
 | `todo_master.md` | ~265 | ~180 | Mixed P0/P1/P2 |
 | **Domain Trackers** | | | |
@@ -279,22 +278,22 @@ Lists per-tracker TODO counts and priority distribution so you can spot high-pri
 ## Common Questions
 
 **Q: Which file should I read first?**
-A: [`todo_prioritization.md`](./todo/todo_prioritization.md) for strategic overview, or [`todo_guide.md`](./todo/todo_guide.md) for navigation.
+A: [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) for complete reference, or [`TODO_README.md`](./TODO_README.md) (this file) for quick start.
 
 **Q: Where do I find work in my area?**
-A: Use [`todo_guide.md`](./todo/todo_guide.md) "Finding Work by Area" section to navigate to your domain tracker.
+A: Use [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) "Complete Tracker List" section to navigate to your domain tracker.
 
 **Q: How do I know what's P0 vs. P1?**
-A: Check [`todo_prioritization.md`](./todo/todo_prioritization.md) for the authoritative list, or grep for `[P0]` tags in trackers.
+A: Check [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) "Priority Distribution Summary" section, or grep for `[P0]` tags in trackers.
 
 **Q: What if I find a new TODO in the code?**
-A: Add it to the relevant domain tracker with a priority tag, and consider updating [`todo_prioritization.md`](./todo/todo_prioritization.md) if it's critical.
+A: Add it to the relevant domain tracker with a priority tag, and update the tracker's priority section if it's critical.
 
 **Q: How do I update my progress?**
 A: Edit the tracker file, change `TODO` → `IN-PROGRESS`, add your name/notes. Mark `DONE` when complete.
 
 **Q: What's the difference between the trackers?**
-A: Domain trackers are detailed/technical; [`todo_prioritization.md`](./todo/todo_prioritization.md) is strategic/high-level with sprint plan.
+A: Domain trackers are detailed/technical; [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md) provides strategic overview with priority breakdown.
 
 **Q: Are there tools to help manage this?**
 A: Currently manual (grep, text editors). Future: Consider scripting unified views, GitHub Issues integration, dashboards.
@@ -335,8 +334,8 @@ Found an issue or have suggestions? See:
 - Sprint plan ready
 - Comprehensive coverage: RTL, rendering, drivers, testing, hardware, performance, security, simulation, examples, community, deployment, data formats, debugging tools, research
 
-**Next Action:** Team review of [`todo_prioritization.md`](./todo/todo_prioritization.md) and Sprint 1 owner assignment.
+**Next Action:** Team review of tracker priorities and Sprint 1 owner assignment via [`TODO_MASTER_INDEX.md`](./TODO_MASTER_INDEX.md).
 
 ---
 
-*For detailed session notes, see [`todo_session_summary_2025_11_25.md`](./todo/todo_session_summary_2025_11_25.md).*
+*For detailed session notes, see [`TODO_SESSION_CONTINUATION_2025_11_25.md`](./TODO_SESSION_CONTINUATION_2025_11_25.md) and [`todo_system_summary_2025_11_25.md`](./todo/todo_system_summary_2025_11_25.md).*

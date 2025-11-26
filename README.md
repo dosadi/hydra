@@ -149,6 +149,11 @@ Comprehensive documentation is available in the `docs/` directory:
 - **`docs/component_status.md`** - Component maturity and status
 - **`docs/sim_controls.md`** - sim_voxel keybinds and editing shortcuts
 
+**TODO Tracking System:**
+- **`docs/TODO_README.md`** - Quick start guide to the TODO tracking system
+- **`docs/TODO_MASTER_INDEX.md`** - Complete reference of all 60 TODO tracker files
+- **`docs/todo/`** - Comprehensive TODO trackers covering all project areas (RTL, drivers, testing, docs, hardware, performance, security, etc.)
+
 See `CLAUDE.md` for guidance on working with Claude Code in this repository.
 
 ## Contributing
@@ -159,7 +164,12 @@ Contributions are welcome! Please see `CONTRIBUTING.md` for:
 - Commit message conventions
 - Testing requirements
 - Code review process
-- Shared task list: see `docs/todo/todo_master.md` for the current 0.0.6 TODOs.
+
+**Project Planning & TODO Tracking:**
+- **Quick Start:** See `docs/TODO_README.md` for an overview of the comprehensive TODO tracking system
+- **Find Work:** Use `docs/TODO_MASTER_INDEX.md` to navigate to specific areas (RTL, drivers, testing, docs, etc.)
+- **Master Tracker:** See `docs/todo/todo_master.md` for cross-cutting items
+- **Current Focus:** Working towards 0.0.7 release - see tracker files for P0/P1 priorities
 
 ## License
 

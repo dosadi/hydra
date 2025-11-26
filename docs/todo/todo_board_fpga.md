@@ -4,6 +4,8 @@
 **Owner:** Hardware Platform Team
 **Related Trackers:** `todo_hardware_validation.md`, `todo_ip_integration.md`, `todo_synthesis.md`
 
+**Session Reference:** See [`docs/TODO_SESSION_CONTINUATION_2025_11_25.md`](../TODO_SESSION_CONTINUATION_2025_11_25.md) "Near-Term (Sprint 2-3)" section for P0 hardware track action items (resource estimates, board selection, procurement, synthesis setup).
+
 ---
 
 ## Overview

@@ -2,6 +2,8 @@
 
 Tracks the critical CI and release flow work from `todo_build_tooling.md`. This subset focuses on the high-priority infrastructure (P0/P1) that must be rock-solid for 0.0.7 builds.
 
+**Session Reference:** See [`docs/TODO_SESSION_CONTINUATION_2025_11_25.md`](../TODO_SESSION_CONTINUATION_2025_11_25.md) "Immediate (Sprint 1)" for prioritized P0 action items from the TODO system expansion session.
+
 - **P0:** Fix `make test_frame` flakiness immediately after `make clean` so CI can run clean builds consecutively.
 - **P0:** Ensure `hydra_dev_loop.sh` exits non-zero on any building/testing failure (`set -e` and remove `|| true` usage).
 - **P0:** Add multi-distro CI matrix (Ubuntu 20.04/22.04/24.04) with full test suite to guard kernel/drivers.
