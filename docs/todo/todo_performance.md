@@ -217,6 +217,12 @@ Tracks performance optimization across RTL, simulation, and software. Focus area
   - **Validation:** CI alerts on >10% regression
   - **Deliverable:** CI perf job
 
+### Automation & Metrics Integration
+
+- **TODO [P2]:** Surface benchmark summaries via `scripts/ai_health_dashboard.py` so each regression run updates the dashboard’s TODO counts and alerts.
+- **TODO [P2]:** Build `scripts/perf_matrix.sh` to sequentially run key benchmarks across Verilator/headless/hardware modes and emit CSV+JSON reports for automation.
+- **TODO [P3]:** Add a “task size map” section that relates bugfixes, feature work, and platform expansions to performance tracker entries so contributors know where to drop notes regardless of scope.
+
 ---
 
 ## P3 - Low Priority Advanced Optimizations (Future Work)
