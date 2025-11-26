@@ -28,7 +28,7 @@ jobs:
           ./scripts/windows-installer.sh
       - name: Upload rebalance report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: todo-rebalance-report
           path: out/todo_rebalance_report.txt
