@@ -518,8 +518,9 @@ module voxel_csr #(
                             // Require 8-byte alignment on SRC/DST/LEN; flag DMA_ERR on violation.
                             if (dma_src[2:0] != 3'b000 || dma_dst[2:0] != 3'b000 || dma_len[2:0] != 3'b000) begin
                                 dma_status[2] <= 1'b1; // err
-                                dma_status[1] <= 1'b0; // clear done
+                                dma_status[1] <= 1'b1; // mark done so driver sees completion
                                 int_status[2] <= 1'b1; // HYDRA_INT_DMA_ERR
+                                int_status[1] <= 1'b1; // treat as dma_done for INT_STATUS
                             end else begin
                                 dma_start_pulse <= 1'b1;
                                 dma_status[1]   <= 1'b0; // clear done
