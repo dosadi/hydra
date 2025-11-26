@@ -11,7 +11,7 @@ See `docs/todo/todo_prioritization.md` for sprint plan. Most items are P2 (nice-
 - TODO: Refine BRDF shading model (diffuse/specular balance) and normalize energy for emissive + lit surfaces.
 - TODO: Add per-material roughness/metallic parameters and propagate into the raycaster for highlight shaping.
 - TODO: Implement soft shadowing in the raystep loop (penumbra approximation) without large perf hit.
-- TODO [P2]: Add a “surface extractor” pipeline stage that records the first hit’s normal/depth/color into a separate buffer, then expose it via the viewer for downstream debug or SSAO tooling.
+- TODO [P2]: Add a “surface extractor” pipeline stage that records the first hit’s normal/depth/color into a separate buffer (see `docs/mathematical_surface_analysis.md` for the shading math), then expose it via the viewer for downstream debug or SSAO tooling.
 - TODO [P2]: Instrument the surface extractor to emit CSV logs of hit normals/curvature for a fixed sample column so offline scripts can verify shading changes across render updates.
 - TODO [P1]: Model the surface extractor shading weight as a nonlinear summation of neighboring voxel normals (e.g., Shepard interpolation) and expose the recomputed normal vector via the debug overlay.
 - TODO [P2]: Add a CLI config (`SURFACE_BAND_MODE=[linear|nonlinear]`) to switch between normal-based smoothing modes and tune the banding curves; log those settings in `scripts/todo_inspect.py`.

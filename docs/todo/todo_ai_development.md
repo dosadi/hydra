@@ -15,3 +15,4 @@ Focuses on AI-assisted workflows, tooling, prompts, and verification for the Hyd
 - **TODO [P2]:** Author AI-specific lint rules (e.g., verifying TODO counts or required sections) and integrate them into `scripts/check_todo_unique.py` or a companion hook.
 - **TODO [P1]:** Automate prompt validation by running the suggested AI patch through `scripts/todo_sweep.py` and flagging mismatched counts before merging.
 - **TODO [P2]:** Capture a documented “AI debrief” entry (goal/context/outcome) within this tracker whenever an agent applies a change, aiding review and provenance.
+- **TODO [P2]:** Link this tracker to `docs/mathematical_surface_analysis.md` when AI agents touch the surface extractor doc so the math provenance stays attached to the automation workflow.
