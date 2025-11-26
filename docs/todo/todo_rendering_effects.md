@@ -15,3 +15,4 @@ Focuses on the shading/effect pipeline: fog, AO, bloom, motion blur, LUTs, volum
 - **TODO [P3]:** Add dynamic exposure controls with user-defined min/max EV and responsiveness.
 - **TODO [P3]:** Implement depth-of-field with focus distance/aperture + focus peaking overlay.
 - **TODO [P3]:** Add per-material anisotropy/roughness presets and metallic/roughness sliders.
+- **TODO [P3]:** Evaluate adding radiosity-style global illumination from voxels (soft indirect light) with per-frame stats exported to `out/radiosity_stats.json` so the AI dashboard can measure its performance impact.
