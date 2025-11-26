@@ -210,6 +210,11 @@ Tracks security hardening for driver, userspace tools, and RTL. Focus areas: inp
   - **Validation:** get_random_bytes() used, not custom PRNG
   - **Deliverable:** Code review confirms
 
+### Automation & Scan Integration
+- **TODO [P2]:** Surface security detector metrics (invalid inputs, fuzz findings) via `scripts/ai_health_dashboard.py` so the dashboard flags when a security tracker pops.
+- **TODO [P2]:** Maintain `docs/security_triage.md` that logs automation findings, OSS scanner outputs, and what TODOs they spawned so AI sessions can trace the cause.
+- **TODO [P3]:** Add a “security task scale guide” to this tracker that explains how to handle anything from a quick bugfix to a new compliance program, keeping the policy flexible.
+
 ---
 
 ## P3 - Low Priority Advanced Security (Future Work)
