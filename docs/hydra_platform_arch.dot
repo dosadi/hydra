@@ -1,0 +1,88 @@
+digraph hydra_soc {
+  rankdir=LR;
+  node [shape=box, fontsize=10];
+
+  subgraph cluster_host {
+    label="Host / Driver";
+    style=filled; color=lightgrey;
+    host_pc [label="Host CPU\n(libhydra / drivers)"];
+  }
+
+  subgraph cluster_pcie {
+    label="PCIe / BARs";
+    style=filled; color=lightyellow;
+    litepcie [label="LitePCIe (IP)\nPCIe EP + DMA", shape=box3d];
+    bar0 [label="BAR0\nAXI-Lite CSR" ];
+    bar1 [label="BAR1\nAXI4 MEM window" ];
+    host_pc -> litepcie [label="PCIe Gen2 x4"]; 
+    litepcie -> bar0 [label="AXI-Lite"];
+    litepcie -> bar1 [label="AXI4"];
+  }
+
+  subgraph cluster_qemu {
+    label="QEMU stub / virtual device";
+    style=filled; color=lightblue;
+    qemu_dev [label="QEMU hydra-pci\n(sim/tests/qemu_stub)"];
+    host_pc -> qemu_dev [label="virt PCIe (guest)"];
+    qemu_dev -> bar0 [label="emulated BAR0"];
+    qemu_dev -> bar1 [label="emulated BAR1"];
+  }
+
+  subgraph cluster_shell {
+    label="Hydra voxel shell\n(sim: voxel_shell_legacy, FPGA: HydraBoardShell)";
+    style=filled; color=lightcyan;
+
+    csr [label="voxel_csr\n(camera/flags/sel/DMA/IRQ)"];
+    axil_stub [label="axil_csr_stub.sv\n(AXI-Lite stub)"];
+
+    dma [label="axi_dma_stub.sv\n(DMA master)"];
+    sdram [label="axi_sdram_stub.sv\n(BRAM-backed SDRAM stub)"];
+
+    voxel [label="voxel_framebuffer_top.sv\n(voxel world + raycaster)"];
+    hdmi_sink [label="axi_stream_sink_stub.sv\n(HDMI/CRC sink stub)"];
+
+    // AXI-Lite control path
+    bar0 -> csr [label="AXI-Lite (BAR0)"];
+    csr -> voxel [label="camera/flags/sel\nstart_frame"];
+    csr -> dma   [label="DMA CSRs\n(src/dst/len/start)"];
+
+    // AXI4 data path
+    bar1 -> sdram [label="AXI4 (host<->SDRAM stub)"];
+    dma  -> sdram [label="AXI4 (DMA)"];
+
+    // voxel debug/BRAM path
+    csr -> voxel [label="dbg world writes", style=dashed];
+
+    // pixel stream to HDMI sink
+    voxel -> hdmi_sink [label="AXI-Stream RGB\n(720p frame)"];
+  }
+
+  subgraph cluster_fpga {
+    label="FPGA shell (LiteX / Nexys Video)";
+    style=filled; color=lightgoldenrod1;
+
+    hydra_shell [label="HydraBoardShell\n(hydra_litex_shell.py)", shape=box3d];
+    hydra_soc   [label="HydraNexysVideoPlatform\n(hydra_litex_nexysvideo.py)", shape=box];
+
+    litepcie   -> hydra_shell [label="AXI-Lite / AXI\n(BAR0 + DRAM window)"];
+    hydra_shell -> csr        [label="AXI-Lite CSR bus", style=dashed];
+    hydra_shell -> sdram      [label="AXI to SDRAM stub / LiteDRAM", style=dashed];
+    hydra_shell -> hdmi_sink  [label="AXI-Stream RGB", style=dashed];
+
+    hydra_soc -> litepcie [label="integrates LitePCIe", style=dotted];
+    hydra_soc -> litedram [label="integrates LiteDRAM", style=dotted];
+    hydra_soc -> liteic   [label="integrates HDMI core", style=dotted];
+  }
+
+  // Planned external IP around the shell
+  subgraph cluster_ip {
+    label="Planned external IP (0.0.5+)";
+    style=dashed; color=lightpink;
+    litedram [label="LiteDRAM\nDDR3 controller"];
+    liteic [label="LiteICLink/LiteVideo\nHDMI encoder"];
+  }
+
+  // Show how IP will wrap the current shell
+  sdram -> litedram [label="AXI interface\n(real DDR3)", style=dashed];
+  hdmi_sink -> liteic [label="video stream", style=dashed];
+}
