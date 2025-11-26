@@ -88,10 +88,15 @@ if ! command -v gh >/dev/null 2>&1; then
 fi
 
 echo "[create_pr] creating PR via 'gh'"
-if gh pr create --title "$PR_TITLE" --body-file "$BODY_FILE" --base main --head "$BRANCH" --assume-yes; then
+if gh pr create --title "$PR_TITLE" --body-file "$BODY_FILE" --base main --head "$BRANCH"; then
     echo "[create_pr] PR created successfully"
 else
-    echo "[create_pr] gh pr create failed — try running the command manually:"
+    echo "[create_pr] gh pr create failed — attempting to open PR creation page in your browser"
+    # Try a web fallback so the user can complete the PR manually via GitHub UI
+    if command -v gh >/dev/null 2>&1; then
+        gh pr create --web || true
+    fi
+    echo "If that doesn't work, run manually:" 
     echo "gh pr create --title \"$PR_TITLE\" --body-file $BODY_FILE --base main --head $BRANCH"
 fi
 
