@@ -44,7 +44,7 @@ This reference captures how to get the most value from your paid AI instances wh
 
 - Add a CI job that runs `python3 scripts/todo_metadata.py` and publishes the JSON as an artifact; link to the job from `docs/ai_resource_strategy.md`.
 - Expand `scripts/automation_watchdog.sh` to call `scripts/todo_metadata.py` so the metadata is always fresh when automation runs.
-- Add an `ai-dashboard` CI job that runs `scripts/ai_health_dashboard.py`, uploads `out/ai_health_dashboard.txt`, and surfaces unknown-priority clusters for reviewers before merging.
+- Add an `ai-dashboard` CI job that runs `scripts/ai_health_dashboard.py`, uploads `out/ai_health_dashboard.txt`, and surfaces unknown-priority clusters for reviewers before merging, then posts the summary directly into the workflow run summary for easy visibility.
 - Build a helper that merges the metadata into a “priority briefing” (e.g., top 5 unknowns + high TODO counts) and prints it for the AI before you start a session.
 
 ## 5. Continuous improvement
