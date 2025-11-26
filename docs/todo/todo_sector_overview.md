@@ -592,6 +592,11 @@ Sectors are tracked in CI pipeline. Each PR is tagged with affected sectors:
 - Run sector-specific test suites
 - Track sector completion % over time
 
+### Emerging Sectors
+
+- **SECTOR-20 (CLUSTERING):** Captures multi-board and mezzanine scaling work; link the cluster deployment playbook and automation artifacts to this overview so each clustered board build draws automation attention.
+- **SECTOR-21 (AI_AUTOMATION):** Tracks metadata/dashboards/rebalance scripts; the sector metrics above should include its TODO counts, so contributors see when the automation stack needs new tasks or maintenance.
+
 ---
 
 **Next Review:** After Sprint 1 (2 weeks)
