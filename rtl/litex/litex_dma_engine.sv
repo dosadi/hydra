@@ -12,8 +12,10 @@ module litex_dma_engine #(
     output wire              err
 );
 
-assign done = 0;
-assign err  = 0;
+// Simple stub behavior: never complete and no error by default.
+// Use explicit 1'b0 to avoid synthesis/tool warnings about implicit integers.
+assign done = 1'b0;
+assign err  = 1'b0;
 
 // TODO: integrate with LiteX MMIO, add AXI streaming support, respect LiteX interrupts
 

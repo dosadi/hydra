@@ -158,6 +158,17 @@ module voxel_axi_core #(
     localparam integer DMA_ADDR_WIDTH = 24; // 16 MiB default window for stub checks.
     localparam [31:0]  DMA_ADDR_MAX   = (1 << DMA_ADDR_WIDTH);
 
+    // DMA state machine encoding (small, local to this module)
+    localparam [1:0] DMA_IDLE = 2'd0;
+    localparam [1:0] DMA_RUN  = 2'd1;
+    localparam [1:0] DMA_ERR  = 2'd2;
+
+    // DMA control/state signals used by the CSR wrapper and the dma_stub.
+    reg  [1:0] dma_state;
+    wire       dma_stub_done;
+    wire       dma_stub_busy;
+    reg        dma_stub_start;
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             dma_busy    <= 1'b0;
@@ -230,10 +241,6 @@ module voxel_axi_core #(
 `endif
 
     // TODO: Wire HDMI counters once LiteVideo scanout is integrated
-    assign hdmi_crc_last      = 32'd0;
-    assign hdmi_frame_count   = 32'd0;
-    assign hdmi_line_count    = 16'd0;
-    assign hdmi_pixel_in_line = 16'd0;
 
     voxel_axil_csr #(
         .ADDR_WIDTH(16),
@@ -372,8 +379,7 @@ module voxel_axi_core #(
     // Framebuffer write AXI4 master
     // - Backed by axi_dma_stub: issues AXI read/write copies with backpressure handling.
     // - Still a stub (no scatter-gather), but performs real data moves.
-    wire dma_stub_busy, dma_stub_done;
-    reg  dma_stub_start;
+    // (moved declarations for dma_stub_* and dma_state above)
 
     wire [3:0]  dma_awid_w;
     wire [27:0] dma_awaddr_w;

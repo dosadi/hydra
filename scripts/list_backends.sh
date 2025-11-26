@@ -232,9 +232,9 @@ else
         fi
 
         printf "%-21s %-19s %-18s %s\n" \
-            "$(echo -e $b)" \
-            "$(echo -e $compiled_status)" \
-            "$(echo -e $runtime_status)" \
+            "${b}" \
+            "${compiled_status}" \
+            "${runtime_status}" \
             "${BACKENDS[$b]}"
     done
 

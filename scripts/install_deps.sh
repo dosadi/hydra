@@ -60,7 +60,7 @@ echo "Updating apt cache..."
 sudo apt-get update
 
 echo "Installing packages: ${PKGS[*]}"
-sudo apt-get install ${SUDO_ARGS[@]} -y "${PKGS[@]}"
+sudo apt-get install "${SUDO_ARGS[@]}" -y "${PKGS[@]}"
 
 echo "Done. You may need to re-login or run 'hash -r' for new commands to be visible." 
 
