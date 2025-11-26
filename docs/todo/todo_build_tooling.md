@@ -20,3 +20,4 @@ For developer tools/build system automation, see `docs/todo/todo_build_devtools.
 - **TODO [P3]:** Ship IDE/editor configs (VSCode, CLion, Vim/Emacs) with build/debug tasks.
 - **TODO [P3]:** Create a static dashboard showing CI/coverage/perf health.
 - **TODO [P3]:** Automate PR descriptions from TODO refs/commit metadata.
+- **TODO [P3]:** Document how commercial EDA flows (Vivado, Quartus, Synopsys) plug into the Hydra build/CMake system, including scripts that produce fab-ready outputs (`scripts/publish_fab_bundle.sh`) so manufacturing tooling integrates with the build pipeline.
