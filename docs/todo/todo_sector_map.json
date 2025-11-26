@@ -247,6 +247,8 @@
       "trackers": [
         "todo_ai_development.md",
         "todo_ai_dashboard.md",
+        "todo_ai_resource_strategy.md",
+        "todo_agent_integration_bridge.md",
         "todo_rebalance_policy.md"
       ],
       "dependencies": ["SECTOR-19", "SECTOR-10"],
