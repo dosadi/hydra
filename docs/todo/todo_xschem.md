@@ -33,3 +33,7 @@ Schematic capture hygiene and symbol/library work to keep RTL ↔ board flow ali
 - TODO [P2]: Document how to export xschem libraries for third-party reviewers (ZIP package + README) and store metadata (hash, date) to prove the release matches the recorded schematic state.
 - TODO [P2]: Integrate the schematic symbol set with `scripts/check_todo_unique.py` so any change to symbol names automatically raises a TODO until reviewed.
 - TODO [P3]: Track how schematic power rails map to CAD-specific net names (e.g., `VDDA`, `VDDR`) and record translations in the tracker so firmware/hardware teams can align unexpectedly renamed nets.
+- TODO [P2]: Build a script that diff-checks the xschem netlist hierarchy before/after RTL changes and adds informative TODO entries when block boundaries or connections change.
+- TODO [P2]: Add automation to ensure every schematic symbol includes descriptive annotations (function, voltage, doc link) and surface missing annotations as TODOs in a validation report.
+- TODO [P3]: Document how to stage schematic updates for a release branch, including checklist items for audits, test PCB steps, and release tagging, in `docs/todo/todo_release_notes_0_0_8.md` when ready.
+- TODO [P3]: Capture a short “FAQ for schematic reviewers” section describing common pitfalls (wrong pin order, missing power flags, misaligned labels) and add it to this tracker for quick reference.
