@@ -9,6 +9,7 @@
 - **TODO [P3]:** Track GPU/backend present latency (SDL vs. platform backend) and surface it in a HUD overlay line labeled “present lag” to correlate render time vs. display handshake.
 - **TODO [P2]:** Log key FPS metrics into `out/fps_health.json` and have `scripts/ai_health_dashboard.py` consume them so FPS deviations update the automation dashboard automatically.
 - **TODO [P2]:** Feed the FPS benchmark summaries into `docs/todo/todo_ai_dashboard.md` and this tracker so when the AI dashboard highlight spikes, this tracker updates with the relevant scenes/toggles.
+- **TODO [P2]:** Reference `out/render_pipeline_baseline.csv` and the new `scripts/render_pipeline_bench.py` summary so instrumentation runs (via `sim_voxel --instrument`) feed this tracker and the AI dashboard with ray-loop/HUD/copy timing baselines and guidance.
 
 ## Optimization Targets
 - **TODO [P1]:** Add a fast mode that skips HUD/minor overlays when frames are under the FPS target (`HYDRA_RENDER_FASTPATH` idea from `docs/render_pipeline_layers.md`), letting the renderer dedicate CPU cycles to ray marching.

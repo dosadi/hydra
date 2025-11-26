@@ -9,6 +9,7 @@
 #include "Vvoxel_framebuffer_top.h"
 #include "Vvoxel_framebuffer_top___024root.h"
 #include "platform/backend_selector.h"
+#include "platform/platform.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -20,6 +21,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
+#include <fstream>
+#include <filesystem>
 #include <strings.h>
 #include <unistd.h>
 
@@ -178,15 +181,34 @@ static void apply_cli_overrides(int argc, char** argv) {
         return nullptr;
     };
 
+    bool show_caps = false;
+
     for (int i = 1; i < argc; ++i) {
         const char* arg = argv[i];
         if (!arg) continue;
-        if ((std::strcmp(arg, "--backend") == 0 || std::strcmp(arg, "-b") == 0) && i + 1 < argc) {
+        if (std::strcmp(arg, "--show-capabilities") == 0 || std::strcmp(arg, "--caps") == 0) {
+            show_caps = true;
+        } else if (std::strcmp(arg, "--quiet") == 0 || std::strcmp(arg, "-q") == 0) {
+            setenv("HYDRA_QUIET", "1", 1);
+        } else if (std::strcmp(arg, "--verbose") == 0 || std::strcmp(arg, "-v") == 0) {
+            setenv("HYDRA_VERBOSE", "1", 1);
+        } else if ((std::strcmp(arg, "--backend") == 0 || std::strcmp(arg, "-b") == 0) && i + 1 < argc) {
             const char* val = argv[++i];
             setenv("HYDRA_BACKEND", val, 1);
             std::fprintf(stderr, "[hydra] CLI override: backend=%s\n", val);
         } else if (const char* val = match_arg(arg, "--backend", i)) {
             set_override("HYDRA_BACKEND", val);
+        } else if ((std::strcmp(arg, "--sdl-driver") == 0 || std::strcmp(arg, "--video-driver") == 0) && i + 1 < argc) {
+            const char* val = argv[++i];
+            setenv("SDL_VIDEODRIVER", val, 1);
+            std::fprintf(stderr, "[hydra] CLI override: SDL_VIDEODRIVER=%s\n", val);
+        } else if (const char* val = match_arg(arg, "--sdl-driver", i)) {
+            set_override("SDL_VIDEODRIVER", val, "SDL video driver");
+        } else if (const char* val = match_arg(arg, "--video-driver", i)) {
+            set_override("SDL_VIDEODRIVER", val, "SDL video driver");
+        } else if (std::strcmp(arg, "--instrument") == 0) {
+            setenv("HYDRA_RENDER_INSTRUMENT", "1", 1);
+            std::fprintf(stderr, "[hydra] CLI override: render instrumentation enabled\n");
         } else if (const char* val = match_arg(arg, "--cam-pos", i)) {
             set_override("HYDRA_CAM_POS", val, "camera position (x,y,z)");
         } else if (const char* val = match_arg(arg, "--cam-ang", i)) {
@@ -206,6 +228,11 @@ static void apply_cli_overrides(int argc, char** argv) {
         } else if (const char* val = match_arg(arg, "--seed", i)) {
             set_override("HYDRA_WORLD_SEED", val, "world/procedural seed");
         }
+    }
+
+    if (show_caps) {
+        platform_log_capabilities();
+        std::exit(0);
     }
 }
 
@@ -391,6 +418,9 @@ int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     apply_cli_overrides(argc, argv);
 
+    const bool render_instrument_mode = env_truthy("HYDRA_RENDER_INSTRUMENT");
+    RenderInstrumentation render_instrument(render_instrument_mode, flatten_cli_args(argc, argv));
+
     Vvoxel_framebuffer_top* top = new Vvoxel_framebuffer_top;
     auto* root = top->rootp;  // Access internal regs exposed by Verilator
     top->clk   = 0;
@@ -453,7 +483,96 @@ int main(int argc, char** argv) {
         // Force SDL to a dummy driver so no window/display server is required.
         setenv("SDL_VIDEODRIVER", "dummy", 0);
         setenv("SDL_AUDIODRIVER", "dummy", 0);
+}
+
+static std::string flatten_cli_args(int argc, char** argv) {
+    std::string out;
+    for (int i = 0; i < argc; ++i) {
+        if (i) out += ' ';
+        if (argv[i]) {
+            out += argv[i];
+        }
     }
+    return out;
+}
+
+struct RenderInstrumentationConfig {
+    float cam_pos_x = 0.0f;
+    float cam_pos_y = 0.0f;
+    float cam_pos_z = 0.0f;
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+    bool smooth_surfaces = false;
+    bool curvature = false;
+    bool extra_light = false;
+    bool diag_slice = false;
+    bool ray_jitter = false;
+    bool hud_enabled = true;
+    float fps_target = 0.0f;
+    bool vsync = true;
+    std::string backend_name;
+    std::string backend_info;
+    std::string pixel_view;
+};
+
+struct RenderInstrumentation {
+    RenderInstrumentation(bool enabled, std::string command_line)
+        : enabled_(enabled), command_line_(std::move(command_line)) {
+        if (!enabled_)
+            return;
+        std::filesystem::create_directories("out");
+        csv_.open("out/render_pipeline_baseline.csv", std::ios::app);
+        if (!csv_)
+            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
+        if (csv_.tellp() == 0)
+            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
+    }
+
+    bool active() const { return enabled_; }
+
+    void write_config(const RenderInstrumentationConfig& cfg) {
+        if (!enabled_)
+            return;
+        std::ofstream cfg_out("out/render_pipeline_baseline.cfg");
+        if (!cfg_out)
+            die("failed to write out/render_pipeline_baseline.cfg");
+        cfg_out << "instrument_command=" << command_line_ << "\n";
+        cfg_out << "backend=" << cfg.backend_name << "\n";
+        cfg_out << "backend_info=" << cfg.backend_info << "\n";
+        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
+        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
+        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
+        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
+                << ",curvature:" << (cfg.curvature ? "1" : "0")
+                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
+                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
+                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
+        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
+        cfg_out << "fps_target=" << cfg.fps_target << "\n";
+        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
+    }
+
+    void record(uint64_t frame,
+                double fps,
+                double ray_loop_ms,
+                double hud_present_ms,
+                double framebuffer_copy_ms,
+                double frame_total_ms) {
+        if (!enabled_)
+            return;
+        auto now = std::chrono::system_clock::now();
+        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        csv_ << frame << ',' << ts_ms << ',' << fps << ','
+             << ray_loop_ms << ',' << hud_present_ms << ','
+             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
+        csv_.flush();
+    }
+
+private:
+    bool enabled_;
+    std::ofstream csv_;
+    std::string command_line_;
+};
 
     log_input_caps();
 
@@ -463,22 +582,54 @@ int main(int argc, char** argv) {
     PlatformBackend backend = PlatformBackend::SDL;
     PlatformContext plat_ctx;
     bool use_platform_present = false;
-    if (requested_backend != PlatformBackend::SDL &&
-        platform_backend_supported(requested_backend)) {
-        PlatformConfig plat_cfg;
-        plat_cfg.width  = SCREEN_WIDTH;
-        plat_cfg.height = SCREEN_HEIGHT;
-        plat_cfg.vsync  = true;
-        if (init_backend(requested_backend, plat_cfg, plat_ctx)) {
-            backend = requested_backend;
-            use_platform_present = true;
-            std::fprintf(stdout, "Using backend: %s\n", backend_name(backend));
-        } else {
-            std::fprintf(stderr, "Warning: backend %s init failed, falling back to SDL\n",
+
+    // Track if we had to fallback from requested backend
+    bool backend_fallback = false;
+    PlatformBackend attempted_backend = requested_backend;
+
+    if (requested_backend != PlatformBackend::SDL) {
+        if (!platform_backend_supported(requested_backend)) {
+            std::fprintf(stderr, "\n[hydra] WARNING: Backend '%s' is not supported on this platform\n",
                          backend_name(requested_backend));
+            std::fprintf(stderr, "[hydra] REASON: Backend not compiled in or platform incompatible\n");
+            std::fprintf(stderr, "[hydra] ACTION: Falling back to SDL backend\n");
+            std::fprintf(stderr, "[hydra] TIP: Run './sim_voxel --caps' to see available backends\n\n");
+            backend_fallback = true;
+        } else {
+            PlatformConfig plat_cfg;
+            plat_cfg.width  = SCREEN_WIDTH;
+            plat_cfg.height = SCREEN_HEIGHT;
+            plat_cfg.vsync  = true;
+
+            std::fprintf(stderr, "[hydra] Initializing %s backend...\n", backend_name(requested_backend));
+
+            if (init_backend(requested_backend, plat_cfg, plat_ctx)) {
+                backend = requested_backend;
+                use_platform_present = true;
+                std::fprintf(stderr, "[hydra] SUCCESS: %s backend initialized\n", backend_name(backend));
+            } else {
+                std::fprintf(stderr, "\n[hydra] WARNING: Backend '%s' initialization failed\n",
+                             backend_name(requested_backend));
+                std::fprintf(stderr, "[hydra] REASON: Check stderr above for specific error messages\n");
+                std::fprintf(stderr, "[hydra] ACTION: Falling back to SDL backend\n");
+
+                // Provide specific hints based on backend
+                if (requested_backend == PlatformBackend::GL) {
+                    std::fprintf(stderr, "[hydra] TIP: Install OpenGL drivers or try HYDRA_BACKEND=sdl\n");
+                } else if (requested_backend == PlatformBackend::Vulkan) {
+                    std::fprintf(stderr, "[hydra] TIP: Install Vulkan drivers or try HYDRA_BACKEND=gl\n");
+                } else if (requested_backend == PlatformBackend::Wayland || requested_backend == PlatformBackend::X11) {
+                    std::fprintf(stderr, "[hydra] TIP: Check DISPLAY env var or try HYDRA_BACKEND=sdl\n");
+                }
+                std::fprintf(stderr, "\n");
+                backend_fallback = true;
+            }
         }
-    } else {
-        std::fprintf(stdout, "Using backend: SDL\n");
+    }
+
+    if (backend == PlatformBackend::SDL) {
+        std::fprintf(stderr, "[hydra] Using SDL backend%s\n",
+                     backend_fallback ? " (fallback)" : " (default)");
     }
 
     log_backend_caps(requested_backend, backend, g_vsync);
@@ -531,7 +682,6 @@ int main(int argc, char** argv) {
     };
 
     const char* font_env = std::getenv("HYDRA_FONT");
-    const char* font_path = font_env ? font_env : "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
     const char* font_scale_env = std::getenv("HYDRA_FONT_SCALE");
     int font_size = 11;
     if (font_scale_env) {
@@ -540,16 +690,53 @@ int main(int argc, char** argv) {
         if (scale > 3.0f) scale = 3.0f;
         font_size = std::max(8, static_cast<int>(11 * scale));
     }
-    TTF_Font* font = TTF_OpenFont(font_path, font_size);
-    if (!font && font_env) {
-        // If an override was provided but failed, fall back to the default.
-        std::fprintf(stderr, "Warning: HYDRA_FONT='%s' failed: %s; falling back to default\n",
-                     font_path, TTF_GetError());
-        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-        font = TTF_OpenFont(font_path, 11);
+
+    // Fallback font search paths for different platforms
+    const char* font_search_paths[] = {
+        font_env,  // User override first
+        // Debian/Ubuntu
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        // Fedora/RHEL
+        "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
+        "/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf",
+        // Arch
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+        // FreeBSD
+        "/usr/local/share/fonts/dejavu/DejaVuSans.ttf",
+        "/usr/local/share/fonts/Liberation/LiberationSans-Regular.ttf",
+        // macOS
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/Library/Fonts/Arial.ttf",
+        "/System/Library/Fonts/SFNSText.ttf",
+        // Windows (if running under WSL or similar)
+        "/mnt/c/Windows/Fonts/arial.ttf",
+        "/mnt/c/Windows/Fonts/Arial.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        nullptr
+    };
+
+    TTF_Font* font = nullptr;
+    const char* font_path = nullptr;
+
+    for (int i = 0; font_search_paths[i] != nullptr; ++i) {
+        if (font_search_paths[i] == nullptr || font_search_paths[i][0] == '\0')
+            continue;
+
+        font = TTF_OpenFont(font_search_paths[i], font_size);
+        if (font) {
+            font_path = font_search_paths[i];
+            break;
+        }
     }
+
     if (!font) {
-        std::fprintf(stderr, "Warning: could not open font (%s), HUD text disabled\n", font_path);
+        std::fprintf(stderr, "Warning: could not find any suitable font, HUD text disabled\n");
+        std::fprintf(stderr, "Hint: Set HYDRA_FONT=/path/to/font.ttf to specify a font\n");
+    } else if (font_env && font_path != font_env) {
+        std::fprintf(stderr, "Warning: HYDRA_FONT='%s' not found, using fallback: %s\n",
+                     font_env, font_path);
     }
 
     const size_t NPIX = size_t(SCREEN_WIDTH) * SCREEN_HEIGHT;
@@ -738,9 +925,29 @@ int main(int argc, char** argv) {
     // Print startup summary for reproducibility
     std::fprintf(stderr, "\n[hydra] === Startup Configuration ===\n");
     std::fprintf(stderr, "[hydra] Backend: %s\n", backend_name(backend));
+
+    // Log backend selection details
+    if (const char* v = std::getenv("HYDRA_BACKEND")) {
+        std::fprintf(stderr, "[hydra] Backend selection: env var HYDRA_BACKEND=%s\n", v);
+    } else if (const char* v = std::getenv("HYDRA_BACKEND_PREFS")) {
+        std::fprintf(stderr, "[hydra] Backend selection: preference order HYDRA_BACKEND_PREFS=%s\n", v);
+    } else {
+        std::fprintf(stderr, "[hydra] Backend selection: auto (default preference order)\n");
+    }
+
+    // Log SDL info if available
+    SDL_version ver;
+    SDL_GetVersion(&ver);
+    std::fprintf(stderr, "[hydra] SDL version: %d.%d.%d\n", ver.major, ver.minor, ver.patch);
+    if (SDL_WasInit(SDL_INIT_VIDEO)) {
+        const char* driver = SDL_GetCurrentVideoDriver();
+        if (driver) {
+            std::fprintf(stderr, "[hydra] SDL video driver: %s\n", driver);
+        }
+    }
+
     std::fprintf(stderr, "[hydra] Resolution: %dx%d\n", SCREEN_WIDTH, SCREEN_HEIGHT);
     std::fprintf(stderr, "[hydra] Font: %s (size %d)\n", font_path, font_size);
-    if (const char* v = std::getenv("HYDRA_BACKEND")) std::fprintf(stderr, "[hydra] HYDRA_BACKEND=%s\n", v);
     if (std::getenv("HYDRA_VSYNC")) std::fprintf(stderr, "[hydra] HYDRA_VSYNC=%s\n", std::getenv("HYDRA_VSYNC"));
     if (frame_dump_path) std::fprintf(stderr, "[hydra] FRAME_DUMP=%s\n", frame_dump_path);
     if (max_dump_env) std::fprintf(stderr, "[hydra] HYDRA_MAX_FRAME_DUMPS=%s\n", max_dump_env);
@@ -762,6 +969,25 @@ int main(int argc, char** argv) {
     if (ray_jitter) std::fprintf(stderr, "[hydra] HYDRA_RAY_JITTER=1\n");
     std::fprintf(stderr, "[hydra] Pixel view: %s\n", pixel_view_mode_name(g_pixel_view_mode));
     std::fprintf(stderr, "[hydra] ==============================\n\n");
+
+    RenderInstrumentationConfig inst_config;
+    inst_config.cam_pos_x = pos_x;
+    inst_config.cam_pos_y = pos_y;
+    inst_config.cam_pos_z = pos_z;
+    inst_config.yaw = yaw;
+    inst_config.pitch = pitch;
+    inst_config.smooth_surfaces = smooth_surfaces;
+    inst_config.curvature = curvature;
+    inst_config.extra_light = extra_light;
+    inst_config.diag_slice = diag_slice;
+    inst_config.ray_jitter = ray_jitter;
+    inst_config.hud_enabled = hud_enabled;
+    inst_config.fps_target = fps_target;
+    inst_config.vsync = g_vsync;
+    inst_config.backend_name = backend_name(backend);
+    inst_config.backend_info = g_backend_info;
+    inst_config.pixel_view = pixel_view_mode_name(g_pixel_view_mode);
+    render_instrument.write_config(inst_config);
 
     bool selection_active = false;
     uint8_t selection_x = 0;
@@ -1202,6 +1428,9 @@ int main(int argc, char** argv) {
         // Simulate HDL
         const int cycles_per_chunk = 2000;
         bool frame_done = false;
+        std::chrono::high_resolution_clock::time_point sim_loop_start;
+        if (render_instrument.active())
+            sim_loop_start = std::chrono::high_resolution_clock::now();
 
         for (int i = 0; i < cycles_per_chunk; ++i) {
             top->clk = 1; top->eval(); main_time++;
@@ -1241,6 +1470,9 @@ int main(int argc, char** argv) {
         }
 
         if (frame_done) {
+             std::chrono::high_resolution_clock::time_point sim_loop_end;
+             if (render_instrument.active())
+                 sim_loop_end = std::chrono::high_resolution_clock::now();
              size_t pixels_written_this_frame = pixels_this_frame;
              last_frame_color_stats = frame_color_stats;
              last_frame_color_stats_valid = frame_color_stats_dirty;
@@ -1326,6 +1558,13 @@ int main(int argc, char** argv) {
             last_frame_time = now;
             if (dt > 0.0f) fps = 1.0f / dt;
 
+            if (render_instrument.active()) {
+                double ray_loop_ms = std::chrono::duration<double, std::milli>(sim_loop_end - sim_loop_start).count();
+                double hud_present_ms = std::chrono::duration<double, std::milli>(hud_present_end - hud_present_start).count();
+                double framebuffer_copy_ms = std::chrono::duration<double, std::milli>(copy_end - copy_start).count();
+                render_instrument.record(frame_counter, fps, ray_loop_ms, hud_present_ms, framebuffer_copy_ms, static_cast<double>(dt * 1000.0f));
+            }
+
             if (!help_overlay_sticky && help_overlay_timer > 0.0f && dt > 0.0f) {
                 help_overlay_timer = std::max(0.0f, help_overlay_timer - dt);
             }
@@ -1347,6 +1586,9 @@ int main(int argc, char** argv) {
                 last_mem_write_util = float(dw) / float(dc);
             }
 
+            std::chrono::high_resolution_clock::time_point hud_present_start;
+            if (render_instrument.active())
+                hud_present_start = std::chrono::high_resolution_clock::now();
             if (hud_enabled && font) {
                 // Darken or lighten HUD band in the framebuffer based on theme.
                 for (int y = SCREEN_HEIGHT - HUD_HEIGHT; y < SCREEN_HEIGHT; ++y) {
@@ -1583,6 +1825,13 @@ int main(int argc, char** argv) {
                                 SCREEN_WIDTH, SCREEN_HEIGHT);
             }
 
+            std::chrono::high_resolution_clock::time_point hud_present_end;
+            if (render_instrument.active())
+                hud_present_end = std::chrono::high_resolution_clock::now();
+
+            std::chrono::high_resolution_clock::time_point copy_start;
+            if (render_instrument.active())
+                copy_start = std::chrono::high_resolution_clock::now();
             void* pixels = nullptr;
             int pitch_bytes = 0;
             if (SDL_LockTexture(tex, nullptr, &pixels, &pitch_bytes) != 0)
@@ -1599,6 +1848,10 @@ int main(int argc, char** argv) {
             SDL_RenderClear(ren);
             SDL_RenderCopy(ren, tex, nullptr, nullptr);
             SDL_RenderPresent(ren);
+
+            std::chrono::high_resolution_clock::time_point copy_end;
+            if (render_instrument.active())
+                copy_end = std::chrono::high_resolution_clock::now();
 
             // Clear framebuffer for next frame to avoid stale pixels if the RTL stalls early
             // or when explicit per-frame clearing is requested.

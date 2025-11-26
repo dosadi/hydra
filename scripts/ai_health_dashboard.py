@@ -80,6 +80,28 @@ def summarize(metadata: dict, top_rank: int) -> list[str]:
     return lines
 
 
+def append_render_pipeline_summary(lines: list[str]) -> None:
+    bench_script = Path(__file__).resolve().parent / "render_pipeline_bench.py"
+    if not bench_script.exists():
+        return
+    try:
+        result = subprocess.run(
+            [sys.executable, str(bench_script)],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        print(f"[ai_health] render_pipeline_bench failed: {exc}", file=sys.stderr)
+        return
+    summary = result.stdout.strip()
+    if not summary:
+        return
+    lines.append("")
+    lines.append("## Render Pipeline Baseline")
+    lines.extend(line for line in summary.splitlines() if line)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Render an AI health dashboard from TODO metadata."
@@ -109,6 +131,7 @@ def main() -> None:
     ensure_metadata(metadata_path)
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     lines = summarize(metadata, args.top)
+    append_render_pipeline_summary(lines)
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
