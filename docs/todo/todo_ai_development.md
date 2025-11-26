@@ -17,3 +17,5 @@ Focuses on AI-assisted workflows, tooling, prompts, and verification for the Hyd
 - **TODO [P1]:** Automate prompt validation by running the suggested AI patch through `scripts/todo_sweep.py` and flagging mismatched counts before merging.
 - **TODO [P2]:** Capture a documented “AI debrief” entry (goal/context/outcome) within this tracker whenever an agent applies a change, aiding review and provenance.
 - **TODO [P2]:** Link this tracker to `docs/mathematical_surface_analysis.md` when AI agents touch the surface extractor doc so the math provenance stays attached to the automation workflow.
+- **TODO [P1]:** Formalize the “efficient AI resource usage” workflow documented in `docs/ai_resource_strategy.md` so each agent runs the recommended probes and logs state snapshots before/after work. Tie the document back to this tracker for quick reference.
+- **TODO [P2]:** Automate updates to `docs/ai_resource_strategy.md` by adding a script that, after the probes succeed, appends a short entry to this tracker (owner/time/probes) so the log stays current.
