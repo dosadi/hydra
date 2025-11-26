@@ -12,6 +12,8 @@ Tasks to keep the RTL synthesis-friendly with predictable timing closure.
 - TODO [P2]: Provide a minimal gate-level sim recipe (GLS) for the top to spot uninitialized nets and timing issues.
 - TODO [P2]: Audit held timing paths from the raycaster and render pipeline (clock crossings) and document which paths can tolerate slack vs. which must stay low-latency.
 - TODO [P2]: Add a synthesis power estimation log (per rails) and tie it to `docs/todo/todo_power.md` so power budgeting stays visible across RTL changes.
+- TODO [P2]: Feed synthesis metadata (timing slack, area, power) into `scripts/ai_health_dashboard.py` so regressed paths trigger TODO updates.
+- TODO [P2]: Create a synthesis change log that records each major bitstream tweak (grid size, clock, DMA width) and cross-links to this tracker for traceability.
 - TODO [P3]: Capture a guideline for vendor-tuned synth scripts (Vivado/Quartus) that includes which macros to pass and which XDC constraints to update when top-level ports change.
 - TODO [P3]: Document how to rerun the synthesis flow in Docker/CI (`scripts/synth_docker.sh`) so contributors can reproduce area/timing numbers before shipping.
 - TODO [P2]: Record slack histograms per timing path and link them to `docs/todo/todo_performance.md` so bench runs can catch regressions relative to 0.0.7.
@@ -22,3 +24,4 @@ Tasks to keep the RTL synthesis-friendly with predictable timing closure.
 - TODO [P1]: Tie synthesis flows to `scripts/todo_rebalance.py` so when timing numbers slip the tracker automatically surfaces the cause and suggests related TODO entries.
 - TODO [P3]: Document the path-specific constraints that should be suppressed when we run the viewer at debug settings, ensuring gating doesn’t affect the release bitstream.
 - TODO [P2]: Build an automated warning when the synthesis build size (LUT/FF utilization) exceeds a threshold recorded in `docs/todo/todo_build_devtools.md`.
+- TODO [P3]: Add a synthesis task size guide describing when to treat a change as a quick tweak vs. a major re-architecture, keeping the tracker flexible for everything from small fixes to whole product expansions.
