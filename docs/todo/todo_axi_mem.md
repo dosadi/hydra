@@ -17,3 +17,7 @@ Complements `todo_dram_axi.md` by focusing on streaming/AXI memory interfaces, D
 - **TODO [P2]:** Tie AXI metrics (backpressure counts, stalled cycles) into `docs/todo/todo_performance.md` and cross-link to `scripts/todo_sweep.py` for automated reporting.
   - Effort: 1 day
   - Deliverable: Cross-reference doc plus script mention
+- **TODO [P1]:** Instrument the AXI paths with error injection knobs (flip DECERR/SLVERR, insert wait states) to verify driver and RTL guards handle the faults gracefully.
+- **TODO [P2]:** Add a memory capture tool (`scripts/axi_capture.py`) that samples AXI transactions and writes JSON/CSV for offline visualization and diffing between simulator runs.
+- **TODO [P3]:** Document AXI lane retry policies for high-latency peripherals (such as PCIe) to explain what the RTL/driver should do when downstream devices respond slowly.
+- **TODO [P2]:** Include AXI coverage points (burst size, QoS combos) in `scripts/todo_rebalance.py` reports so under-tested modes get flagged automatically.
