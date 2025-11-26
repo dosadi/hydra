@@ -1,6 +1,0 @@
-# Hydra Depth / Reemissure Index
-
-This landing page now references the split depth and reemissure trackers so contributors can find the narrow TODO sets quickly.
-
-- **Depth buffer:** `docs/toodo/todo_depth_buffer.md` – depth ranges, fog/SSAO experiments, histograms, debug overlays.
-- **Reemissure:** `docs/toodo/todo_reemissure.md` – reemissure semantics, assertions, histograms, and emissive debugging helpers.
