@@ -213,10 +213,16 @@ Explores novel techniques and potential major improvements beyond current roadma
     - Oriented cones instead of cubes
     - Better surface approximation
     - Research from literature
-  - **Effort:** Very Large (20-30 days)
-  - **Dependencies:** Cone raycasting algorithm
-  - **Validation:** Visual quality improvement
-  - **Deliverable:** Coxel prototype
+- **Effort:** Very Large (20-30 days)
+- **Dependencies:** Cone raycasting algorithm
+- **Validation:** Visual quality improvement
+- **Deliverable:** Coxel prototype
+
+## P3: Research Automation & Thought Leadership
+
+- **TODO [P3]:** Publish an “experiment log” (`docs/research_notes.md`) where each radical idea (ray cone, SVO-DAG, clustering) links back to this tracker so AI/automation knows the output of small experiments vs. product-scale proposals.
+- **TODO [P3]:** Feed experimental metrics (compression ratios, novel rendering stats) into `scripts/ai_health_dashboard.py` and `docs/todo/todo_ai_dashboard.md` so the dashboard flags when fresh research introduces instability.
+- **TODO [P3]:** Document a “research workflow” section in this tracker that clarifies when to drop small notebooks versus fully scoped research initiatives, keeping the tracker flexible across all task sizes.
 
 - TODO [P3]: Implement dual contouring
   - **Coverage:**
