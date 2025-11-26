@@ -15,6 +15,9 @@
 - **TODO [P2]:** Add a packaging verification script that compares current schematic/RTL/hardware versions vs what’s stamped on the packaging QR/serial, generating a TODO if mismatched.
 - **TODO [P2]:** Build a “customer setup guide” draft (steps for unpacking, installing drivers, running demos) that references `todo_simulation_viewer.md` and `todo_documentation.md`.
 - **TODO [P2]:** Publish support/resolution workflows (contact info, issue filing) and ensure they surface on the AI dashboard tracker so maintainers know when field tickets materialize.
+- **TODO [P2]:** Explore open-source vs closed-source hardware paths (open repo, hardware licensing, private manufacturing) and document the pros/cons for manufacturing, packaging, and community programs in a dedicated `docs/go_to_market_open_vs_closed.md`.
+- **TODO [P2]:** Add TODO entries detailing free (community) vs commercial bundling options for Hydra kits, linking them to production scales (beta kits, pre-orders, enterprise) and corresponding automation tracker references so we know what to produce for each audience.
+- **TODO [P3]:** Describe community vs private lab deployment needs (support, warranties, services) in this tracker so manufacturing/policies align with the right SLAs per customer type.
 
 ## P3 - Marketing & Community
 
