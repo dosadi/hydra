@@ -11,8 +11,11 @@ See `docs/todo/todo_prioritization.md` for sprint plan. Most items are P2 (nice-
 - TODO: Refine BRDF shading model (diffuse/specular balance) and normalize energy for emissive + lit surfaces.
 - TODO: Add per-material roughness/metallic parameters and propagate into the raycaster for highlight shaping.
 - TODO: Implement soft shadowing in the raystep loop (penumbra approximation) without large perf hit.
+- TODO [P2]: Add a “surface extractor” pipeline stage that records the first hit’s normal/depth/color into a separate buffer, then expose it via the viewer for downstream debug or SSAO tooling.
+- TODO [P2]: Instrument the surface extractor to emit CSV logs of hit normals/curvature for a fixed sample column so offline scripts can verify shading changes across render updates.
 - TODO: Add ambient occlusion term in the ray marcher (raystep-based heuristic) with tunable radius/strength.
 - TODO: Integrate temporal accumulation/denoise (with motion reset) to smooth noisy frames.
+- TODO [P3]: Build a surface-export helper that saves the surface/extractor buffer as a raw image (normal/depth map) plus metadata, so automation can compare successive commits automatically.
 - TODO: Add a simple bloom/bright-pass stage after framebuffer write (configurable threshold/intensity).
 - TODO: Support tone mapping/gamma correction as a post step (ACES-like and simple Reinhard options).
 - IN-PROGRESS: Wire pixel_reemissure sideband fully through the pipeline and expose in HUD/debug (sim viewer can now switch to word2/sideband views; HUD stats still pending; RTL still drops reemissure on HDMI/AXI paths).
