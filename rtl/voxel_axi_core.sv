@@ -131,11 +131,10 @@ module voxel_axi_core #(
     wire         dma_start_pulse;
     reg          dma_busy;
     reg          dma_done;
-    reg          dma_err;
     wire [31:0]  dma_src;
     wire [31:0]  dma_dst;
     wire [31:0]  dma_len;
-    reg  [31:0]  dma_status;
+    wire [31:0]  dma_status_out;
 
     // Blitter memory access (for 3D blitter bring-up)
     wire         blit_mem_we;
@@ -173,21 +172,15 @@ module voxel_axi_core #(
             case (dma_state)
                 DMA_IDLE: begin
                     if (dma_start_pulse) begin
-                        if (dma_busy) begin
-                            dma_err    <= 1'b1;
-                            dma_status <= dma_status | 32'h4;
-                        end else if (dma_len == 0 ||
-                                     dma_src >= DMA_ADDR_MAX || dma_dst >= DMA_ADDR_MAX ||
-                                     dma_src + dma_len > DMA_ADDR_MAX ||
-                                     dma_dst + dma_len > DMA_ADDR_MAX) begin
-                            dma_err    <= 1'b1;
-                            dma_status <= dma_status | 32'h4;
-                            dma_done   <= 1'b1;
-                            dma_status <= dma_status | 32'h5;
-                            dma_state  <= DMA_ERR;
+                            if (dma_busy) begin
+                            end else if (dma_len == 0 ||
+                                         dma_src >= DMA_ADDR_MAX || dma_dst >= DMA_ADDR_MAX ||
+                                         dma_src + dma_len > DMA_ADDR_MAX ||
+                                         dma_dst + dma_len > DMA_ADDR_MAX) begin
+                                dma_done   <= 1'b1;
+                                dma_state  <= DMA_ERR;
                         end else begin
                             dma_busy    <= 1'b1;
-                            dma_status  <= dma_status | 32'h2; // busy
                             dma_stub_start <= 1'b1;
                             dma_state   <= DMA_RUN;
                         end
@@ -196,7 +189,6 @@ module voxel_axi_core #(
                 DMA_RUN: begin
                     if (dma_stub_done) begin
                         dma_busy   <= 1'b0;
-                        dma_status <= (dma_status & ~32'h2) | 32'h1;
                         dma_done   <= 1'b1;
                         dma_state  <= DMA_IDLE;
                     end
@@ -298,7 +290,7 @@ module voxel_axi_core #(
         .dma_src        (dma_src),
         .dma_dst        (dma_dst),
         .dma_len        (dma_len),
-        .dma_status     (dma_status),
+        .dma_status     (dma_status_out),
 
         .blit_mem_we    (blit_mem_we),
         .blit_mem_re    (blit_mem_re),

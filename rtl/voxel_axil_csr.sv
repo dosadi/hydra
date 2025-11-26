@@ -515,8 +515,10 @@ module voxel_axil_csr #(
                             `ifdef CSR_DEBUG
                                 $display("CSR: DMA_CTRL write @0x%04h src=0x%08x dst=0x%08x len=0x%08x busy_in=%0b", awaddr_aligned, dma_src, dma_dst, dma_len, dma_busy_in);
                             `endif
-                            // Require 8-byte alignment on SRC/DST/LEN; flag DMA_ERR on violation.
-                            if (dma_src[2:0] != 3'b000 || dma_dst[2:0] != 3'b000 || dma_len[2:0] != 3'b000) begin
+                            if (dma_busy_in) begin
+                                dma_status[2] <= 1'b1; // err
+                                int_status[2] <= 1'b1;
+                            end else if (dma_src[2:0] != 3'b000 || dma_dst[2:0] != 3'b000 || dma_len[2:0] != 3'b000) begin
                                 dma_status[2] <= 1'b1; // err
                                 dma_status[1] <= 1'b1; // mark done so driver sees completion
                                 int_status[2] <= 1'b1; // HYDRA_INT_DMA_ERR
