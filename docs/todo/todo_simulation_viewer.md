@@ -199,6 +199,12 @@ Tracks simulation viewer features, HUD improvements, user controls, batch/headle
   - **Validation:** Camera orbits around target
   - **Deliverable:** Orbit mode toggle (O key)
 
+## P3 - Automation & Dashboard Integration
+
+- **TODO [P3]:** Log viewer telemetry (FPS, camera path, HUD state) into `out/viewer_health.json` and have `scripts/ai_health_dashboard.py` consume it so viewer regressions show up in the dashboard summary.
+- **TODO [P3]:** Create a viewer regression harness that runs multiple backend combos via `scripts/ai_health_dashboard.py` and captures frame diffs per backend in `out/viewer_regression/`.
+- **TODO [P3]:** Maintain a viewer feature backlog section (list of quick fixes vs product-level rewrites) that references this tracker so contributors can span bugfixes through new feature initiatives without assuming a fixed size.
+
 - **TODO [P2]:** Add camera FOV (field of view) adjustment
   - **Effort:** 2 days
   - **Priority:** P2 - Viewing flexibility
