@@ -10,3 +10,7 @@ Tasks to keep the RTL synthesis-friendly with predictable timing closure.
 - TODO [P2]: Add optional clock gating enables for idle blocks (DMA/blitter/HDMI) with synthesis-friendly generates.
 - TODO [P2]: Document reset strategy (async assert, sync deassert) and ensure all flops are covered; add reset-domain crossing notes if any remain.
 - TODO [P2]: Provide a minimal gate-level sim recipe (GLS) for the top to spot uninitialized nets and timing issues.
+- TODO [P2]: Audit held timing paths from the raycaster and render pipeline (clock crossings) and document which paths can tolerate slack vs. which must stay low-latency.
+- TODO [P2]: Add a synthesis power estimation log (per rails) and tie it to `docs/todo/todo_power.md` so power budgeting stays visible across RTL changes.
+- TODO [P3]: Capture a guideline for vendor-tuned synth scripts (Vivado/Quartus) that includes which macros to pass and which XDC constraints to update when top-level ports change.
+- TODO [P3]: Document how to rerun the synthesis flow in Docker/CI (`scripts/synth_docker.sh`) so contributors can reproduce area/timing numbers before shipping.
