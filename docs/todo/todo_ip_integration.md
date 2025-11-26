@@ -218,6 +218,13 @@ Tracks integration of third-party IP cores (LitePCIe, LiteDRAM, LiteVideo, LiteX
   - **Validation:** LiteX generates integrated SoC
 - **Deliverable:** LiteX build script
 
+### P2 - Extended Integration & Tooling Automation
+- **TODO [P2]:** Document IP integration dependency map (LitePCIe → DMA → HDMI) and feed dependencies into `docs/todo/todo_dependency_map.md` so automation can weight the critical paths.
+- **TODO [P2]:** Add automated integration tests that run `scripts/ai_health_dashboard.py` and ensure the dependency tracker/backlog updates when LiteX/LiteDRAM counters shift (tie to AI dashboard job).
+- **TODO [P2]:** Provide GDB/remote debug configuration for the LiteX firmware/BIOS so bring-up engineers can step through PCIe/DRAM initialization with symbol paths.
+- **TODO [P2]:** Create a script to refresh LiteX-generated constraints and cross-check them against the board stack-up (compare pinouts vs. `docs/todo/todo_board_hardware_design.md`).
+- **TODO [P3]:** Add a research note exploring LiteX integration with AI planning (how to auto-optimise DMA paths or pipeline phases) and connect it to `docs/todo/todo_ai_development.md`.
+
 ### LiteX Stubs & Surface Work
 - **TODO [P1]:** Turn `rtl/litex/litex_pcie_bridge.sv` into a working bridge with AXI translation, descriptor parsing, and MSI-X handling; log progress in this tracker for visibility.
 - **TODO [P2]:** Build out `rtl/litex/litex_dma_engine.sv` so it produces AXI bursts (read/write) mapped to LiteX descriptors, and connect the module to `docs/todo/todo_dma_pcie.md` for DMA parity testing.
