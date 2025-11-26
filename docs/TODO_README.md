@@ -22,9 +22,10 @@
 2. **`todo_guide.md`** - Navigation guide, quick start by area
 3. **`todo_changelog_0_0_7.md`** - Changes from 0.0.6 → 0.0.7, migration guide
 4. **`todo_dependency_map.md`** - Dependency lookup table for high-level trackers
-5. **`todo_session_summary_2025_11_25.md`** - Detailed session notes
-6. **`TODO_README.md`** - This file
-7. **`todo_rebalance_policy.md`** - Guidelines for keeping tracker volumes balanced
+5. **`todo_ai_development.md`** - AI tooling/workflow TODOs
+6. **`todo_session_summary_2025_11_25.md`** - Detailed session notes
+7. **`TODO_README.md`** - This file
+8. **`todo_rebalance_policy.md`** - Guidelines for keeping tracker volumes balanced
 
 ### Master Tracker
 6. **`todo_master.md`** - Cross-cutting items (sim/viewer, drivers, build/CI, docs)

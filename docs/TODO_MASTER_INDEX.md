@@ -27,6 +27,7 @@
 | `TODO_MASTER_INDEX.md` | This file - complete tracker reference | ~300 |
 | `todo_prioritization.md` | Strategic roadmap, 8-week sprint plan | ~765 |
 | `todo_dependency_map.md` | Tracker dependency matrix | ~100 |
+| `todo_ai_development.md` | AI tooling/workflow TODOs | ~40 |
 | `todo_system_summary_2025_11_25.md` | Session summary, metrics, recommendations | ~350 |
 | Additional meta docs may exist | | |
 
