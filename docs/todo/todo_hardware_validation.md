@@ -198,6 +198,33 @@ Tracks pre-silicon validation, FPGA bring-up, hardware testing, and physical dep
   - **Validation:** LEDs reflect expected states
   - **Deliverable:** LED mapping in constraints
 
+- **TODO [P2]:** Add deterministic hardware validation sequences that export frame dumps and verify them against golden references using `scripts/compare_frame_dump.sh`.
+  - **Effort:** Medium (2 days)
+  - **Priority:** P2 - Regression coverage
+  - **Dependencies:** Frame dump capability
+  - **Validation:** Frame comparison script passes headless CI
+  - **Deliverable:** Frame diff script + reference images
+- **TODO [P2]:** Maintain a hardware defect log (`docs/hardware_defect_log.md`) documenting issues found during validation along with status/owner, and surface the log via the AI dashboard briefing so anomalies are easy to trace.
+  - **Effort:** Small (1 day)
+  - **Priority:** P2 - Traceability
+  - **Dependencies:** Collected issues
+  - **Validation:** Log entries correlate with dashboard prompts
+  - **Deliverable:** Defect log doc
+
+### Advanced Validation Automation
+- **TODO [P1]:** Expand `scripts/automation_watchdog.sh` to include hardware regression hooks that build the FPGA bitstream, run `scripts/check_build_requirements.py`, and refresh `docs/todo/todo_tracker_metadata.json` so the AI dashboard sees accurate hardware TODO counts before gating.
+  - **Effort:** Medium (2 days)
+  - **Priority:** P1 - Automate validation visibility
+  - **Dependencies:** Existing automation scripts
+  - **Validation:** Automation job updates metadata + dashboard
+  - **Deliverable:** Updated automation script + README note
+- **TODO [P1]:** Create `scripts/hardware_health_summary.py` that collects FPGA telemetry (clock, temp, SDRAM errors) during regression runs and publishes a JSON artifact consumed by `scripts/ai_health_dashboard.py`.
+  - **Effort:** Medium (2 days)
+  - **Priority:** P1 - Dashboard integration
+  - **Dependencies:** Monitor hooks, dashboard script
+  - **Validation:** JSON file appears in CI artifacts
+  - **Deliverable:** Monitoring script + doc mention
+
 ### Performance Validation
 - **TODO [P1]:** Measure frame rate on FPGA (target: 30+ FPS at 480x360)
   - **Effort:** 2 days
@@ -378,10 +405,18 @@ Tracks pre-silicon validation, FPGA bring-up, hardware testing, and physical dep
 
 - **TODO [P3]:** Create hardware-in-the-loop (HIL) test framework for automated regression
   - **Effort:** 10 days
-  - **Priority:** P3 - Test automation
+- **Priority:** P3 - Test automation
   - **Dependencies:** FPGA boards, automation infrastructure
   - **Validation:** Regression runs nightly on hardware
   - **Deliverable:** HIL test framework
+
+### Long-term Validation Readiness
+- **TODO [P3]:** Build a hardware validation readiness checklist (power rail sequencing, timing closure, driver health) that versioned alongside the AI dashboard so release readiness is traceable per board.
+  - **Effort:** Medium (2 days)
+  - **Priority:** P3 - Release maturity
+  - **Dependencies:** Current validation scripts
+  - **Validation:** Checklist referenced by release leads
+  - **Deliverable:** `docs/hardware_validation_readiness.md`
 
 ---
 
