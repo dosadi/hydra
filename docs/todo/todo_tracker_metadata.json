@@ -59,27 +59,27 @@
     "done_lines": 199,
     "priority": {
       "P0": 72,
-      "P1": 247,
-      "P2": 656,
-      "P3": 378,
+      "P1": 250,
+      "P2": 659,
+      "P3": 379,
       "unknown": 117
     },
-    "todo_lines": 1470,
+    "todo_lines": 1477,
     "tracker_count": 65
   },
   "todo_ai_development.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T23:36:30.937756",
-    "line_count": 19,
+    "last_updated": "2025-11-26T00:29:05.294302",
+    "line_count": 26,
     "path": "docs/todo/todo_ai_development.md",
     "priority": {
       "P0": 1,
-      "P1": 3,
-      "P2": 9,
-      "P3": 2,
+      "P1": 6,
+      "P2": 12,
+      "P3": 3,
       "unknown": 0
     },
-    "todo_lines": 15
+    "todo_lines": 22
   },
   "todo_axi_lite_coverage.md": {
     "done_lines": 0,
@@ -853,7 +853,7 @@
   },
   "todo_system_design.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T00:23:07.302324",
+    "last_updated": "2025-11-26T00:24:40.594358",
     "line_count": 32,
     "path": "docs/todo/todo_system_design.md",
     "priority": {

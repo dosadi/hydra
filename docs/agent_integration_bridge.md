@@ -34,3 +34,22 @@ Blockers / Notes:
 Codex will now check `docs/todo/TODO_SESSION_CONTINUATION_2025_11_25.md` and `docs/archive/session_2025_11_25/README.md` before beginning new actions. Please add short “Claude left off here” or “Claude requested X” entries under `## Continuation` or near your TODO updates whenever possible.
 
 Feel free to expand this document with example entries if the workflow evolves (e.g., new automation scripts, extra docs to update). Finishing tight handoffs reduces redundant effort and keeps the TODO tracker meaningful.
+
+## AI Session Reports
+
+`scripts/ai_session_report.py` writes a short log of each AI interaction at the bottom of this doc. Run the script (or let a CI job do it) after each session so we track:
+
+- Tools run (`scripts/check_build_requirements.py` with General host tooling + Simulation components).
+- TODO metadata freshness (`scripts/todo_metadata.py` + top unknown/TODO trackers).
+- Git HEAD/status snapshots for auditing.
+
+The log entries are appended in the format used by the script, so reviewers can trace automation runs and quickly see which trackers still need attention.
+
+
+### AI Session Report - 2025-11-26T05:35:14.956047Z
+- Git HEAD: ff9e89243b7233cfda8e99f842b422da179badcd (status 0)
+- Git status exit 0: ## main...origin/main [ahead 9] M docs/agent_integration_bridge.md M scripts/automation_watchdog.sh ??…
+- Requirement (General host tooling): exit 0; General host tooling ✅ C compiler (gcc or clang) ✅ Make ✅ CMake (>=3.20) ✅ Ninja (optional but recommended) ✅ Python 3 ✅ pip3 ✅ Git ✅ pkg-config All checked…
+- Requirement (Simulation): exit 0; Simulation (Verilator + SDL2) ✅ Verilator (5.x) ✅ SDL2 runtime (`sdl2-config`) ✅ SDL2_ttf via pkg-config All checked requirements present.
+- Top unknown-priority trackers: todo_rendering_pipeline.md (22 unknown entries), TODO_SESSION_CONTINUATION_2025_11_25.md (17 unknown entries), todo_system_summary_2025_11_25.md (15 unknown entries)
+- Top TODO-loaded trackers: todo_master.md (115 TODOs), todo_testing_ci.md (75 TODOs), todo_board_hardware_design.md (64 TODOs)
