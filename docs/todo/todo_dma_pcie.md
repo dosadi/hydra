@@ -52,3 +52,7 @@ See `docs/todo/todo_prioritization.md` for sprint plan. Items marked with priori
 - TODO: Define structured DMA logging schema and ingestion scripts (`docs/todo/todo_dma_structured_logging.md`).
 - TODO: Capture PCIe hotplug workflows and ensure DMA state cleans up (`docs/todo/todo_dma_hotplug.md`).
 - TODO: Build a DMA trace artifact pipeline for CI and nightly runs (`docs/todo/todo_dma_trace_artifacts.md`).
+- TODO [P2]: Add validation that DMA aligns with PCIe maximal payload sizes (check `DMA_LEN` vs. negotiated MP) and document required driver behavior.
+- TODO [P2]: Instrument BAR0/BAR1 register snapshots (with timestamp) so the trace artifacts include address windows for reproducing bad transfers.
+- TODO [P3]: Add a DMA watchdog mode that tracks burst completion crosstalk to avoid rogue masters; tie it into `todo_dma_trace_artifacts.md`.
+- TODO [P3]: Define a smoke test that exercises BAR0 vs BAR1 interleaving (color-coded) and logs whether invalid accesses trigger proper errors.
