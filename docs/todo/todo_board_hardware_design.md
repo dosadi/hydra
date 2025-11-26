@@ -198,6 +198,76 @@ Tracks custom PCB design, component selection, connectors/headers, power distrib
     - Status LEDs (4-8 user-controlled)
     - Reset button, config button
 
+### Layout & Mechanical Readiness
+- **TODO [P1]:** Finalize thermal solution (heat sink, fan, airflow) for the selected FPGA and power stage, with CFD or empirical estimates.
+  - **Effort:** 2 days
+  - **Priority:** P1 - Prevent thermal throttling
+  - **Dependencies:** Power dissipation targets, chassis/enclosure
+  - **Validation:** Thermal budget spreadsheet + proof-of-concept thermal model (CAD/CFD)
+  - **Deliverable:** Thermal spec + mechanical CAD for cooling hardware
+- **TODO [P1]:** Define PCB stack-up/signal layer plan for power/PCIe/DRAM, including impedance control and referencing.
+  - **Effort:** 1.5 days
+  - **Priority:** P1 - SI/PI readiness
+  - **Dependencies:** Fabricator capabilities (max layers, spec)
+  - **Validation:** Stack-up doc (dielectric, thickness, foil)
+  - **Deliverable:** Manufacturer-ready stack-up sheet
+- **TODO [P1]:** Author mechanical enclosure/board mounting notes (fasteners, retention, card guide) and supply drawings to fab house.
+  - **Effort:** 1 day
+  - **Priority:** P1 - Mechanical integration
+  - **Dependencies:** Form factor, thermal solution
+  - **Validation:** Fabricator/assembler acknowledge mechanical requirements
+  - **Deliverable:** Demo mechanical note (PDF + CAD snippet)
+
+### Manufacturing Preparation
+- **TODO [P2]:** Build a BOM/per-cost estimate template with multiple component sources to ensure longest lead-time items have alternates.
+  - **Effort:** 1 day
+  - **Priority:** P2 - Manufacturing readiness
+  - **Dependencies:** Component selection, budgets
+  - **Validation:** BOM with primary/secondary/tertiary vendors
+  - **Deliverable:** BOM spreadsheet + sourcing notes
+- **TODO [P2]:** Schedule first-run board spins with incremental validation steps (bare board, partial populate, full populate).
+  - **Effort:** 1 day
+  - **Priority:** P2 - Risk mitigation
+  - **Dependencies:** Fabricator lead time
+  - **Validation:** Build plan documented (what gets tested at each spin)
+  - **Deliverable:** Spin plan document + pass/fail criteria
+- **TODO [P2]:** Capture manufacturing constraints (min trace/space, via aspect, panelization) and feed them into DFM checks or fab notes.
+  - **Effort:** 1 day
+  - **Priority:** P2 - DFM compliance
+  - **Dependencies:** Board stack-up, design rules
+  - **Validation:** DFM checklist completed
+  - **Deliverable:** DFM memo for assembler
+
+## P2 - Testing, Compliance, and Automation
+- **TODO [P2]:** Define a rack-level test fixture (power/PCIe) and a scriptable test sequence that exercises PCIe enumeration, SDRAM training, and power health.
+  - **Effort:** 2 days
+  - **Priority:** P2 - Bring-up automation
+  - **Dependencies:** Known interfaces, firmware
+  - **Validation:** Automated script logs + pass/fail summary
+  - **Deliverable:** `scripts/board_bringup.sh` plus fixture notes
+- **TODO [P2]:** Trace layout review (PDF/annotations) to highlight high-speed nets and associated concerns for peer review sessions.
+  - **Effort:** 1 day
+  - **Priority:** P2 - Quality assurance
+  - **Dependencies:** Completed routing
+  - **Validation:** Review minutes with sign-off
+  - **Deliverable:** Review deck + annotated layout snapshots
+- **TODO [P2]:** Add EMI/ESD considerations (filtering, clampers) to the design and document compliance steps for CE/FCC.
+  - **Effort:** 1 day
+  - **Priority:** P2 - Regulatory path
+  - **Dependencies:** Power/PCIe design
+  - **Validation:** EMI plan, recommended parts list
+  - **Deliverable:** Compliance section in final board doc
+- **TODO [P2]:** Add schematic verification steps to CI (DFM bring-up up to tolerances) by adding automated schematic check scripts to `scripts/`.
+  - **Effort:** 1 day
+  - **Priority:** P2
+  - **Dependencies:** Schematics in version control
+  - **Validation:** CI job runs with pass/fail
+  - **Deliverable:** `scripts/board_schematics_check.sh`
+
+## P3 - Future Enhancements
+- **TODO [P3]:** Investigate modular mezzanine add-ons for Hydra (e.g., attachable DRAM expansions or GPU co-processors) and document requirements.
+- **TODO [P3]:** Draft a board maintenance plan (firmware updates, diagnostics, field service) referencing this tracker and `docs/hardware_validation.md`.
+
 - **TODO [P2]:** Integrate analog/Mixed-Signal sims (VAMS/Spice/Xyce/Matlab) for the power/IO rails and signal integrity paths; document the exact tooling, input decks, and regression steps so the board simulation workflow can be reproduced.
 - **TODO [P3]:** Add a script (`scripts/board_simulate.sh`) that runs the analog models (VAMS/Spice) and saves the waveforms/logs for each release, producing artifacts referenced in `docs/todo/todo_system_summary_2025_11_25.md`.
 - **TODO [P1]:** Author a VAMS-focused checklist covering setup (license, models), verification steps, and drift detection of analog parameters to run before each analog regression.  
