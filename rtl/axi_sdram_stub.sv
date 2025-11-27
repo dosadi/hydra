@@ -103,6 +103,7 @@ module axi_sdram_stub #(
     reg [2:0] w_size;
     reg [1:0] w_burst;
     reg       w_err;
+    reg [7:0] w_total_beats;
 
     reg [ID_WIDTH-1:0] r_id;
     reg [ADDR_WIDTH-1:0] r_addr;
@@ -112,6 +113,7 @@ module axi_sdram_stub #(
     reg [2:0] r_size;
     reg [1:0] r_burst;
     reg       r_err;
+    reg [7:0] r_total_beats;
 
     // Simple pseudo-random jitter (linear feedback shift register)
     reg [7:0] lfsr;
@@ -275,6 +277,16 @@ module axi_sdram_stub #(
             s_axi_rvalid |-> ##[1:8] !s_axi_rvalid;
         endproperty
         rvalid_pulse_width_sva: assert property (rvalid_pulse_width);
+
+        // SVA: WRAP next address stays within wrap boundary
+        property wrap_address_within_bounds;
+            @(posedge clk) disable iff (!rst_n)
+            (r_active && r_burst == 2'b10) |-> (
+                (r_addr >= (r_addr - (r_addr % ((r_total_beats)*(1<<r_size)))) ) &&
+                (r_addr < (r_addr - (r_addr % ((r_total_beats)*(1<<r_size)))) + (r_total_beats*(1<<r_size)))
+            );
+        endproperty
+        wrap_address_within_bounds_sva: assert property (wrap_address_within_bounds);
 `endif
     // ------------------------------------------------------------------------
     // Outstanding transaction counters
@@ -371,6 +383,26 @@ module axi_sdram_stub #(
 
     wire [ADDR_WIDTH-1:0] w_addr_next = w_addr + (1 << w_size);
     wire [ADDR_WIDTH-1:0] r_addr_next = r_addr + (1 << r_size);
+
+    // Compute WRAP next address helper (byte-addressed)
+    function automatic [ADDR_WIDTH-1:0] wrap_next_addr;
+        input [ADDR_WIDTH-1:0] addr;
+        input [7:0] total_beats; // number of beats in burst
+        input [2:0] size;        // beat size as power-of-two shift
+        input [ADDR_WIDTH-1:0] base_addr;
+        reg [ADDR_WIDTH-1:0] beat_bytes;
+        reg [ADDR_WIDTH-1:0] wrap_size;
+        reg [ADDR_WIDTH-1:0] base;
+        reg [ADDR_WIDTH-1:0] offset;
+    begin
+        beat_bytes = (1 << size);
+        wrap_size = beat_bytes * total_beats;
+        // compute wrap base (aligned lower multiple of wrap_size)
+        base = addr - (addr % wrap_size);
+        offset = (addr - base + beat_bytes) % wrap_size;
+        wrap_next_addr = base + offset;
+    end
+    endfunction
     localparam integer MEM_ADDR_SHIFT = 3;
     wire [7:0] jitter = (WAIT_JITTER == 0) ? 8'd0 : (lfsr & {8{(WAIT_JITTER!=0)}}) % (WAIT_JITTER+1);
 
@@ -454,6 +486,8 @@ module axi_sdram_stub #(
                 w_id    <= w_id_q[w_head];
                 w_addr  <= w_addr_q[w_head];
                 w_beats <= w_beats_q[w_head];
+                // store total beats (AWLEN is beats-1 in AXI canonical form; stored value is AWLEN)
+                w_total_beats <= w_beats_q[w_head] + 1'b1;
                 w_delay <= w_delay_q[w_head];
                 w_size  <= w_size_q[w_head];
                 w_burst <= w_burst_q[w_head];
@@ -485,7 +519,14 @@ module axi_sdram_stub #(
 
                 if (w_beats != 0)
                     w_beats <= w_beats - 1'b1;
-                w_addr <= (w_burst == BURST_INCR) ? w_addr_next : w_addr;
+                // Compute next address depending on burst type
+                if (w_burst == BURST_INCR) begin
+                    w_addr <= w_addr_next;
+                end else if (w_burst == 2'b10) begin // WRAP
+                    w_addr <= wrap_next_addr(w_addr, w_total_beats, w_size, w_addr);
+                end else begin // FIXED or unsupported falls back to increment
+                    w_addr <= w_addr_next;
+                end
 
                 if (s_axi_wlast || (w_beats == 0)) begin
                     s_axi_bid    <= w_id;
@@ -568,6 +609,7 @@ module axi_sdram_stub #(
                 r_id    <= r_id_q[r_head];
                 r_addr  <= r_addr_q[r_head];
                 r_beats <= r_beats_q[r_head];
+                r_total_beats <= r_beats_q[r_head] + 1'b1;
                 r_delay <= r_delay_q[r_head] + jitter;
                 r_size  <= r_size_q[r_head];
                 r_burst <= r_burst_q[r_head];
@@ -594,7 +636,14 @@ module axi_sdram_stub #(
 
                     if (r_beats != 0)
                         r_beats <= r_beats - 1'b1;
-                    r_addr <= (r_burst == BURST_INCR) ? r_addr_next : r_addr;
+                    // Next address for read based on burst type
+                    if (r_burst == BURST_INCR) begin
+                        r_addr <= r_addr_next;
+                    end else if (r_burst == 2'b10) begin // WRAP
+                        r_addr <= wrap_next_addr(r_addr, r_total_beats, r_size, r_addr);
+                    end else begin
+                        r_addr <= r_addr_next;
+                    end
                 end
             end
             if (s_axi_rvalid && s_axi_rready) begin
