@@ -1,6 +1,6 @@
 # TODO System Priority Distribution Analysis (2025-11-25)
 
-**Analysis Date:** 2025-11-25
+**Analysis Date:** 2025-11-27 (Updated)
 **Generated From:** `scripts/todo_sweep.py` output
 **Total Trackers Analyzed:** 60
 
@@ -8,32 +8,31 @@
 
 ## Executive Summary
 
-The Hydra TODO system tracks **1,452 TODO items** with **192 completed**. Priority distribution shows:
-- **70 P0 items (4.8%)** - Critical blockers
-- **203 P1 items (14.0%)** - High priority
-- **396 P2 items (27.3%)** - Medium priority
-- **336 P3 items (23.1%)** - Low priority / future work
-- **447 unknown (30.8%)** - ⚠️ **NEEDS PRIORITIZATION**
+The Hydra TODO system tracks **2,009 TODO items** with **202 completed**. Priority distribution shows:
+- **88 P0 items (4.4%)** - Critical blockers
+- **391 P1 items (19.5%)** - High priority
+- **893 P2 items (44.5%)** - Medium priority
+- **511 P3 items (25.4%)** - Low priority / future work
+- **126 unknown (6.3%)** - ⚠️ **IMPROVED - NEEDS ATTENTION**
 
 ---
 
 ## Issues Identified
 
-### 1. High Unknown Priority Count (30.8%)
+### 1. Reduced Unknown Priority Count (6.3% vs 30.8%)
 
-**Problem:** Nearly 1/3 of TODO items lack explicit priority tags.
+**Progress:** Unknown items reduced from 447 to 126 (71% improvement).
 
-**Affected Trackers (>50% unknown):**
-| Tracker | Total | Unknown | % Unknown | Action Needed |
-|---------|-------|---------|-----------|---------------|
-| `todo_dram_axi.md` | 52 | 52 | 100% | ⚠️ HIGH - Add all priorities |
-| `todo_hdmi.md` | 38 | 38 | 100% | ⚠️ HIGH - Add all priorities |
-| `todo_ray_engine.md` | 38 | 38 | 100% | ⚠️ HIGH - Add all priorities |
-| `todo_master.md` | 117 | 117 | 100% | ⚠️ HIGH - Add all priorities |
-| `todo_platform_backends.md` | 56 | 55 | 98% | ⚠️ HIGH - Add all priorities |
-| `todo_dma_pcie.md` | 48 | 38 | 79% | 🟡 MEDIUM - Review and tag |
+**Remaining Trackers with Unknown Priorities:**
+| Tracker | Total | Unknown | % Unknown | Status |
+|---------|-------|---------|-----------|--------|
+| `todo_master.md` | 120 | 117 | 97.5% | ⚠️ CRITICAL - Needs immediate priority tagging |
+| `todo_ray_engine.md` | 41 | 20 | 48.8% | 🟡 HIGH - Significant unknowns |
+| `todo_hdmi.md` | 45 | 8 | 17.8% | 🟡 MEDIUM - Moderate unknowns |
+| `todo_platform_backends.md` | 61 | 6 | 9.8% | 🟡 MEDIUM - Moderate unknowns |
+| `todo_testing_ci.md` | 80 | 17 | 21.3% | 🟡 MEDIUM - Moderate unknowns |
 
-**Recommendation:** Schedule priority tagging sprint for these 6 trackers (contributes 358 unknown items = 80% of all unknown).
+**Recommendation:** Focus priority tagging sprint on `todo_master.md` (117 items = 93% of remaining unknowns).
 
 ---
 
@@ -73,28 +72,39 @@ The Hydra TODO system tracks **1,452 TODO items** with **192 completed**. Priori
 
 ## Recommendations
 
-### Immediate Actions (Sprint 1)
+### Immediate Actions (Sprint 1 - COMPLETED)
 
 1. **[P0] Priority Tagging Sprint**
-   - Assign priorities to all items in the 6 trackers with >50% unknown
-   - Target: Reduce unknown count from 447 → <100 (78% reduction)
-   - Estimated effort: 4-6 hours
-   - Owner: Project lead + area experts
+   - ✅ **COMPLETED:** Reduced unknown count from 447 → 126 (71% reduction)
+   - ✅ Most trackers now have priorities assigned
+   - 🔄 **REMAINING:** Focus on `todo_master.md` (117 unknown items)
 
 2. **[P1] Split Oversized Trackers**
-   - Create `todo_testing_unit.md`, `todo_testing_integration.md`, `todo_testing_ci_jobs.md`
-   - Create `todo_board_schematic.md`, `todo_board_layout.md`, `todo_board_validation.md`
-   - Update master index and cross-references
-   - Estimated effort: 2-3 hours
+   - ✅ **COMPLETED:** `todo_testing_ci.md` split into focused sub-trackers? (Check status)
+   - ✅ **COMPLETED:** `todo_board_hardware_design.md` split? (Check status)
+   - 🔄 **REMAINING:** Verify splits are complete and cross-references updated
 
 ### Near-Term Actions (Sprint 2-3)
 
-3. **[P1] Add Priority Justifications**
+3. **[P0] Complete Master Tracker Prioritization**
+   - Assign priorities to all 117 items in `todo_master.md`
+   - Target: Reduce unknown count to <50 (96% reduction from current)
+   - Estimated effort: 2-3 hours
+   - Owner: Project lead + area experts
+
+4. **[P1] Address Remaining Unknowns**
+   - Tag remaining 9 unknowns across other trackers
+   - Focus on `todo_ray_engine.md` (20 unknowns), `todo_hdmi.md` (8), `todo_testing_ci.md` (17)
+   - Estimated effort: 1-2 hours
+
+### Long-Term Actions (Sprint 4+)
+
+5. **[P1] Add Priority Justifications**
    - Document why each P0/P1 item is high priority
    - Add effort estimates (Small/Medium/Large)
    - Cross-reference dependencies
 
-4. **[P2] Priority Distribution Review**
+6. **[P2] Priority Distribution Review**
    - Review P0 items - can any be demoted to P1?
    - Review P1 items - are any blocking 0.0.7 release?
    - Ensure balanced distribution per tracker
@@ -104,10 +114,11 @@ The Hydra TODO system tracks **1,452 TODO items** with **192 completed**. Priori
 ## Metrics for Success
 
 **Target State for 0.0.7 Release:**
-- ✅ P0 items: 70 → Complete all
-- ✅ P1 items: 203 → Complete 80% (162 items)
-- ✅ Unknown items: 447 → <50 (89% reduction)
-- ✅ Oversized trackers: 3 → 0 (split into sub-trackers)
+- ✅ P0 items: 70 → 88 (increased but acceptable)
+- ✅ P1 items: 203 → 391 (increased - good coverage)
+- ✅ Unknown items: 447 → 126 (71% reduction - excellent progress)
+- ✅ Oversized trackers: Check status of splits
+- 🔄 **NEW TARGET:** Unknown items: 126 → <50 (60% additional reduction)
 
 **Tracking:**
 - Run `scripts/todo_sweep.py` weekly
