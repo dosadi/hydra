@@ -274,14 +274,17 @@ module voxel_framebuffer_top #(
         .write_data (world_wdata)
     );
 
-    // Memory write arbitration: debug writes override world_gen
+    // Memory write arbitration: priority arbiter between debug writes and world_gen
     wire        dbg_write_en_mux   = dbg_write_en | dbg_ext_write_en;
     wire [17:0] dbg_write_addr_mux = dbg_ext_write_en ? dbg_ext_write_addr : dbg_write_addr;
     wire [63:0] dbg_write_data_mux = dbg_ext_write_en ? dbg_ext_write_data : dbg_write_data;
 
-    wire [17:0] mem_write_addr = dbg_write_en_mux ? dbg_write_addr_mux : world_waddr;
-    wire        mem_write_en   = dbg_write_en_mux | world_wen;
-    wire [63:0] mem_write_data = dbg_write_en_mux ? dbg_write_data_mux : world_wdata;
+    // Arbiter select: 1 => debug, 0 => world
+    reg mem_write_arb;
+
+    wire [17:0] mem_write_addr = mem_write_arb ? dbg_write_addr_mux : world_waddr;
+    wire        mem_write_en   = mem_write_arb ? dbg_write_en_mux     : world_wen;
+    wire [63:0] mem_write_data = mem_write_arb ? dbg_write_data_mux   : world_wdata;
 
     voxel_memory_64 geom_mem (
         .clk        (clk),
@@ -488,17 +491,40 @@ module voxel_framebuffer_top #(
     end
 
     // ------------------------------------------------------------------------
-    // Stub: Robust memory write arbitration between debug writes and world_gen
-    // TODO: Implement priority arbitration logic for debug writes vs. world_gen
-    reg mem_write_arb;
+    // Robust memory write arbitration between debug writes and world_gen
+    // Priority: debug writes (host or external) win when both request the same
+    // cycle. Arbiter favors debug and otherwise allows the world generator.
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            mem_write_arb <= 0;
+            mem_write_arb <= 1'b0;
         end else begin
-            // TODO: Add arbitration logic here
-            // For now, debug writes override world_gen
-            mem_write_arb <= dbg_ext_write_en ? 1'b1 : 1'b0;
+            // If debug requests a write this cycle, prefer it.
+            // Otherwise, if world requests, allow world.
+            if (dbg_write_en_mux && !world_wen)
+                mem_write_arb <= 1'b1;
+            else if (!dbg_write_en_mux && world_wen)
+                mem_write_arb <= 1'b0;
+            else if (dbg_write_en_mux && world_wen)
+                mem_write_arb <= 1'b1; // tie: prefer debug
+            else
+                mem_write_arb <= 1'b0;
         end
     end
+
+`ifdef FORMAL
+    // SVA: when both sources request a write, arbiter must prefer debug
+    property arb_prefers_debug;
+        @(posedge clk) disable iff (!rst_n)
+        (dbg_write_en_mux && world_wen) |-> (mem_write_arb == 1'b1);
+    endproperty
+    arb_prefers_debug_sva: assert property (arb_prefers_debug);
+
+    // SVA: final mem write signals must reflect the selected source
+    property mem_write_reflects_source;
+        @(posedge clk) disable iff (!rst_n)
+        mem_write_en |-> ((mem_write_arb && dbg_write_en_mux) || (!mem_write_arb && world_wen));
+    endproperty
+    mem_write_reflects_source_sva: assert property (mem_write_reflects_source);
+`endif
 
 endmodule
