@@ -1744,6 +1744,8 @@ static void apply_cli_overrides(int argc, char** argv) {
             set_override("HYDRA_PIXEL_VIEW", val, "pixel view mode");
         } else if (const char* val = match_arg(arg, "--seed", i)) {
             set_override("HYDRA_WORLD_SEED", val, "world/procedural seed");
+        } else if (const char* val = match_arg(arg, "--benchmark", i)) {
+            set_override("HYDRA_BENCHMARK", val, "benchmark frame count");
         }
     }
 
@@ -4072,6 +4074,8 @@ static void record_color(ColorRange& range, uint32_t argb) {
 				}
 				++frame_counter;
 
+				if (benchmark_frames > 0 && frame_counter >= benchmark_frames) running = false;
+
 				auto now = std::chrono::high_resolution_clock::now();
 				float dt = std::chrono::duration<float>(now - last_frame_time).count();
 				if (fps_target > 0.0f) {
@@ -5003,6 +5007,9 @@ private:
 	if (ray_jitter) std::fprintf(stderr, "[hydra] HYDRA_RAY_JITTER=1\n");
 	std::fprintf(stderr, "[hydra] Pixel view: %s\n", pixel_view_mode_name(g_pixel_view_mode));
 	std::fprintf(stderr, "[hydra] ==============================\n\n");
+
+	const char* benchmark_env = std::getenv("HYDRA_BENCHMARK");
+	int benchmark_frames = benchmark_env ? std::max(0, std::atoi(benchmark_env)) : 0;
 
 	RenderInstrumentationConfig inst_config;
 	inst_config.cam_pos_x = pos_x;

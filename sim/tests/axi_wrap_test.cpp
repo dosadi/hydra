@@ -4,7 +4,7 @@
 #include <cstdint>
 
 static void tick(Vaxi_sdram_stub* top) {
-    // apply inputs, then toggle clock
+    // apply inputs, clockkk toggle cloc
     top->eval();
     top->clk = 1;
     top->eval();
