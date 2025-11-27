@@ -219,7 +219,7 @@ Following the initial improvements, a second systematic pass identified and impl
 **Added Sections**:
 - **Documentation** - Links to all major docs in `docs/` directory
 - **Contributing** - Points to CONTRIBUTING.md
-- **License** - Placeholder for future license
+- **License** - BSD-3-Clause (see `LICENSE` at repository root)
 - **Status** - Version (0.0.5), maturity level, platform support
 
 **Impact**: Professional, complete README that provides clear guidance for new users and contributors
