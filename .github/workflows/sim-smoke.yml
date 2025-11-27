@@ -13,6 +13,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache sim build
+        uses: actions/cache@v4
+        with:
+          path: |
+            sim/obj_dir
+            sim/build
+            ~/.cache/verilator
+          key: ${{ runner.os }}-sim-${{ matrix.compiler }}-${{ hashFiles('sim/**','rtl/**','Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-sim-${{ matrix.compiler }}-
+
       - name: Install dependencies
         run: |
           sudo apt-get update
