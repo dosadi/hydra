@@ -250,7 +250,10 @@ module voxel_axi_core #(
 
     voxel_axil_csr #(
         .ADDR_WIDTH(16),
-        .DATA_WIDTH(32)
+        .DATA_WIDTH(32),
+        .SCREEN_WIDTH(SCREEN_WIDTH),
+        .SCREEN_HEIGHT(SCREEN_HEIGHT),
+        .VOXEL_GRID_SIZE(VOXEL_GRID_SIZE)
     ) u_csr (
         .clk            (clk),
         .rst_n          (rst_n),
@@ -618,6 +621,32 @@ module voxel_axi_core #(
             end
         end
     end
+
+    // Covergroup: pixel_addr monotonicity and frame completeness
+    covergroup cg_pixel_addr @(posedge clk);
+        coverpoint pixel_addr {
+            bins start = {0};
+            bins end   = {TOTAL_PIXELS-1};
+            bins range [] = {[0:TOTAL_PIXELS-1]};
+        }
+        coverpoint pixels_in_frame {
+            bins complete = {TOTAL_PIXELS};
+        }
+    endgroup
+    cg_pixel_addr pixel_addr_cov = new();
+    always @(posedge clk) begin
+        if (pixel_write_en)
+            pixel_addr_cov.sample();
+    end
+
+    // SVA: frame_done must only pulse after exactly TOTAL_PIXELS emitted
+    property frame_done_after_total_pixels;
+        @(posedge clk)
+        disable iff (!rst_n)
+        (pixels_in_frame == TOTAL_PIXELS) |-> frame_done;
+    endproperty
+    assert property (frame_done_after_total_pixels)
+        else $fatal("SVA: frame_done did not pulse after TOTAL_PIXELS emitted");
 
     // Selection changes should only occur on sel_load_pulse and stay in-bounds.
     reg [5:0] sel_x_d, sel_y_d, sel_z_d;

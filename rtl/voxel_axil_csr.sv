@@ -9,6 +9,9 @@
 module voxel_axil_csr #(
     parameter integer ADDR_WIDTH = 16,
     parameter integer DATA_WIDTH = 32,
+    parameter integer SCREEN_WIDTH    = 480,
+    parameter integer SCREEN_HEIGHT   = 360,
+    parameter integer VOXEL_GRID_SIZE = 64,
     parameter [15:0]  VENDOR_ID  = 16'h1BAD,
     parameter [15:0]  DEVICE_ID  = 16'h2024,
     parameter [7:0]   REV_ID     = 8'h02,
@@ -785,6 +788,33 @@ module voxel_axil_csr #(
     end
 
 `ifdef VERILATOR
+        // SVA: fb_base and fb_stride must be non-zero when start_frame_pulse is asserted
+        property fb_base_stride_nonzero_on_start_frame;
+            @(posedge clk)
+            disable iff (!rst_n)
+            start_frame_pulse |-> (fb_base != 32'd0 && fb_stride != 32'd0);
+        endproperty
+        assert property (fb_base_stride_nonzero_on_start_frame)
+            else $fatal("SVA: fb_base or fb_stride is zero when start_frame_pulse asserted");
+    // SVA: irq_out must only assert when (int_status & int_mask) != 0
+    property irq_out_gated_by_int_mask;
+        @(posedge clk)
+            disable iff (!rst_n)
+            irq_out |-> (|(int_status & int_mask));
+        endproperty
+        assert property (irq_out_gated_by_int_mask)
+            else $fatal("SVA: irq_out asserted when no int_status bits are masked");
+
+        // SVA: Each bit in int_mask gates the corresponding int_status interrupt
+        genvar i;
+        generate
+            for (i = 0; i < 32; i = i + 1) begin : int_mask_bit_sva
+                property int_mask_bit_gates_irq;
+                    @(posedge clk)
+                    disable iff (!rst_n)
+                    ((int_status[i] && int_mask[i]) |-> irq_out);
+                endproperty
+                assert property (int_mask_bit_gates_irq)
     // AXI-Lite stability checks: hold address/data/strobes steady while VALID && !READY.
     always @(posedge clk) begin
         if (s_axil_awvalid && !s_axil_awready) begin
@@ -834,6 +864,9 @@ module voxel_axil_csr #(
         if (!rst_n)
             axi_cover.sample();
     end
+                else $fatal("SVA: irq_out not asserted for int_status[%0d] & int_mask[%0d]", i, i);
+        end
+    endgenerate
 `endif
 
 endmodule

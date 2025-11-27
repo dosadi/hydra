@@ -68,6 +68,64 @@ module voxel_framebuffer_top #(
     input  wire         soft_reset_ext
 );
 
+    // ------------------------------------------------------------------------
+    // Framebuffer SVAs and Coverage
+    // ------------------------------------------------------------------------
+    // Track last pixel address for monotonicity check
+    reg [31:0] last_pixel_addr;
+    reg        pixel_addr_valid;
+
+    // SVA: Pixel address monotonicity (should not decrease within a frame)
+    property pixel_addr_monotonic;
+        @(posedge clk) disable iff (!rst_n)
+        pixel_write_en && pixel_addr_valid |-> pixel_addr >= last_pixel_addr;
+    endproperty
+    pixel_addr_monotonic_sva: assert property (pixel_addr_monotonic);
+
+    // SVA: No overlapping pixel writes within a frame
+    // (Simple implementation: check for repeated addr on consecutive cycles)
+    property pixel_write_no_overlap;
+        @(posedge clk) disable iff (!rst_n)
+        pixel_write_en && pixel_addr_valid |-> pixel_addr != last_pixel_addr;
+    endproperty
+    pixel_write_no_overlap_sva: assert property (pixel_write_no_overlap);
+
+    // SVA: Frame done pulse only when not busy (all pixels written)
+    property frame_done_when_idle;
+        @(posedge clk) disable iff (!rst_n)
+        frame_done |-> !core_busy;
+    endproperty
+    frame_done_when_idle_sva: assert property (frame_done_when_idle);
+
+    // Covergroup: Pixel address distribution
+    covergroup cg_pixel_addr @(posedge clk);
+        addr_bins: coverpoint pixel_addr {
+            bins low[]    = {[0:1023]};
+            bins mid[]    = {[1024:SCREEN_WIDTH*SCREEN_HEIGHT/2]};
+            bins high[]   = {[SCREEN_WIDTH*SCREEN_HEIGHT/2+1:SCREEN_WIDTH*SCREEN_HEIGHT-1]};
+        }
+    endgroup
+    cg_pixel_addr_inst = new();
+
+    // Covergroup: Write enable pulse coverage
+    covergroup cg_pixel_write_en @(posedge clk);
+        write_en: coverpoint pixel_write_en;
+    endgroup
+    cg_pixel_write_en_inst = new();
+
+    // Track last pixel address for SVAs
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            last_pixel_addr   <= 32'd0;
+            pixel_addr_valid  <= 1'b0;
+        end else begin
+            if (pixel_write_en) begin
+                last_pixel_addr  <= pixel_addr;
+                pixel_addr_valid <= 1'b1;
+            end
+        end
+    end
+
     // Camera registers (host-writeable)
     reg signed [15:0] cam_x;
     reg signed [15:0] cam_y;

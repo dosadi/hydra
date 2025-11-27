@@ -76,6 +76,26 @@ module voxel_raycaster_core_pipelined #(
     output reg [31:0]  dbg_ray_miss_count
 );
 
+    // --------------------------------------------------------------------
+    // Coverage: pixel_addr and ray_steps
+    // --------------------------------------------------------------------
+    covergroup cg_pixel_addr @(posedge clk);
+        pixel_addr_cp: coverpoint pixel_addr {
+            bins low[] = {[0:SCREEN_WIDTH*SCREEN_HEIGHT/4-1]};
+            bins mid[] = {[SCREEN_WIDTH*SCREEN_HEIGHT/4:3*SCREEN_WIDTH*SCREEN_HEIGHT/4-1]};
+            bins high[] = {[3*SCREEN_WIDTH*SCREEN_HEIGHT/4:SCREEN_WIDTH*SCREEN_HEIGHT-1]};
+        }
+    endgroup
+    cg_pixel_addr u_cg_pixel_addr = new();
+
+    covergroup cg_ray_steps @(posedge clk);
+        ray_steps_cp: coverpoint ray_steps {
+            bins short = {[0:MAX_RAY_STEPS/4-1]};
+            bins medium = {[MAX_RAY_STEPS/4:MAX_RAY_STEPS/2-1]};
+            bins long = {[MAX_RAY_STEPS/2:MAX_RAY_STEPS-1]};
+        }
+    endgroup
+    cg_ray_steps u_cg_ray_steps = new();
     // State machine
     localparam S_IDLE        = 4'd0;
     localparam S_RENDER_PIXEL= 4'd1;
@@ -219,7 +239,7 @@ module voxel_raycaster_core_pipelined #(
             tmp = out_b + ((voxel_emissive * out_b) >> 8); out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
         end
 
-        // Material ID is unused in the current feature set; keep it zero for debug compatibility.
+        // NOTE: Material ID is currently unused; set to zero for debug compatibility. Future features may use this field for advanced shading/material effects.
         out_material_id = 8'h00;
 
         if (voxel_material_type == 4'd3)       out_reflection = 8'd255;
@@ -233,7 +253,7 @@ module voxel_raycaster_core_pipelined #(
         out_attenuation = ray_steps;
         out_emission    = (voxel_material_type == 4'd1) ? voxel_emissive : 8'd0;
 
-        // Normals/curvature are stubbed: up vector unless smooth surfaces enabled
+        // NOTE: Normals/curvature are stubbed (up vector) unless smooth surfaces enabled. For full normal computation, extend this logic to use voxel geometry.
         out_normal_x  = pixel_normal_x;
         out_normal_y  = pixel_normal_y;
         out_normal_z  = pixel_normal_z;

@@ -1,10 +1,10 @@
 // ============================================================================
 // axi_sdram_stub.sv
-// - Minimal AXI4 memory model acting as a stand-in for SDRAM/DDR controllers.
-// - Single-clock, synchronous; supports incremental bursts (AWLEN/ARLEN) with
-//   fixed DATA_WIDTH and ADDR_WIDTH. No reordering; accepts one transaction at
-//   a time on each channel.
-// ============================================================================
+// Minimal AXI4 memory model acting as a stand-in for SDRAM/DDR controllers.
+// Single-clock, synchronous; supports incremental bursts (AWLEN/ARLEN) with fixed DATA_WIDTH and ADDR_WIDTH.
+// No reordering; accepts one transaction at a time on each channel.
+// NOTE: This is a stub for simulation and integration. For full SDRAM/DDR support, extend with timing, refresh, and error handling.
+// TODO: Add support for advanced AXI features, timing closure, and real memory backends.
 `timescale 1ns/1ps
 
 module axi_sdram_stub #(
@@ -117,6 +117,68 @@ module axi_sdram_stub #(
     reg [7:0] lfsr;
 
     integer i;
+
+    // ------------------------------------------------------------------------
+    // AXI Protocol SVAs and Coverage
+    // ------------------------------------------------------------------------
+    // Outstanding transaction counters
+    wire [31:0] aw_outstanding = (w_tail >= w_head) ? (w_tail - w_head) : (MAX_OUTSTANDING + w_tail - w_head);
+    wire [31:0] ar_outstanding = (r_tail >= r_head) ? (r_tail - r_head) : (MAX_OUTSTANDING + r_tail - r_head);
+    wire aw_active = w_active;
+    wire ar_active = r_active;
+
+    // SVA: AWREADY only high when not exceeding MAX_OUTSTANDING
+    property awready_limit;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_awready |-> (aw_outstanding < MAX_OUTSTANDING);
+    endproperty
+    awready_limit_sva: assert property (awready_limit);
+
+    // SVA: WREADY only high when a valid AW transaction is active
+    property wready_awactive;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_wready |-> aw_active;
+    endproperty
+    wready_awactive_sva: assert property (wready_awactive);
+
+    // SVA: ARREADY only high when not exceeding MAX_OUTSTANDING
+    property arready_limit;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_arready |-> (ar_outstanding < MAX_OUTSTANDING);
+    endproperty
+    arready_limit_sva: assert property (arready_limit);
+
+    // SVA: RVALID only high when a read transaction is active
+    property rvalid_aractive;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_rvalid |-> ar_active;
+    endproperty
+    rvalid_aractive_sva: assert property (rvalid_aractive);
+
+    // Covergroup: Burst lengths and wait states
+    covergroup cg_axi_burst @(posedge clk);
+        burst_len: coverpoint s_axi_awlen {
+            bins short[] = {[0:3]};
+            bins medium[] = {[4:15]};
+            bins long[] = {[16:255]};
+        }
+        wait_jitter: coverpoint WAIT_JITTER {
+            bins none = {0};
+            bins low = {[1:2]};
+            bins high = {[3:8]};
+        }
+    endgroup
+    cg_axi_burst_inst = new();
+
+    // Covergroup: Backpressure events (AWREADY/WREADY/ARREADY/RREADY stalls)
+    covergroup cg_axi_backpressure @(posedge clk);
+        aw_stall: coverpoint !s_axi_awready;
+        w_stall:  coverpoint !s_axi_wready;
+        ar_stall: coverpoint !s_axi_arready;
+        r_stall:  coverpoint !s_axi_rready;
+    endgroup
+    cg_axi_backpressure_inst = new();
+
 `ifndef SYNTHESIS
     initial begin
         for (i = 0; i < MEM_WORDS; i = i + 1)

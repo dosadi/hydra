@@ -28,6 +28,24 @@ module voxel_memory_64 #(
     input  wire [DATA_WIDTH-1:0]  write_data
 );
 
+
+    // ------------------------------------------------------------------------
+    // SVAs for memory correctness and bounds
+    // ------------------------------------------------------------------------
+    // SVA: No out-of-bounds read or write
+    property addr_in_bounds;
+        @(posedge clk)
+        (read_en | write_en) |-> (read_addr < DEPTH && write_addr < DEPTH);
+    endproperty
+    addr_in_bounds_sva: assert property (addr_in_bounds);
+
+    // SVA: Read-after-write returns correct data (write-first)
+    property read_after_write;
+        @(posedge clk)
+        (read_en && write_en && (read_addr == write_addr)) |-> (read_data == write_data);
+    endproperty
+    read_after_write_sva: assert property (read_after_write);
+
     localparam integer DEPTH = GRID_SIZE * GRID_SIZE * GRID_SIZE; // 262,144
 
     (* ram_style = "block", ram_decomp = "power" *)

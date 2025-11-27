@@ -187,6 +187,40 @@ module axi_dma_stub #(
 
 `ifdef VERILATOR
     // AXI4 master stability and basic correctness checks.
+
+    // ------------------------------------------------------------------------
+    // Covergroups for DMA burst, backpressure, and error response
+    // ------------------------------------------------------------------------
+    covergroup cg_dma_burst @(posedge clk);
+        awlen: coverpoint m_axi_awlen {
+            bins single = {0};
+            bins reserved[] = {[1:255]};
+        }
+        arlen: coverpoint m_axi_arlen {
+            bins single = {0};
+            bins reserved[] = {[1:255]};
+        }
+    endgroup
+    cg_dma_burst_inst = new();
+
+    covergroup cg_dma_backpressure @(posedge clk);
+        aw_stall: coverpoint (m_axi_awvalid && !m_axi_awready);
+        w_stall:  coverpoint (m_axi_wvalid && !m_axi_wready);
+        ar_stall: coverpoint (m_axi_arvalid && !m_axi_arready);
+    endgroup
+    cg_dma_backpressure_inst = new();
+
+    covergroup cg_dma_error @(posedge clk);
+        bresp: coverpoint m_axi_bresp {
+            bins okay = {2'b00};
+            bins slverr = {2'b10};
+        }
+        rresp: coverpoint m_axi_rresp {
+            bins okay = {2'b00};
+            bins slverr = {2'b10};
+        }
+    endgroup
+    cg_dma_error_inst = new();
     always @(posedge clk) begin
         if (m_axi_awvalid && !m_axi_awready) begin
             assert($stable(m_axi_awaddr)) else $fatal("AWADDR changed while AWVALID held high");
