@@ -27,7 +27,7 @@ help:
 	@echo "  make lint          - Lint RTL and sim C++ (verilator --lint-only, clang-tidy if available)"
 	@echo "  make verilator-check - Ensure Verilator meets recommended major version"
 	@echo "  make files         - Verify required repo files exist"
-	@echo "  make todo-unique   - Ensure docs/toodo/todo_master.md has no duplicate TODO entries"
+	@echo "  make todo-unique   - Ensure docs/todo/todo_master.md has no duplicate TODO entries"
 	@echo "  make bench         - Quick sim benchmark (LOG_FRAMES=1 AUTO_EXIT=1)"
 	@echo "  make spellcheck    - Run codespell on docs (skips if tool missing)"
 	@echo "  make license-check - Verify SPDX headers on source files"
