@@ -8,6 +8,12 @@ set -euo pipefail
 echo "TERMUX PREFLIGHT CHECK"
 echo "======================="
 
+# Parse options
+INSTALL=0
+if [[ ${1:-} == "--install" ]]; then
+  INSTALL=1
+fi
+
 if ! command -v pkg >/dev/null 2>&1; then
   echo "Not running in Termux (pkg not found). This script is intended for Termux." >&2
   exit 2
@@ -36,11 +42,12 @@ check_cmd() {
   fi
 }
 
-check_cmd git
-check_cmd rsync
-check_cmd proot-distro
-check_cmd openssh
-check_cmd adb
+MISSING_PACKAGES=()
+check_cmd git || MISSING_PACKAGES+=(git)
+check_cmd rsync || MISSING_PACKAGES+=(rsync)
+check_cmd proot-distro || MISSING_PACKAGES+=(proot-distro)
+check_cmd openssh || MISSING_PACKAGES+=(openssh)
+check_cmd adb || true
 check_cmd sshd || true
 
 echo
@@ -83,6 +90,25 @@ echo
 echo "If you want to accept files from your workstation, start sshd on Termux and run the host-side rsync:" \
      "on Termux: ./scripts/termux_ssh_control.sh start" \
      "on host: ./scripts/rsync_to_termux.sh user@TERMUX_IP /data/data/com.termux/files/home/hydra 22"
+
+if [[ ${INSTALL} -eq 1 ]]; then
+  if [[ ${#MISSING_PACKAGES[@]} -eq 0 ]]; then
+    echo "All minimal packages already installed."
+  else
+    echo "The following packages are missing and will be installed via 'pkg': ${MISSING_PACKAGES[*]}"
+    read -p "Proceed to install? [y/N] " yn
+    case "$yn" in
+      [Yy]*) ;;
+      *) echo "Skipping install."; exit 0;;
+    esac
+    pkg update -y
+    for p in "${MISSING_PACKAGES[@]}"; do
+      echo "Installing $p"
+      pkg install -y "$p" || echo "Failed to install $p; continue"
+    done
+    echo "Install step complete. Re-run this script without --install to verify." 
+  fi
+fi
 
 echo
 echo "Preflight check complete."
