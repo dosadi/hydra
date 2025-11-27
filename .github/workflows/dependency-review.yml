@@ -1,0 +1,24 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Optional: add configuration for allowed licenses
+          # config-file: '.github/dependency-review-config.yml'
+          fail-on-severity: moderate
+          allow-licenses: BSD-2-Clause, BSD-3-Clause, MIT, Apache-2.0, ISC, Zlib
+          deny-licenses: MS-PL, BSD-4-Clause, JSON

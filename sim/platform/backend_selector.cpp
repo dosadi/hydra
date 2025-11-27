@@ -5,6 +5,12 @@
 #include <cstring>
 #include <strings.h>
 #include <string>
+#include <memory>
+
+// Include backend classes
+#include "backend_sdl.h"
+#include "backend_headless.h"
+// TODO: include others
 
 static bool env_equals(const char* key, const char* val) {
     const char* v = std::getenv(key);
@@ -83,15 +89,18 @@ PlatformBackend select_default_backend() {
 }
 
 bool init_backend(PlatformBackend backend, const PlatformConfig& cfg, PlatformContext& ctx) {
-    return platform_init(backend, cfg, ctx);
+    ctx.backend = create_backend(backend);
+    if (!ctx.backend) return false;
+    return ctx.backend->init(ctx, cfg);
 }
 
-void present_backend(PlatformBackend backend, PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
-    platform_present(backend, ctx, pixels, w, h);
+void present_backend(PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
+    if (ctx.backend) ctx.backend->present(ctx, pixels, w, h);
 }
 
-void shutdown_backend(PlatformBackend backend, PlatformContext& ctx) {
-    platform_shutdown(backend, ctx);
+void shutdown_backend(PlatformContext& ctx) {
+    if (ctx.backend) ctx.backend->shutdown(ctx);
+    ctx.backend.reset();
 }
 
 void platform_log_capabilities() {
@@ -114,4 +123,16 @@ void platform_log_capabilities() {
     std::fprintf(stderr, " X11");
 #endif
     std::fprintf(stderr, " Headless\n");
+}
+
+BackendPtr create_backend(PlatformBackend backend) {
+    switch (backend) {
+        case PlatformBackend::SDL:
+            return std::make_unique<SDLBackend>();
+        case PlatformBackend::Headless:
+            return std::make_unique<HeadlessBackend>();
+        // TODO: add other backends
+        default:
+            return nullptr;
+    }
 }

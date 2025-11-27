@@ -6,12 +6,15 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "ci"
+      - "automated"
     commit-message:
       prefix: "ci"
+      include: "scope"
 
   # Python dependencies (for cocotb and scripts)
   - package-ecosystem: "pip"
@@ -19,14 +22,33 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "python"
+      - "automated"
     commit-message:
       prefix: "deps"
+      include: "scope"
     # Only update if there's a requirements.txt or similar
     # If not present, this won't do anything
+
+  # Docker dependencies (if any)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
 
   # Note: Native dependencies (Verilator, SDL2, etc.) are managed by OS package managers
   # and should be updated manually. Version constraints are documented in:

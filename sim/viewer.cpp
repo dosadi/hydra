@@ -4071,12 +4071,12 @@ static void record_color(ColorRange& range, uint32_t argb) {
 					std::fprintf(stderr,
 						"frame %zu done, pixels_written=%zu nonzero=%zu sample0=%08x mid=%08x\n",
 						frame_counter, pixels_this_frame, nonzero, sample0, sample_mid);
-				}
-				++frame_counter;
+			}
+			++frame_counter;
 
-				if (benchmark_frames > 0 && frame_counter >= benchmark_frames) running = false;
+			if (benchmark_frames > 0) top->start_frame_ext = 0;
 
-				auto now = std::chrono::high_resolution_clock::now();
+			if (benchmark_frames > 0 && frame_counter >= benchmark_frames) running = false;				auto now = std::chrono::high_resolution_clock::now();
 				float dt = std::chrono::duration<float>(now - last_frame_time).count();
 				if (fps_target > 0.0f) {
 					float target_dt = 1.0f / fps_target;
@@ -4812,6 +4812,7 @@ private:
 		top->clk = 1; top->eval(); main_time++;
 	}
 	top->rst_n = 1;
+	top->start_frame_ext = 1;
 
 	const char* cam_pos_env = std::getenv("HYDRA_CAM_POS");   // "x,y,z"
 	const char* cam_ang_env = std::getenv("HYDRA_CAM_ANG");   // "yaw,pitch"
@@ -4960,6 +4961,10 @@ private:
 	const char* fps_env = std::getenv("HYDRA_FPS_TARGET");
 	const float fps_target = fps_env ? std::max(0.0f, static_cast<float>(std::atof(fps_env))) : 0.0f;
 
+	const char* benchmark_env = std::getenv("HYDRA_BENCHMARK");
+	int benchmark_frames = benchmark_env ? std::max(0, std::atoi(benchmark_env)) : 0;
+	if (headless_backend && benchmark_frames == 0) benchmark_frames = 1;
+
 	// Print startup summary for reproducibility
 	std::fprintf(stderr, "\n[hydra] === Startup Configuration ===\n");
 	std::fprintf(stderr, "[hydra] Backend: %s\n", backend_name(backend));
@@ -4996,6 +5001,7 @@ private:
 	if (pixel_view_env) std::fprintf(stderr, "[hydra] HYDRA_PIXEL_VIEW=%s\n", pixel_view_env);
 	if (const char* v = std::getenv("HYDRA_WORLD_SEED")) std::fprintf(stderr, "[hydra] HYDRA_WORLD_SEED=%s\n", v);
 	if (safe_capture_mode) std::fprintf(stderr, "[hydra] HYDRA_SAFE_CAPTURE=1\n");
+	if (benchmark_env) std::fprintf(stderr, "[hydra] HYDRA_BENCHMARK=%s\n", benchmark_env);
 	std::fprintf(stderr, "[hydra] Camera: pos=(%.1f,%.1f,%.1f) yaw=%.2f pitch=%.2f\n",
 				 pos_x, pos_y, pos_z, yaw, pitch);
 	std::fprintf(stderr, "[hydra] Move speed: %.3f (fast: %.3f) Mouse sens: %.4f%s\n",
@@ -5007,9 +5013,6 @@ private:
 	if (ray_jitter) std::fprintf(stderr, "[hydra] HYDRA_RAY_JITTER=1\n");
 	std::fprintf(stderr, "[hydra] Pixel view: %s\n", pixel_view_mode_name(g_pixel_view_mode));
 	std::fprintf(stderr, "[hydra] ==============================\n\n");
-
-	const char* benchmark_env = std::getenv("HYDRA_BENCHMARK");
-	int benchmark_frames = benchmark_env ? std::max(0, std::atoi(benchmark_env)) : 0;
 
 	RenderInstrumentationConfig inst_config;
 	inst_config.cam_pos_x = pos_x;

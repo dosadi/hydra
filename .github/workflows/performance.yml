@@ -1,0 +1,56 @@
+name: Performance Regression Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache sim build
+        uses: actions/cache@v4
+        with:
+          path: |
+            sim/obj_dir
+            sim/sim_voxel
+          key: ${{ runner.os }}-perf-sim-${{ hashFiles('sim/**','rtl/**','Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-perf-sim-
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator g++ make libsdl2-dev libsdl2-ttf-dev python3
+
+      - name: Build sim if not cached
+        run: |
+          if [ ! -f sim/sim_voxel ]; then
+            cd sim
+            make -j$(nproc)
+          fi
+
+      - name: Run performance benchmark
+        run: |
+          chmod +x scripts/render_benchmark.sh
+          ./scripts/render_benchmark.sh
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        if: github.event_name == 'push'
+        with:
+          name: Render Performance Benchmark
+          tool: 'custom'
+          output-file-path: out/render_pipeline_baseline.csv
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          comment-on-alert: true
+          alert-threshold: '200%'
+          fail-on-alert: false

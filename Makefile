@@ -1,6 +1,6 @@
 # Top-level convenience targets (does not auto-build drivers by default)
 
-.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint docs-only diff-summary fmt package lint verilator-check files todo-unique bench spellcheck license-check pixel-test dma-negative cam-reset mmap-smoke cam-flags-demo bar1-hexdump backend-probe doc-scan doc-check doc-freshen doc-freshen-analyze doc-ai-prompts build-scan build-check build-freshen touch-check-all touch-freshen-all
+.PHONY: all sim test driver-linux driver-freebsd drivers backends blit-smoketest libhydra drm-info clean distclean sdk-setup dev-loop ip-fetch help cmake-linux quick smoke sanitize purge-obj-dir env-probe shellcheck whitespace docs docs-lint docs-only diff-summary fmt package lint verilator-check files todo-unique bench spellcheck license-check pixel-test dma-negative cam-reset mmap-smoke cam-flags-demo bar1-hexdump backend-probe doc-scan doc-check doc-freshen doc-freshen-analyze doc-ai-prompts build-scan build-check build-freshen touch-check-all touch-freshen-all automate-priority
 
 all: sim
 
@@ -53,6 +53,7 @@ help:
 	@echo "  make build-freshen - Analyze build freshening plan"
 	@echo "  make touch-check-all   - Check both docs and build freshness"
 	@echo "  make touch-freshen-all - Auto-freshen all Tier 1 items"
+	@echo "  make automate-priority - Run comprehensive priority sector automation"
 	@echo ""
 	@echo "  make libhydra      - Build libhydra.a static library"
 	@echo "  make blit-smoketest- Build user blit smoke test"
@@ -260,6 +261,10 @@ touch-check-all: doc-check build-check
 
 touch-freshen-all: doc-freshen
 	@echo "✓ All Tier 1 auto-freshening complete"
+
+automate-priority:
+	@echo "Running comprehensive priority sector automation..."
+	@./scripts/automate_priority.sh
 
 clean:
 	@$(MAKE) -C sim clean || true

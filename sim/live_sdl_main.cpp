@@ -463,6 +463,8 @@ int main(int argc, char** argv) {
     top->start_frame_ext   = 0;
     top->soft_reset_ext    = 0;
 
+    const char* benchmark_env = std::getenv("HYDRA_BENCHMARK");
+    int benchmark_frames = benchmark_env ? std::atoi(benchmark_env) : 0;
     const bool log_keys = (std::getenv("LOG_KEYS") != nullptr);
     const bool log_frames = (std::getenv("LOG_FRAMES") != nullptr);
     int log_keys_count = 0;
@@ -786,6 +788,8 @@ int main(int argc, char** argv) {
     const char* mouse_cap_env = std::getenv("HYDRA_MOUSE_CAPTURE");
     if (mouse_cap_env && std::strcmp(mouse_cap_env, "0") == 0)
         mouse_captured = false;
+    if (headless_backend)
+        mouse_captured = false;
 
     auto load_autosave_cfg = [&](const char* path) {
         if (!path || path[0] == '\0') return;
@@ -1013,7 +1017,7 @@ int main(int argc, char** argv) {
     apply_flags_to_dut();
     apply_selection_to_dut();
     root->voxel_framebuffer_top__DOT__world_seed = world_seed_override;
-    update_mouse_capture();
+    if (!headless_backend) update_mouse_capture();
 
     auto reset_key_state = [&]() { keys = InputState{}; };
 
@@ -1032,7 +1036,7 @@ int main(int argc, char** argv) {
             } else if (ev.type == SDL_WINDOWEVENT) {
                 if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED ||
                     ev.window.event == SDL_WINDOWEVENT_TAKE_FOCUS) {
-                    update_mouse_capture();
+                    if (!headless_backend) update_mouse_capture();
                 } else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
                     reset_key_state();
                 } else if (ev.window.event == SDL_WINDOWEVENT_RESIZED ||
@@ -1112,8 +1116,10 @@ int main(int argc, char** argv) {
                             }
                             break;
                         case SDLK_m:
-                            mouse_captured = !mouse_captured;
-                            update_mouse_capture();
+                            if (!headless_backend) {
+                                mouse_captured = !mouse_captured;
+                                update_mouse_capture();
+                            }
                             break;
                         case SDLK_F3:
                             safe_capture_mode = !safe_capture_mode;
@@ -1363,8 +1369,11 @@ int main(int argc, char** argv) {
         // Ensure DUT flags follow local toggles every frame.
         apply_flags_to_dut();
 
+        top->start_frame_ext = (benchmark_frames > 0) ? 1 : 0;
+        top->benchmark_mode = (benchmark_frames > 0) ? 1 : 0;
+
         // Simulate HDL
-        const int cycles_per_chunk = 2000;
+        const int cycles_per_chunk = 1000000;
         bool frame_done = false;
         std::chrono::high_resolution_clock::time_point sim_loop_start;
         std::chrono::high_resolution_clock::time_point hud_present_start, hud_present_end, copy_start, copy_end;
@@ -1756,7 +1765,7 @@ int main(int argc, char** argv) {
             }
 
             if (use_platform_present) {
-                present_backend(backend, plat_ctx, framebuffer.data(),
+                present_backend(plat_ctx, framebuffer.data(),
                                 SCREEN_WIDTH, SCREEN_HEIGHT);
             }
 
@@ -1809,7 +1818,7 @@ int main(int argc, char** argv) {
     delete top;
 
     if (use_platform_present)
-        shutdown_backend(backend, plat_ctx);
+        shutdown_backend(plat_ctx);
 
     std::fprintf(stderr, "[hydra] exit summary: backend=%s vsync=%s frames_rendered=%zu\n",
                  backend_name(backend),

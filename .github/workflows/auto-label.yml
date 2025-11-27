@@ -1,0 +1,96 @@
+name: Auto Label PRs and Issues
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { issue, pull_request } = context.payload;
+            const item = issue || pull_request;
+            const isPR = !!pull_request;
+
+            if (!item) return;
+
+            const title = item.title.toLowerCase();
+            const body = (item.body || '').toLowerCase();
+            const labels = [];
+
+            // Component detection
+            if (title.includes('rtl') || body.includes('rtl') || title.includes('verilog') || body.includes('systemverilog')) {
+              labels.push('rtl');
+            }
+            if (title.includes('sim') || body.includes('sim') || title.includes('verilator') || body.includes('sdl')) {
+              labels.push('sim');
+            }
+            if (title.includes('driver') || body.includes('driver') || title.includes('linux') || title.includes('freebsd') || title.includes('windows') || title.includes('macos')) {
+              labels.push('driver');
+            }
+            if (title.includes('build') || body.includes('build') || title.includes('makefile') || body.includes('cmake') || title.includes('ci') || body.includes('github action')) {
+              labels.push('build-system');
+            }
+            if (title.includes('test') || body.includes('test') || title.includes('testing')) {
+              labels.push('testing');
+            }
+            if (title.includes('platform') || body.includes('platform') || title.includes('backend') || body.includes('sdl') || body.includes('opengl') || body.includes('vulkan')) {
+              labels.push('platform-backend');
+            }
+            if (title.includes('doc') || body.includes('doc') || title.includes('documentation')) {
+              labels.push('documentation');
+            }
+
+            // Type detection for PRs
+            if (isPR) {
+              if (title.includes('fix') || title.includes('bug') || body.includes('fix') || body.includes('bug')) {
+                labels.push('bug');
+              }
+              if (title.includes('add') || title.includes('new') || title.includes('feature') || body.includes('add') || body.includes('new') || body.includes('feature')) {
+                labels.push('enhancement');
+              }
+              if (title.includes('refactor') || body.includes('refactor') || title.includes('cleanup') || body.includes('cleanup')) {
+                labels.push('refactoring');
+              }
+              if (title.includes('perf') || body.includes('perf') || title.includes('performance') || body.includes('performance')) {
+                labels.push('performance');
+              }
+              if (title.includes('break') || body.includes('break') || title.includes('breaking') || body.includes('breaking')) {
+                labels.push('breaking change');
+              }
+            }
+
+            // Priority detection
+            if (title.includes('urgent') || body.includes('urgent') || title.includes('critical') || body.includes('critical')) {
+              labels.push('priority: critical');
+            } else if (title.includes('high') || body.includes('high')) {
+              labels.push('priority: high');
+            }
+
+            // Effort estimation (rough)
+            if (body.includes('small') || body.includes('quick') || body.includes('trivial')) {
+              labels.push('effort: small');
+            }
+
+            // Add labels if any were detected
+            if (labels.length > 0) {
+              const { owner, repo } = context.repo;
+              const issue_number = item.number;
+
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels
+              });
+
+              console.log(`Added labels: ${labels.join(', ')}`);
+            }

@@ -1,0 +1,60 @@
+name: Close Stale Issues and PRs
+
+on:
+  schedule:
+    # Run daily at 1:30 AM UTC
+    - cron: '30 1 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # Issues
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity. It will be closed in 14 days if no further activity occurs.
+
+            If this issue is still relevant, please:
+            - Add a comment explaining the current status
+            - Update any relevant labels
+            - Reference any related work or PRs
+
+            Thank you for your contributions to Hydra! 🤖
+          close-issue-message: |
+            This issue has been automatically closed due to inactivity. If this issue is still relevant, please reopen it with updated information.
+
+            We appreciate your interest in Hydra! 🚀
+          stale-issue-label: 'status: stale'
+          exempt-issue-labels: 'priority: critical,priority: high,help wanted,good first issue,status: blocked,status: in-progress'
+
+          # PRs
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity. It will be closed in 7 days if no further activity occurs.
+
+            To keep this PR open:
+            - Push new commits or force-push to update the branch
+            - Add a comment explaining the current status
+            - Request review if ready
+
+            Thank you for your contributions! 🤖
+          close-pr-message: |
+            This pull request has been automatically closed due to inactivity. If you still plan to work on this, please reopen it when you're ready to continue.
+
+            We appreciate your contributions to Hydra! 🚀
+          stale-pr-label: 'status: stale'
+          exempt-pr-labels: 'priority: critical,priority: high,status: blocked,status: needs-review,work-in-progress'
+
+          # General settings
+          operations-per-run: 100
+          remove-stale-when-updated: true
+          enable-statistics: true

@@ -24,6 +24,7 @@
 - Waveforms: tracing is enabled; inspect `sim/obj_dir/*.vcd` when debugging RTL changes.
 - Cocotb scaffold: `cd sim/tests/cocotb_hydra && make SIM=icarus` (requires cocotb + supported simulator). RTL stubs live in `sim/tests/rtl/`.
 - Add targeted assertions as you touch logic; document new keybinds or flags when user-visible.
+- **Rendering Architecture**: See `docs/rendering_separation.md` and `docs/rendering_architecture_diagram.md` for detailed fake vs real rendering separation.
 
 ## Commit & Pull Request Guidelines
 - Commit subjects: short, imperative, single-scope (e.g., `Clamp camera bounds`, `Add voxel edit hotkeys`).

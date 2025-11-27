@@ -27,8 +27,15 @@ struct PlatformConfig {
     bool vsync = false;
 };
 
+#include <memory>
+
+class Backend;
+
+using BackendPtr = std::unique_ptr<Backend>;
+
 struct PlatformContext {
     void* user = nullptr;
+    BackendPtr backend;
 };
 
 // Returns true if the backend is deemed supported (stub always false except SDL).
@@ -38,7 +45,7 @@ bool platform_backend_supported(PlatformBackend backend);
 bool platform_init(PlatformBackend backend, const PlatformConfig& cfg, PlatformContext& ctx);
 
 // Present one frame (stub: no-op).
-void platform_present(PlatformBackend backend, PlatformContext& ctx, const uint32_t* pixels, int width, int height);
+void platform_present(PlatformContext& ctx, const uint32_t* pixels, int width, int height);
 
 // Tear down backend (stub: no-op).
-void platform_shutdown(PlatformBackend backend, PlatformContext& ctx);
+void platform_shutdown(PlatformContext& ctx);

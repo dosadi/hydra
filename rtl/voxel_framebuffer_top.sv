@@ -36,6 +36,9 @@ module voxel_framebuffer_top #(
     output wire         frame_done,
     output wire         core_busy,
 
+    // World ready signal
+    output reg         world_ready,
+
     // Optional external control (AXI-Lite shell / host)
     input  wire         cam_load,
     input  wire signed [15:0] cam_x_in,
@@ -65,7 +68,8 @@ module voxel_framebuffer_top #(
     input  wire [63:0]  dbg_ext_write_data,
 
     input  wire         start_frame_ext,
-    input  wire         soft_reset_ext
+    input  wire         soft_reset_ext,
+    input  wire         benchmark_mode
 );
 
     // ------------------------------------------------------------------------
@@ -361,7 +365,6 @@ module voxel_framebuffer_top #(
 
     // Simple control: run world_gen once, then repeatedly start frames
     reg world_started;
-    reg world_ready;
     reg busy_d;
     reg pending_start;
 
@@ -397,10 +400,11 @@ module voxel_framebuffer_top #(
                 // Kick frames when idle:
                 // - If AUTO_START_FRAMES, free-run once world is ready.
                 // - Otherwise require a pending_start from host.
-                if (world_ready && AUTO_START_FRAMES && !busy)
+                if (world_ready && !busy && start_frame_ext) begin
                     start <= 1'b1;
-                else if (world_ready && AUTO_START_FRAMES && busy_d && !busy)
+                end else if (world_ready && AUTO_START_FRAMES && busy_d && !busy && !benchmark_mode) begin
                     start <= 1'b1;
+                end
 
                 if (world_ready && pending_start) begin
                     start         <= 1'b1;

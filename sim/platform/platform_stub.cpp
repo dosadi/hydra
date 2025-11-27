@@ -1,4 +1,6 @@
 #include "platform.h"
+#include "backend_base.h"
+#include "backend_selector.h"
 
 #include "backend_ops.h"
 
@@ -91,22 +93,14 @@ static BackendOps get_ops(PlatformBackend backend) {
 }
 
 bool platform_init(PlatformBackend backend, const PlatformConfig& cfg, PlatformContext& ctx) {
-    if (!platform_backend_supported(backend))
-        return false;
-    BackendOps ops = get_ops(backend);
-    return ops.init ? ops.init(ctx, cfg) : false;
+    return init_backend(backend, cfg, ctx);
 }
 
-void platform_present(PlatformBackend backend, PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
-    if (!platform_backend_supported(backend))
-        return;
-    BackendOps ops = get_ops(backend);
-    if (ops.present) ops.present(ctx, pixels, w, h);
+void platform_present(PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
+    if (ctx.backend) ctx.backend->present(ctx, pixels, w, h);
 }
 
-void platform_shutdown(PlatformBackend backend, PlatformContext& ctx) {
-    if (!platform_backend_supported(backend))
-        return;
-    BackendOps ops = get_ops(backend);
-    if (ops.shutdown) ops.shutdown(ctx);
+void platform_shutdown(PlatformContext& ctx) {
+    if (ctx.backend) ctx.backend->shutdown(ctx);
+    ctx.backend.reset();
 }

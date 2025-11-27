@@ -1,0 +1,111 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator g++ make libsdl2-dev libsdl2-ttf-dev python3
+
+      - name: Build release artifacts
+        run: |
+          # Build sim
+          cd sim
+          make -j$(nproc)
+
+          # Build SDK tools
+          cd ..
+          ./scripts/setup_sdk.sh
+
+          # Create package
+          make package
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Extract version from tag
+          VERSION="${{ steps.tag.outputs.tag }}"
+          VERSION_NUM="${VERSION#v}"
+
+          # Generate release notes from RELEASE_NOTES files
+          RELEASE_NOTES_FILE="RELEASE_NOTES_${VERSION_NUM}.md"
+          if [ -f "$RELEASE_NOTES_FILE" ]; then
+            RELEASE_BODY=$(cat "$RELEASE_NOTES_FILE")
+          else
+            RELEASE_BODY="## Release ${VERSION}
+
+            ### Changes
+            - See commit history for details
+
+            ### Installation
+            Download the package from the assets below and extract:
+            \`\`\`bash
+            tar xzf hydra-package.tar.gz
+            cd hydra-package
+            ./sim_voxel
+            \`\`\`
+
+            ### Requirements
+            - Verilator 5.x
+            - SDL2 libraries
+            - C++17 compiler
+            "
+          fi
+
+          # Escape for multiline output
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          release_name: Release ${{ steps.tag.outputs.tag }}
+          body: ${{ steps.release_notes.outputs.body }}
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, 'alpha') || contains(steps.tag.outputs.tag, 'beta') || contains(steps.tag.outputs.tag, 'rc') }}
+
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./out/hydra-package.tar.gz
+          asset_name: hydra-package-${{ steps.tag.outputs.tag }}.tar.gz
+          asset_content_type: application/gzip
