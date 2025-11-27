@@ -72,6 +72,9 @@ module surface_extractor #(
     endgroup
     cg_extraction_events_inst = new();
 
+    // ------------------------------------------------------------------------
+    // Stub: Future surface extraction logic
+    // TODO: Implement real normal and curvature computation based on voxel_data
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             surface_normal_x  <= 8'd0;
@@ -84,7 +87,8 @@ module surface_extractor #(
             voxel_addr        <= 18'd0;
         end else begin
             if (enable) begin
-                // trivial: instantly "finish"
+                // TODO: Add real surface extraction logic here
+                // For now, instantly "finish" with placeholder values
                 done <= 1'b1;
             end else begin
                 done <= 1'b0;

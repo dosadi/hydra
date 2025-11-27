@@ -67,6 +67,20 @@ module axi_stream_sink_stub #(
         end
     end
 
+    // ------------------------------------------------------------------------
+    // Stub: Future logic for HDMI/TMDS tuser (SOF) and tlast (end-of-line/frame)
+    // TODO: Implement proper handling of tuser and tlast for HDMI/TMDS testbench integration
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            // ...existing code...
+        end else begin
+            if (s_axis_tvalid && s_axis_tready) begin
+                // TODO: Add logic for tuser (SOF) and tlast (end-of-line/frame)
+                // For now, only basic beat/frame counting is implemented
+            end
+        end
+    end
+
 `ifdef FORMAL
     // SVA: tvalid/tready handshake only when tvalid
     property tready_only_on_tvalid;

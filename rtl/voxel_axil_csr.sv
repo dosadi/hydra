@@ -138,7 +138,7 @@ module voxel_axil_csr #(
     reg [4:0]  blit_fifo_count;
     reg [31:0] blit_fifo_data_out;
 
-    reg [31:0] blit_pix_mem [0:1023];
+    reg [31:0] blit_pix_mem [0:1024];
     reg [31:0] blit_obj_mem [0:63];
     reg [31:0] blit_fifo_mem[0:15];
 
@@ -918,6 +918,79 @@ module voxel_axil_csr #(
         irq_out |-> (frame_done_pulse || dma_done_in);
     endproperty
     irq_only_on_events_sva: assert property (irq_only_on_events);
-`endif
 
+    // SVA: Setup/hold and pulse width for AXI-Lite AWVALID
+    property awvalid_setup;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_awvalid |-> $stable(s_axil_awvalid) throughout [*1:$] s_axil_awready;
+    endproperty
+    awvalid_setup_sva: assert property (awvalid_setup);
+
+    property awvalid_hold;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_awready |-> $stable(s_axil_awvalid) throughout [*1:2];
+    endproperty
+    awvalid_hold_sva: assert property (awvalid_hold);
+
+    property awvalid_pulse_width;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_awvalid |-> ##[1:8] !s_axil_awvalid;
+    endproperty
+    awvalid_pulse_width_sva: assert property (awvalid_pulse_width);
+
+    // Repeat for WVALID, ARVALID, RVALID
+    property wvalid_setup;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_wvalid |-> $stable(s_axil_wvalid) throughout [*1:$] s_axil_wready;
+    endproperty
+    wvalid_setup_sva: assert property (wvalid_setup);
+
+    property wvalid_hold;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_wready |-> $stable(s_axil_wvalid) throughout [*1:2];
+    endproperty
+    wvalid_hold_sva: assert property (wvalid_hold);
+
+    property wvalid_pulse_width;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_wvalid |-> ##[1:8] !s_axil_wvalid;
+    endproperty
+    wvalid_pulse_width_sva: assert property (wvalid_pulse_width);
+
+    property arvalid_setup;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_arvalid |-> $stable(s_axil_arvalid) throughout [*1:$] s_axil_arready;
+    endproperty
+    arvalid_setup_sva: assert property (arvalid_setup);
+
+    property arvalid_hold;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_arready |-> $stable(s_axil_arvalid) throughout [*1:2];
+    endproperty
+    arvalid_hold_sva: assert property (arvalid_hold);
+
+    property arvalid_pulse_width;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_arvalid |-> ##[1:8] !s_axil_arvalid;
+    endproperty
+    arvalid_pulse_width_sva: assert property (arvalid_pulse_width);
+
+    property rvalid_setup;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_rvalid |-> $stable(s_axil_rvalid) throughout [*1:$] s_axil_rready;
+    endproperty
+    rvalid_setup_sva: assert property (rvalid_setup);
+
+    property rvalid_hold;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_rready |-> $stable(s_axil_rvalid) throughout [*1:2];
+    endproperty
+    rvalid_hold_sva: assert property (rvalid_hold);
+
+    property rvalid_pulse_width;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_rvalid |-> ##[1:8] !s_axil_rvalid;
+    endproperty
+    rvalid_pulse_width_sva: assert property (rvalid_pulse_width);
+`endif
 endmodule

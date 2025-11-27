@@ -288,8 +288,20 @@ module voxel_raycaster_core_pipelined #(
             tmp = out_b + ((voxel_emissive * out_b) >> 8); out_b = (tmp > 9'd255) ? 8'd255 : tmp[7:0];
         end
 
-        // NOTE: Material ID is currently unused; set to zero for debug compatibility. Future features may use this field for advanced shading/material effects.
-        out_material_id = 8'h00;
+        // ------------------------------------------------------------------------
+        // Stub: Material ID usage for advanced shading/material effects
+        // TODO: Integrate material_id into shading pipeline for future features
+        reg [7:0] material_id;
+        always @(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+                material_id <= 8'd0;
+            end else begin
+                // TODO: Use material_id for advanced shading/material effects
+                // Currently set to zero for debug compatibility
+                material_id <= 8'd0;
+            end
+        end
+        // ------------------------------------------------------------------------
 
         if (voxel_material_type == 4'd3)       out_reflection = 8'd255;
         else if (voxel_material_type == 4'd5)  out_reflection = 8'd200;

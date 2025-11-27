@@ -60,6 +60,7 @@ module voxel_memory_64 #(
             for (i = 0; i < DEPTH; i = i + 1)
                 vox[i] = {DATA_WIDTH{1'b0}};
         end
+        // TODO: Add support for pattern or random initialization here
         read_data = {DATA_WIDTH{1'b0}};
     end
 `endif

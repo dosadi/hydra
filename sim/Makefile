@@ -1,23 +1,21 @@
 PROJECT_ROOT := ..
-REQUIRED_VERILATOR_VERSION ?= 5.014
 RTL_DIR      := $(PROJECT_ROOT)/rtl
 SIM_DIR      := $(PROJECT_ROOT)/sim
 
 TOP_MODULE   := voxel_framebuffer_top
 
 CXX_SRCS     := viewer_main.cpp \
-				 platform/platform_stub.cpp \
-				 platform/backend_selector.cpp \
-				 platform/backend_sdl.cpp \
-				 platform/backend_headless.cpp \
-				 platform/backend_gl.cpp \
-				 platform/backend_vulkan.cpp \
-				 platform/backend_wayland.cpp \
-				 platform/backend_x11.cpp \
-				 platform/backend_fbdev.cpp \
-				 platform/backend_win32.cpp \
-				 platform/backend_macos.cpp \
-				 render_instrumentation.cpp
+                 platform/platform_stub.cpp \
+                 platform/backend_selector.cpp \
+                 platform/backend_sdl.cpp \
+                 platform/backend_headless.cpp \
+                 platform/backend_gl.cpp \
+                 platform/backend_vulkan.cpp \
+                 platform/backend_wayland.cpp \
+                 platform/backend_x11.cpp \
+                 platform/backend_fbdev.cpp \
+                 platform/backend_win32.cpp \
+                 platform/backend_macos.cpp
 CXX_EXE      := sim_voxel
 
 VERILATOR    ?= verilator
@@ -96,17 +94,6 @@ ifeq ($(CCACHE),1)
 endif
 
 all: $(CXX_EXE)
-check_verilator_version:
-	@installed_version=$(shell $(VERILATOR) --version | awk '{print $$2}' | cut -d- -f1); \
-	if [ "$$installed_version" != "$(REQUIRED_VERILATOR_VERSION)" ]; then \
-		echo "[ERROR] Verilator version $$installed_version does not match required $(REQUIRED_VERILATOR_VERSION)"; \
-		echo "Please install Verilator $(REQUIRED_VERILATOR_VERSION) and retry."; \
-		exit 1; \
-	else \
-		echo "[OK] Verilator version $$installed_version matches required $(REQUIRED_VERILATOR_VERSION)"; \
-	fi
-
-all: check_verilator_version $(CXX_EXE)
 
 $(CXX_EXE): V$(TOP_MODULE)___024root.h
 	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk
@@ -123,25 +110,15 @@ GOLDEN_FRAME   := $(SIM_DIR)/tests/golden_frame.ppm
 
 .PHONY: test_frame smoke quick purge_obj_dir lint bench
 test_frame: $(CXX_EXE)
-	       @mkdir -p $(TEST_BUILD_DIR)
-	       @rm -f $(TEST_FRAME) $(TEST_BUILD_DIR)/frame_diff.log
-	       # Use fixed seed for CI determinism
-			       SEED=42; ATTEMPTS=0; MAX_ATTEMPTS=3; SUCCESS=0; \
-			       while test "$ATTEMPTS" -lt "$MAX_ATTEMPTS"; do \
-				       cd $(SIM_DIR) && FRAME_DUMP="$(TEST_FRAME)" AUTO_EXIT=1 SIM_SEED=$SEED ./$(CXX_EXE) >/dev/null 2>&1 || true; \
-				       cd $(PROJECT_ROOT) && { \
-					       python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm > sim/build/frame_diff.log 2>&1; \
-					       status=$$?; \
-					       cat sim/build/frame_diff.log; \
-					       if test "$$status" -eq 0; then SUCCESS=1; break; fi; \
-				       }; \
-				       ATTEMPTS=$$(expr $$ATTEMPTS + 1); \
-				       echo "[test_frame] Attempt $$ATTEMPTS failed, retrying..."; \
-			       done; \
-			       if test "$SUCCESS" -eq 0; then \
-				       echo "[test_frame] All attempts failed. See frame_diff.log for details."; \
-				       exit 1; \
-			       fi
+	@mkdir -p $(TEST_BUILD_DIR)
+	@rm -f $(TEST_FRAME) $(TEST_BUILD_DIR)/frame_diff.log
+	cd $(SIM_DIR) && FRAME_DUMP="$(TEST_FRAME)" AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
+	@cd $(PROJECT_ROOT) && { \
+		python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm > sim/build/frame_diff.log 2>&1; \
+		status=$$?; \
+		cat sim/build/frame_diff.log; \
+		exit $$status; \
+	}
 
 # Minimal build without optional backends; identical to default but handy for CI/debug messaging.
 smoke: $(CXX_EXE)

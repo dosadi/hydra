@@ -487,4 +487,18 @@ module voxel_framebuffer_top #(
         end
     end
 
+    // ------------------------------------------------------------------------
+    // Stub: Robust memory write arbitration between debug writes and world_gen
+    // TODO: Implement priority arbitration logic for debug writes vs. world_gen
+    reg mem_write_arb;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            mem_write_arb <= 0;
+        end else begin
+            // TODO: Add arbitration logic here
+            // For now, debug writes override world_gen
+            mem_write_arb <= dbg_ext_write_en ? 1'b1 : 1'b0;
+        end
+    end
+
 endmodule

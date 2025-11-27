@@ -57,19 +57,22 @@ static void record_color(ColorRange& range, uint32_t argb) {
 static const int   SCREEN_WIDTH  = 480;
 static const int   SCREEN_HEIGHT = 360;
 static const int   HUD_HEIGHT    = 80;
-
-const float FX            = 256.0f;  // fixed-point scale
-bool        g_vsync       = true;
+static const float FX            = 256.0f;  // fixed-point scale
+static bool        g_vsync       = true;
 
 vluint64_t main_time = 0;
 double sc_time_stamp() { return main_time; }
 
+enum class PixelViewMode {
+    Color = 0,
+    Word0,
+    Word2,
+    SidebandMix,
+};
 
-// PixelViewMode is defined in harness_common.h
+static PixelViewMode g_pixel_view_mode = PixelViewMode::Color;
 
-PixelViewMode g_pixel_view_mode = PixelViewMode::Color;
-
-const char* pixel_view_mode_name(PixelViewMode m) {
+static const char* pixel_view_mode_name(PixelViewMode m) {
     switch (m) {
         case PixelViewMode::Color:      return "color";
         case PixelViewMode::Word0:      return "word0";
@@ -79,7 +82,7 @@ const char* pixel_view_mode_name(PixelViewMode m) {
     }
 }
 
-PixelViewMode pixel_view_from_string(const char* s) {
+static PixelViewMode pixel_view_from_string(const char* s) {
     if (!s) return PixelViewMode::Color;
     if (strcasecmp(s, "color") == 0)    return PixelViewMode::Color;
     if (strcasecmp(s, "word0") == 0)    return PixelViewMode::Word0;
@@ -135,31 +138,24 @@ static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
 }
 
 // Depth-fog configuration and application
-
-struct PipelineConfig {
-    bool fog_enabled = false;
-    uint32_t fog_color = 0xFFE0E0E0; // ARGB
-    float fog_density = 1.0f;
-    // Future: bool aa_enabled = false;
-    // Future: bool tonemap_enabled = false;
-    // Add more pipeline toggles here
-};
-
-static PipelineConfig g_pipeline_config;
+static bool g_fog_enabled = false;
+static uint32_t g_fog_color = 0xFFE0E0E0; // ARGB
+static float g_fog_density = 1.0f; // linear density multiplier
 
 static uint32_t apply_fog(uint32_t src_argb, uint8_t depth_byte) {
-    if (!g_pipeline_config.fog_enabled) return src_argb;
+    if (!g_fog_enabled) return src_argb;
     float d = static_cast<float>(depth_byte) / 255.0f; // 0..1, 0=near,1=far
-    float factor = d * g_pipeline_config.fog_density;
+    // simple linear/exponential blend control
+    float factor = d * g_fog_density;
     if (factor > 1.0f) factor = 1.0f;
 
     uint8_t sr = (src_argb >> 16) & 0xFF;
     uint8_t sg = (src_argb >> 8)  & 0xFF;
     uint8_t sb =  src_argb        & 0xFF;
 
-    uint8_t fr = (g_pipeline_config.fog_color >> 16) & 0xFF;
-    uint8_t fg = (g_pipeline_config.fog_color >> 8)  & 0xFF;
-    uint8_t fb =  g_pipeline_config.fog_color        & 0xFF;
+    uint8_t fr = (g_fog_color >> 16) & 0xFF;
+    uint8_t fg = (g_fog_color >> 8)  & 0xFF;
+    uint8_t fb =  g_fog_color        & 0xFF;
 
     uint8_t rr = static_cast<uint8_t>(sr * (1.0f - factor) + fr * factor);
     uint8_t gg = static_cast<uint8_t>(sg * (1.0f - factor) + fg * factor);
@@ -181,7 +177,7 @@ static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
     return (uint32_t(x) << 12) | (uint32_t(y) << 6) | uint32_t(z);
 }
 
-bool env_truthy(const char* key) {
+static bool env_truthy(const char* key) {
     if (const char* v = std::getenv(key)) {
         return v[0] != '\0' && v[0] != '0' && strcasecmp(v, "false") != 0;
     }
@@ -270,7 +266,7 @@ static void apply_cli_overrides(int argc, char** argv) {
     }
 }
 
-std::string flatten_cli_args(int argc, char** argv) {
+static std::string flatten_cli_args(int argc, char** argv) {
     std::string out;
     for (int i = 0; i < argc; ++i) {
         if (i) out += ' ';
@@ -519,18 +515,19 @@ int main(int argc, char** argv) {
     bool last_frame_color_stats_valid = false;
 
     // Configure depth fog from environment
-    g_pipeline_config.fog_enabled = env_truthy("HYDRA_FOG");
+    g_fog_enabled = env_truthy("HYDRA_FOG");
     if (const char* fog_col = std::getenv("HYDRA_FOG_COLOR")) {
+        // accept formats like "0xRRGGBB" or "RRGGBB"
         unsigned long v = std::strtoul(fog_col, nullptr, 0);
-        g_pipeline_config.fog_color = 0xFF000000u | (uint32_t(v) & 0x00FFFFFFu);
+        g_fog_color = 0xFF000000u | (uint32_t(v) & 0x00FFFFFFu);
     }
     if (const char* fog_den = std::getenv("HYDRA_FOG_DENSITY")) {
         char* endptr = nullptr;
         float d = std::strtof(fog_den, &endptr);
-        if (endptr && endptr != fog_den) g_pipeline_config.fog_density = d;
+        if (endptr && endptr != fog_den) g_fog_density = d;
     }
-    if (g_pipeline_config.fog_enabled) {
-        std::fprintf(stderr, "[hydra] Depth fog enabled color=%08x density=%.3f\n", g_pipeline_config.fog_color, g_pipeline_config.fog_density);
+    if (g_fog_enabled) {
+        std::fprintf(stderr, "[hydra] Depth fog enabled color=%08x density=%.3f\n", g_fog_color, g_fog_density);
     }
 
     // Ensure SDL grabs keyboard focus; allow renderer selection via SDL hints/env.
@@ -1420,7 +1417,7 @@ int main(int argc, char** argv) {
                     uint32_t w2 = top->pixel_word2;
                     uint32_t pixel_value = pixel96_to_argb(w0, w1, w2);
                     uint8_t depth_byte = (w0 >> 16) & 0xFF;
-                    if (g_pipeline_config.fog_enabled) {
+                    if (g_fog_enabled) {
                         pixel_value = apply_fog(pixel_value, depth_byte);
                     }
                     framebuffer[addr] = pixel_value;

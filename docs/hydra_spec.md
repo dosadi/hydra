@@ -2,6 +2,8 @@
 
 This is a working outline for the Hydra PCIe device: blocks, formats, and a straw‑man BAR0 register map to guide driver/hardware bring‑up.
 
+**Release Version:** 0.0.7 (latest)
+
 ## Functional blocks (initial)
 - PCIe endpoint (BAR0 CSR space, optional BAR1 aperture for frame/voxel data).
 - Voxel core: 64×64×64 volume, fixed‑point raycaster with diagnostic slice mode.
@@ -10,7 +12,7 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - HDMI/DVI output pipeline (LiteICLink/LiteVideo planned), AXI-Stream sink stub in sim.
 - DMA engine (host↔SDRAM/BRAM) for voxel/frame uploads (LitePCIe/LiteDMA planned; AXI stubs exist in RTL).
 
-## Device IDs (current for 0.0.3)
+## Device IDs (current for 0.0.7)
 - Vendor ID: `0x1BAD`
 - Device ID: `0x2024`
 (Update when assigned; keep in sync with Linux driver and UAPI headers.)
@@ -22,7 +24,7 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 ## BAR0 register sketch (byte offsets, little-endian)
 - `0x0000` `ID`          (RO): [31:16] vendor, [15:0] device.
 - `0x0004` `REV`         (RO): [7:0] rev, [15:8] build, [31:16] reserved.  
-  Current: rev `0x02`, build `0x01` for release 0.0.3; bump on any register map change.
+  Current: rev `0x07`, build `0x01` for release 0.0.7; bump on any register map change.
 - `0x0010` `CTRL`        (RW): [0]=soft_reset, [1]=start_frame, [2]=diag_slice_en, [3]=extra_light_en.
 - `0x0014` `STATUS`      (RO): [0]=busy, [1]=frame_done, [2]=dma_busy, [3]=dma_done, [4]=blit_busy, [5]=blit_done, [31:6]=resvd.
 - `0x0020..0x003C` Camera (RW): cam_x/y/z, cam_dir_x/y/z, cam_plane_x/y (signed 16-bit each, packed 32-bit).
@@ -44,6 +46,7 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - Reserved: 0x0170..0xFFFF for future (perf counters, extended extractor controls).
 
 ### Reset defaults (expected values after power-on or soft reset)
+**Release 0.0.7 CSR Defaults:**
 - `CTRL` = 0x0000_0000 (soft_reset/start_frame deasserted; flags cleared)
 - `FLAGS` = smooth=1, curvature=1, extra_light=0, diag_slice=0, ray_jitter=0
 - `SEL_ACTIVE` = 0, `SEL_X/Y/Z` = 0
@@ -52,7 +55,7 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - Blitter stub registers: CTRL/STATUS/SRC/DST/LEN/STRIDE/SURF_* = 0
 - Debug write addr/data = 0
 
-Driver probe validation (recommended):
+Driver probe validation (recommended for 0.0.7):
 - Read `ID`/`REV` and compare against driver expectations; fail if unknown.
 - Read `FLAGS`, `CTRL`, `INT_STATUS`, `INT_MASK`, `FB_BASE/STRIDE`, `SEL_*`, and `DMA_STATUS` to confirm reset defaults match the above table; if any differ, log and fail probe to catch RTL drift.
 - For BAR1-capable systems, confirm `HYDRA_IOCTL_INFO` reports non-zero BAR1 length before mapping.
@@ -73,7 +76,32 @@ This mode is primarily used to inspect the volume along the X axis and verify sl
 ### Ray jitter (render_config[2])
 
 Setting `render_config[2]` / `FLAGS[4]` enables a tiny deterministic sub-voxel jitter on the Y/Z ray positions (derived from the screen coordinate). It smooths banding/artifacts by offsetting the ray start slightly for each pixel; toggle it via the `J` key or `HYDRA_RAY_JITTER=1` in the sim or driver.
-- AXI-Stream video: 24-bit RGB, tuser=start-of-frame, tlast=end-of-frame per line/frame depending on encoder.
+
+## AXI-Stream Backpressure Protocol (IP Integration)
+
+Hydra's AXI-Stream video output (for HDMI/DRAM/PCIe integration) follows standard AXI-Stream handshake and backpressure signaling:
+
+- **tvalid**: Indicates valid data on the bus.
+- **tready**: Indicates receiver is ready to accept data.
+- **tuser**: Start-of-frame marker (asserted on first pixel of each frame).
+- **tlast**: End-of-line or end-of-frame marker (asserted on last pixel of each line or frame).
+
+### Backpressure Handling
+- The RTL must only assert `tvalid` when `tready` is high.
+- If `tready` deasserts, the pixel pipeline stalls and holds the current value until `tready` returns high.
+- Frame and line counters must not advance unless a pixel is successfully transferred (`tvalid && tready`).
+- HDMI/DRAM/PCIe sinks must assert `tready` according to their buffer state; if full, deassert to apply backpressure.
+- The AXI-Stream stub in simulation always asserts `tready` (no backpressure), but hardware IP may apply backpressure dynamically.
+
+### Protocol Compliance
+- All AXI-Stream signals are synchronous to the pixel clock.
+- The RTL should include SVAs (SystemVerilog Assertions) to check:
+  - `tvalid` only advances when `tready` is high.
+  - `tuser` and `tlast` are asserted at correct frame/line boundaries.
+  - No dropped or repeated pixels under backpressure.
+- For integration, see `docs/ip_integration.md` and `docs/hardware_test_plan.md` for test scenarios and compliance checks.
+
+**Note:** Proper backpressure handling is critical for reliable HDMI/DRAM/PCIe output and must be validated in both simulation and hardware.
 
 ## Interrupts (proposed)
 - Bits: [0]=frame_done, [1]=dma_done, [2]=dma_err (stub: not driven, reads 0), [3]=irq_test pulse, [4]=blit_done.

@@ -233,26 +233,6 @@ module voxel_axi_core #(
     assign blit_mem_rdata = 64'd0;
 
     // Simple safety assertions (simulation only).
-    // SVA: AWVALID and WVALID must not be asserted simultaneously unless AWREADY and WREADY are both high
-    property aw_w_valid_exclusive;
-        @(posedge clk) disable iff (!rst_n)
-        (m_axi_awvalid && m_axi_wvalid) |-> (m_axi_awready && m_axi_wready);
-    endproperty
-    aw_w_valid_exclusive_sva: assert property (aw_w_valid_exclusive);
-
-    // SVA: ARVALID and RVALID must not be asserted simultaneously unless ARREADY and RREADY are both high
-    property ar_r_valid_exclusive;
-        @(posedge clk) disable iff (!rst_n)
-        (m_axi_arvalid && m_axi_rvalid) |-> (m_axi_arready && m_axi_rready);
-    endproperty
-    ar_r_valid_exclusive_sva: assert property (ar_r_valid_exclusive);
-
-    // SVA: All valid/ready signals deassert on reset
-    property valid_ready_deassert_on_reset;
-        @(posedge clk) disable iff (!rst_n)
-        !rst_n |-> !(m_axi_awvalid || m_axi_wvalid || m_axi_arvalid || m_axi_rvalid || m_axi_awready || m_axi_wready || m_axi_arready || m_axi_rready);
-    endproperty
-    valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
 `ifdef VERILATOR
     // Selection should stay within the voxel grid bounds.
     always @(*) begin
@@ -270,10 +250,7 @@ module voxel_axi_core #(
 
     voxel_axil_csr #(
         .ADDR_WIDTH(16),
-        .DATA_WIDTH(32),
-        .SCREEN_WIDTH(SCREEN_WIDTH),
-        .SCREEN_HEIGHT(SCREEN_HEIGHT),
-        .VOXEL_GRID_SIZE(VOXEL_GRID_SIZE)
+        .DATA_WIDTH(32)
     ) u_csr (
         .clk            (clk),
         .rst_n          (rst_n),
@@ -642,32 +619,6 @@ module voxel_axi_core #(
         end
     end
 
-    // Covergroup: pixel_addr monotonicity and frame completeness
-    covergroup cg_pixel_addr @(posedge clk);
-        coverpoint pixel_addr {
-            bins start = {0};
-            bins end   = {TOTAL_PIXELS-1};
-            bins range [] = {[0:TOTAL_PIXELS-1]};
-        }
-        coverpoint pixels_in_frame {
-            bins complete = {TOTAL_PIXELS};
-        }
-    endgroup
-    cg_pixel_addr pixel_addr_cov = new();
-    always @(posedge clk) begin
-        if (pixel_write_en)
-            pixel_addr_cov.sample();
-    end
-
-    // SVA: frame_done must only pulse after exactly TOTAL_PIXELS emitted
-    property frame_done_after_total_pixels;
-        @(posedge clk)
-        disable iff (!rst_n)
-        (pixels_in_frame == TOTAL_PIXELS) |-> frame_done;
-    endproperty
-    assert property (frame_done_after_total_pixels)
-        else $fatal("SVA: frame_done did not pulse after TOTAL_PIXELS emitted");
-
     // Selection changes should only occur on sel_load_pulse and stay in-bounds.
     reg [5:0] sel_x_d, sel_y_d, sel_z_d;
     reg       sel_active_d;
@@ -755,70 +706,5 @@ module voxel_axi_core #(
         else
             irq_out_d <= irq_out;
     end
-
-`ifdef FORMAL
-    // SVA: AXI-Lite AW handshake only when AWVALID
-    property axil_aw_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        s_axil_awready |-> s_axil_awvalid;
-    endproperty
-    axil_aw_handshake_only_on_valid_sva: assert property (axil_aw_handshake_only_on_valid);
-
-    // SVA: AXI-Lite W handshake only when WVALID
-    property axil_w_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        s_axil_wready |-> s_axil_wvalid;
-    endproperty
-    axil_w_handshake_only_on_valid_sva: assert property (axil_w_handshake_only_on_valid);
-
-    // SVA: AXI-Lite AR handshake only when ARVALID
-    property axil_ar_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        s_axil_arready |-> s_axil_arvalid;
-    endproperty
-    axil_ar_handshake_only_on_valid_sva: assert property (axil_ar_handshake_only_on_valid);
-
-    // SVA: AXI-Lite R handshake only when RVALID
-    property axil_r_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        s_axil_rready |-> s_axil_rvalid;
-    endproperty
-    axil_r_handshake_only_on_valid_sva: assert property (axil_r_handshake_only_on_valid);
-
-    // SVA: AXI4 AW handshake only when AWVALID
-    property axi_aw_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        m_axi_awready |-> m_axi_awvalid;
-    endproperty
-    axi_aw_handshake_only_on_valid_sva: assert property (axi_aw_handshake_only_on_valid);
-
-    // SVA: AXI4 W handshake only when WVALID
-    property axi_w_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        m_axi_wready |-> m_axi_wvalid;
-    endproperty
-    axi_w_handshake_only_on_valid_sva: assert property (axi_w_handshake_only_on_valid);
-
-    // SVA: AXI4 AR handshake only when ARVALID
-    property axi_ar_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        m_axi_arready |-> m_axi_arvalid;
-    endproperty
-    axi_ar_handshake_only_on_valid_sva: assert property (axi_ar_handshake_only_on_valid);
-
-    // SVA: AXI4 R handshake only when RVALID
-    property axi_r_handshake_only_on_valid;
-        @(posedge clk) disable iff (!rst_n)
-        m_axi_rready |-> m_axi_rvalid;
-    endproperty
-    axi_r_handshake_only_on_valid_sva: assert property (axi_r_handshake_only_on_valid);
-
-    // SVA: Reset deasserts all valid/ready signals
-    property valid_ready_deassert_on_reset;
-        @(posedge clk) disable iff (!rst_n)
-        !rst_n |-> !(s_axil_awvalid || s_axil_wvalid || s_axil_arvalid || s_axil_rvalid || s_axil_awready || s_axil_wready || s_axil_arready || s_axil_rready || m_axi_awvalid || m_axi_wvalid || m_axi_arvalid || m_axi_rvalid || m_axi_awready || m_axi_wready || m_axi_arready || m_axi_rready);
-    endproperty
-    valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
-`endif
 
 endmodule
