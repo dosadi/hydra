@@ -4,6 +4,19 @@ set -euo pipefail
 # Usage: ./scripts/rsync_to_termux.sh <user@host> [remote_path] [ssh_port]
 # Example: ./scripts/rsync_to_termux.sh u@192.168.1.42 /data/data/com.termux/files/home/hydra 22
 
+DRY_RUN=0
+EXTRA_EXCLUDES=()
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1; shift;;
+    --exclude) EXTRA_EXCLUDES+=("--exclude" "$2"); shift 2;;
+    --) shift; break;;
+    -*) echo "Unknown option $1"; exit 1;;
+    *) break;;
+  esac
+done
+
 REMOTE=${1:?"remote target required (user@host)"}
 REMOTE_PATH=${2:-"~/hydra"}
 SSH_PORT=${3:-22}
@@ -22,7 +35,12 @@ EXCLUDES=(
   --exclude "rtl/*_tb.v"
 )
 
-RSYNC_OPTS=( -avz --delete --compress-level=3 "${EXCLUDES[@]}" -e "ssh -p ${SSH_PORT}" )
+EXCLUDE_ARGS=("${EXCLUDES[@]}" "${EXTRA_EXCLUDES[@]}")
+RSYNC_BASE=( -a -v -z )
+if [[ $DRY_RUN -eq 1 ]]; then
+  RSYNC_BASE+=(--dry-run)
+fi
+RSYNC_OPTS=( "${RSYNC_BASE[@]}" --delete --compress-level=3 "${EXCLUDE_ARGS[@]}" -e "ssh -p ${SSH_PORT}" )
 
 echo "Syncing workspace to ${REMOTE}:${REMOTE_PATH} (ssh port ${SSH_PORT})"
 echo "This will delete remote files not present locally under the target path."
