@@ -112,6 +112,11 @@ TEST_FRAME     := $(TEST_BUILD_DIR)/frame_test.ppm
 GOLDEN_FRAME   := $(SIM_DIR)/tests/golden_frame.ppm
 
 .PHONY: test_frame smoke quick purge_obj_dir lint bench
+# Unit test: AXI WRAP
+.PHONY: test_axi_wrap
+test_axi_wrap:
+	@echo "Running AXI WRAP unit test"
+	@cd tests && bash ./run_axi_wrap_test.sh
 test_frame: $(CXX_EXE)
 	@mkdir -p $(TEST_BUILD_DIR)
 	@rm -f $(TEST_FRAME) $(TEST_BUILD_DIR)/frame_diff.log
