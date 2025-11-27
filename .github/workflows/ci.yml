@@ -1,13 +1,15 @@
-# Placeholder CI workflow for Hydra
-name: CI (placeholder)
+name: Hydra CI
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  linux:
     runs-on: ubuntu-latest
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@v6
 
       - name: Install dependencies
