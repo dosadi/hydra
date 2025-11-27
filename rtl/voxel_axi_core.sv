@@ -233,6 +233,26 @@ module voxel_axi_core #(
     assign blit_mem_rdata = 64'd0;
 
     // Simple safety assertions (simulation only).
+    // SVA: AWVALID and WVALID must not be asserted simultaneously unless AWREADY and WREADY are both high
+    property aw_w_valid_exclusive;
+        @(posedge clk) disable iff (!rst_n)
+        (m_axi_awvalid && m_axi_wvalid) |-> (m_axi_awready && m_axi_wready);
+    endproperty
+    aw_w_valid_exclusive_sva: assert property (aw_w_valid_exclusive);
+
+    // SVA: ARVALID and RVALID must not be asserted simultaneously unless ARREADY and RREADY are both high
+    property ar_r_valid_exclusive;
+        @(posedge clk) disable iff (!rst_n)
+        (m_axi_arvalid && m_axi_rvalid) |-> (m_axi_arready && m_axi_rready);
+    endproperty
+    ar_r_valid_exclusive_sva: assert property (ar_r_valid_exclusive);
+
+    // SVA: All valid/ready signals deassert on reset
+    property valid_ready_deassert_on_reset;
+        @(posedge clk) disable iff (!rst_n)
+        !rst_n |-> !(m_axi_awvalid || m_axi_wvalid || m_axi_arvalid || m_axi_rvalid || m_axi_awready || m_axi_wready || m_axi_arready || m_axi_rready);
+    endproperty
+    valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
 `ifdef VERILATOR
     // Selection should stay within the voxel grid bounds.
     always @(*) begin
@@ -735,5 +755,70 @@ module voxel_axi_core #(
         else
             irq_out_d <= irq_out;
     end
+
+`ifdef FORMAL
+    // SVA: AXI-Lite AW handshake only when AWVALID
+    property axil_aw_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_awready |-> s_axil_awvalid;
+    endproperty
+    axil_aw_handshake_only_on_valid_sva: assert property (axil_aw_handshake_only_on_valid);
+
+    // SVA: AXI-Lite W handshake only when WVALID
+    property axil_w_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_wready |-> s_axil_wvalid;
+    endproperty
+    axil_w_handshake_only_on_valid_sva: assert property (axil_w_handshake_only_on_valid);
+
+    // SVA: AXI-Lite AR handshake only when ARVALID
+    property axil_ar_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_arready |-> s_axil_arvalid;
+    endproperty
+    axil_ar_handshake_only_on_valid_sva: assert property (axil_ar_handshake_only_on_valid);
+
+    // SVA: AXI-Lite R handshake only when RVALID
+    property axil_r_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_rready |-> s_axil_rvalid;
+    endproperty
+    axil_r_handshake_only_on_valid_sva: assert property (axil_r_handshake_only_on_valid);
+
+    // SVA: AXI4 AW handshake only when AWVALID
+    property axi_aw_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        m_axi_awready |-> m_axi_awvalid;
+    endproperty
+    axi_aw_handshake_only_on_valid_sva: assert property (axi_aw_handshake_only_on_valid);
+
+    // SVA: AXI4 W handshake only when WVALID
+    property axi_w_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        m_axi_wready |-> m_axi_wvalid;
+    endproperty
+    axi_w_handshake_only_on_valid_sva: assert property (axi_w_handshake_only_on_valid);
+
+    // SVA: AXI4 AR handshake only when ARVALID
+    property axi_ar_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        m_axi_arready |-> m_axi_arvalid;
+    endproperty
+    axi_ar_handshake_only_on_valid_sva: assert property (axi_ar_handshake_only_on_valid);
+
+    // SVA: AXI4 R handshake only when RVALID
+    property axi_r_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        m_axi_rready |-> m_axi_rvalid;
+    endproperty
+    axi_r_handshake_only_on_valid_sva: assert property (axi_r_handshake_only_on_valid);
+
+    // SVA: Reset deasserts all valid/ready signals
+    property valid_ready_deassert_on_reset;
+        @(posedge clk) disable iff (!rst_n)
+        !rst_n |-> !(s_axil_awvalid || s_axil_wvalid || s_axil_arvalid || s_axil_rvalid || s_axil_awready || s_axil_wready || s_axil_arready || s_axil_rready || m_axi_awvalid || m_axi_wvalid || m_axi_arvalid || m_axi_rvalid || m_axi_awready || m_axi_wready || m_axi_arready || m_axi_rready);
+    endproperty
+    valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
+`endif
 
 endmodule

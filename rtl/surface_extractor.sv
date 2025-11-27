@@ -49,6 +49,21 @@ module surface_extractor #(
         (surface_normal_x <= 8'd255 && surface_normal_y <= 8'd255 && surface_normal_z <= 8'd255 && surface_curvature <= 8'd255 && surface_smoothness <= 8'd255);
     endproperty
     output_bounds_sva: assert property (output_bounds);
+    `ifdef FORMAL
+        // SVA: Done only pulses when enable is high
+        property done_only_on_enable;
+            @(posedge clk) disable iff (!rst_n)
+            done |-> enable;
+        endproperty
+        done_only_on_enable_sva: assert property (done_only_on_enable);
+
+        // SVA: Output bounds (normals, curvature, smoothness)
+        property output_bounds;
+            @(posedge clk) disable iff (!rst_n)
+            (surface_normal_x <= 8'd255 && surface_normal_y <= 8'd255 && surface_normal_z <= 8'd255 && surface_curvature <= 8'd255 && surface_smoothness <= 8'd255);
+        endproperty
+        output_bounds_sva: assert property (output_bounds);
+    `endif
 
     // Covergroup: Extraction event types
     covergroup cg_extraction_events @(posedge clk);

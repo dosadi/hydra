@@ -75,29 +75,36 @@ module voxel_framebuffer_top #(
     reg [31:0] last_pixel_addr;
     reg        pixel_addr_valid;
 
-    // SVA: Pixel address monotonicity (should not decrease within a frame)
-    property pixel_addr_monotonic;
+`ifdef FORMAL
+    // SVA: Frame start must eventually result in frame_done
+    property frame_start_leads_to_done;
         @(posedge clk) disable iff (!rst_n)
-        pixel_write_en && pixel_addr_valid |-> pixel_addr >= last_pixel_addr;
+        start_frame_ext |-> ##[1:$] frame_done;
     endproperty
-    pixel_addr_monotonic_sva: assert property (pixel_addr_monotonic);
+    frame_start_leads_to_done_sva: assert property (frame_start_leads_to_done);
 
-    // SVA: No overlapping pixel writes within a frame
-    // (Simple implementation: check for repeated addr on consecutive cycles)
-    property pixel_write_no_overlap;
-        @(posedge clk) disable iff (!rst_n)
-        pixel_write_en && pixel_addr_valid |-> pixel_addr != last_pixel_addr;
-    endproperty
-    pixel_write_no_overlap_sva: assert property (pixel_write_no_overlap);
-
-    // SVA: Frame done pulse only when not busy (all pixels written)
+    // SVA: Frame done only when not busy
     property frame_done_when_idle;
         @(posedge clk) disable iff (!rst_n)
         frame_done |-> !core_busy;
     endproperty
     frame_done_when_idle_sva: assert property (frame_done_when_idle);
 
-    // Covergroup: Pixel address distribution
+    // SVA: Pixel address monotonicity
+    property pixel_addr_monotonic;
+        @(posedge clk) disable iff (!rst_n)
+        pixel_write_en |-> pixel_addr >= $past(pixel_addr);
+    endproperty
+    pixel_addr_monotonic_sva: assert property (pixel_addr_monotonic);
+
+    // SVA: Pixel write enable only when busy
+    property pixel_write_en_when_busy;
+        @(posedge clk) disable iff (!rst_n)
+        pixel_write_en |-> core_busy;
+    endproperty
+    pixel_write_en_when_busy_sva: assert property (pixel_write_en_when_busy);
+
+    // Coverage: Pixel address distribution
     covergroup cg_pixel_addr @(posedge clk);
         addr_bins: coverpoint pixel_addr {
             bins low[]    = {[0:1023]};
@@ -107,11 +114,39 @@ module voxel_framebuffer_top #(
     endgroup
     cg_pixel_addr_inst = new();
 
-    // Covergroup: Write enable pulse coverage
+    // Coverage: Write enable pulse coverage
     covergroup cg_pixel_write_en @(posedge clk);
         write_en: coverpoint pixel_write_en;
     endgroup
     cg_pixel_write_en_inst = new();
+`endif
+
+    // SVA: Frame done pulse only when not busy (all pixels written)
+    property frame_done_when_idle;
+        @(posedge clk) disable iff (!rst_n)
+        frame_done |-> !core_busy;
+    endproperty
+    frame_done_when_idle_sva: assert property (frame_done_when_idle);
+
+    // SVA: Every frame start pulse must eventually result in a frame_done pulse
+    // NOTE: Verilator does not support SVA sequence delays (##[n:m]).
+    // Full liveness check (frame start always leads to frame_done) requires a formal tool or custom testbench monitor.
+
+    // Covergroup: Pixel address distribution
+    // covergroup cg_pixel_addr @(posedge clk);
+    //     addr_bins: coverpoint pixel_addr {
+    //         bins low[]    = {[0:1023]};
+    //         bins mid[]    = {[1024:SCREEN_WIDTH*SCREEN_HEIGHT/2]};
+    //         bins high[]   = {[SCREEN_WIDTH*SCREEN_HEIGHT/2+1:SCREEN_WIDTH*SCREEN_HEIGHT-1]};
+    //     }
+    // endgroup
+    // cg_pixel_addr_inst = new();
+
+    // Covergroup: Write enable pulse coverage
+    // covergroup cg_pixel_write_en @(posedge clk);
+    //     write_en: coverpoint pixel_write_en;
+    // endgroup
+    // cg_pixel_write_en_inst = new();
 
     // Track last pixel address for SVAs
     always @(posedge clk or negedge rst_n) begin

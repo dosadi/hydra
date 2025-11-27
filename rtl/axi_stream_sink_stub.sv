@@ -67,4 +67,27 @@ module axi_stream_sink_stub #(
         end
     end
 
+`ifdef FORMAL
+    // SVA: tvalid/tready handshake only when tvalid
+    property tready_only_on_tvalid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axis_tready |-> s_axis_tvalid;
+    endproperty
+    tready_only_on_tvalid_sva: assert property (tready_only_on_tvalid);
+
+    // SVA: Frame count only increments on tlast
+    property frame_count_on_tlast;
+        @(posedge clk) disable iff (!rst_n)
+        (frame_count != $past(frame_count)) |-> s_axis_tlast;
+    endproperty
+    frame_count_on_tlast_sva: assert property (frame_count_on_tlast);
+
+    // SVA: CRC update only on tlast
+    property last_frame_crc_on_tlast;
+        @(posedge clk) disable iff (!rst_n)
+        (last_frame_crc != $past(last_frame_crc)) |-> s_axis_tlast;
+    endproperty
+    last_frame_crc_on_tlast_sva: assert property (last_frame_crc_on_tlast);
+`endif
+
 endmodule

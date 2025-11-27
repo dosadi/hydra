@@ -113,6 +113,16 @@ module axi_dma_stub #(
                 S_IDLE: begin
                     if (start) begin
                         $display("DMA_STUB: start src=0x%0h dst=0x%0h len=%0d", src_addr, dst_addr, len_bytes);
+                        // Alignment checks
+                        if (src_addr % STRB_WIDTH != 0) begin
+                            $fatal(1, "DMA_STUB: src_addr not 8-byte aligned: %0h", src_addr);
+                        end
+                        if (dst_addr % STRB_WIDTH != 0) begin
+                            $fatal(1, "DMA_STUB: dst_addr not 8-byte aligned: %0h", dst_addr);
+                        end
+                        if (len_bytes % STRB_WIDTH != 0) begin
+                            $fatal(1, "DMA_STUB: len_bytes not multiple of bus width: %0d", len_bytes);
+                        end
                         busy      <= 1'b1;
                         cur_src   <= src_addr;
                         cur_dst   <= dst_addr;
@@ -186,6 +196,26 @@ module axi_dma_stub #(
     end
 
 `ifdef VERILATOR
+        // SVA: AWVALID and WVALID must not be asserted simultaneously unless AWREADY and WREADY are both high
+        property aw_w_valid_exclusive;
+            @(posedge clk) disable iff (!rst_n)
+            (m_axi_awvalid && m_axi_wvalid) |-> (m_axi_awready && m_axi_wready);
+        endproperty
+        aw_w_valid_exclusive_sva: assert property (aw_w_valid_exclusive);
+
+        // SVA: ARVALID and RVALID must not be asserted simultaneously unless ARREADY and RREADY are both high
+        property ar_r_valid_exclusive;
+            @(posedge clk) disable iff (!rst_n)
+            (m_axi_arvalid && m_axi_rvalid) |-> (m_axi_arready && m_axi_rready);
+        endproperty
+        ar_r_valid_exclusive_sva: assert property (ar_r_valid_exclusive);
+
+        // SVA: All valid/ready signals deassert on reset
+        property valid_ready_deassert_on_reset;
+            @(posedge clk) disable iff (!rst_n)
+            !rst_n |-> !(m_axi_awvalid || m_axi_wvalid || m_axi_arvalid || m_axi_rvalid || m_axi_awready || m_axi_wready || m_axi_arready || m_axi_rready);
+        endproperty
+        valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
     // AXI4 master stability and basic correctness checks.
 
     // ------------------------------------------------------------------------

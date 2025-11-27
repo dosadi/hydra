@@ -120,6 +120,86 @@ module axi_sdram_stub #(
 
     // ------------------------------------------------------------------------
     // AXI Protocol SVAs and Coverage
+        // SVA: AWVALID and WVALID must not be asserted simultaneously unless AWREADY and WREADY are both high
+        property aw_w_valid_exclusive;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_awvalid && s_axi_wvalid) |-> (s_axi_awready && s_axi_wready);
+        endproperty
+        aw_w_valid_exclusive_sva: assert property (aw_w_valid_exclusive);
+
+        // SVA: ARVALID and RVALID must not be asserted simultaneously unless ARREADY and RREADY are both high
+        property ar_r_valid_exclusive;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_arvalid && s_axi_rvalid) |-> (s_axi_arready && s_axi_rready);
+        endproperty
+        ar_r_valid_exclusive_sva: assert property (ar_r_valid_exclusive);
+
+`ifdef FORMAL
+        // SVA: AW handshake only when AWVALID
+        property aw_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awready |-> s_axi_awvalid;
+        endproperty
+        aw_handshake_only_on_valid_sva: assert property (aw_handshake_only_on_valid);
+
+        // SVA: W handshake only when WVALID
+        property w_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wready |-> s_axi_wvalid;
+        endproperty
+        w_handshake_only_on_valid_sva: assert property (w_handshake_only_on_valid);
+
+        // SVA: AR handshake only when ARVALID
+        property ar_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arready |-> s_axi_arvalid;
+        endproperty
+        ar_handshake_only_on_valid_sva: assert property (ar_handshake_only_on_valid);
+
+        // SVA: R handshake only when RVALID
+        property r_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rready |-> s_axi_rvalid;
+        endproperty
+        r_handshake_only_on_valid_sva: assert property (r_handshake_only_on_valid);
+
+        // SVA: Outstanding transactions do not exceed MAX_OUTSTANDING
+        property max_outstanding_write;
+            @(posedge clk) disable iff (!rst_n)
+            w_head - w_tail <= MAX_OUTSTANDING;
+        endproperty
+        max_outstanding_write_sva: assert property (max_outstanding_write);
+
+        property max_outstanding_read;
+            @(posedge clk) disable iff (!rst_n)
+            r_head - r_tail <= MAX_OUTSTANDING;
+        endproperty
+        max_outstanding_read_sva: assert property (max_outstanding_read);
+
+        // SVA: Error response only on error
+        property error_response_only_on_error;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_bvalid && s_axi_bresp == RESP_SLVERR) |-> w_err;
+        endproperty
+        error_response_only_on_error_sva: assert property (error_response_only_on_error);
+
+        // SVA: Reset deasserts all valid/ready signals
+        property valid_ready_deassert_on_reset;
+            @(posedge clk) disable iff (!rst_n)
+            !rst_n |-> !(s_axi_awvalid || s_axi_wvalid || s_axi_arvalid || s_axi_rvalid || s_axi_awready || s_axi_wready || s_axi_arready || s_axi_rready);
+        endproperty
+        valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
+
+        // SVA: Data integrity (no X/Z on outgoing signals when valid)
+        property no_xz_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_awvalid |-> !$isunknown(s_axi_awaddr)) &&
+            (s_axi_wvalid |-> !$isunknown(s_axi_wdata)) &&
+            (s_axi_wvalid |-> !$isunknown(s_axi_wstrb)) &&
+            (s_axi_arvalid |-> !$isunknown(s_axi_araddr));
+        endproperty
+        no_xz_on_valid_sva: assert property (no_xz_on_valid);
+`endif
     // ------------------------------------------------------------------------
     // Outstanding transaction counters
     wire [31:0] aw_outstanding = (w_tail >= w_head) ? (w_tail - w_head) : (MAX_OUTSTANDING + w_tail - w_head);

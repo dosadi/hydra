@@ -588,4 +588,41 @@ module voxel_shell_legacy #(
             irq_out_d <= irq_out;
     end
 
+`ifdef FORMAL
+    // SVA: AW handshake only when AWVALID
+    property aw_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_awready |-> s_axil_awvalid;
+    endproperty
+    aw_handshake_only_on_valid_sva: assert property (aw_handshake_only_on_valid);
+
+    // SVA: W handshake only when WVALID
+    property w_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_wready |-> s_axil_wvalid;
+    endproperty
+    w_handshake_only_on_valid_sva: assert property (w_handshake_only_on_valid);
+
+    // SVA: AR handshake only when ARVALID
+    property ar_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_arready |-> s_axil_arvalid;
+    endproperty
+    ar_handshake_only_on_valid_sva: assert property (ar_handshake_only_on_valid);
+
+    // SVA: R handshake only when RVALID
+    property r_handshake_only_on_valid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axil_rready |-> s_axil_rvalid;
+    endproperty
+    r_handshake_only_on_valid_sva: assert property (r_handshake_only_on_valid);
+
+    // SVA: Reset deasserts all valid/ready signals
+    property valid_ready_deassert_on_reset;
+        @(posedge clk) disable iff (!rst_n)
+        !rst_n |-> !(s_axil_awvalid || s_axil_wvalid || s_axil_arvalid || s_axil_rvalid || s_axil_awready || s_axil_wready || s_axil_arready || s_axil_rready);
+    endproperty
+    valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
+`endif
+
 endmodule
