@@ -40,46 +40,43 @@ module axi_stream_sink_stub #(
         end else begin
             if (s_axis_tvalid && s_axis_tready) begin
                 beat_count <= beat_count + 1'b1;
-                // Simple XOR-based CRC surrogate
-                frame_crc <= frame_crc ^ {8'd0, s_axis_tdata};
-                // track line/pixel
+                // If tuser (SOF) is asserted on this beat, start CRC from this beat's data.
+                if (s_axis_tuser) begin
+                    frame_crc <= {8'd0, s_axis_tdata};
+                    line_count <= 16'd0;
+                    pixel_in_line <= 16'd0;
+                end else begin
+                    // Simple XOR-based CRC surrogate
+                    frame_crc <= frame_crc ^ {8'd0, s_axis_tdata};
+                end
+
+                // track line/pixel (tlast ends a line/frame)
                 if (pixel_in_line == LINE_PIXELS-1 || s_axis_tlast) begin
                     pixel_in_line <= 16'd0;
                     line_count    <= line_count + 1'b1;
                 end else begin
                     pixel_in_line <= pixel_in_line + 1'b1;
                 end
+
                 if (s_axis_tlast) begin
+                    // Capture final CRC for the frame (include this beat)
+                    if (s_axis_tuser)
+                        last_frame_crc <= {8'd0, s_axis_tdata};
+                    else
+                        last_frame_crc <= frame_crc ^ {8'd0, s_axis_tdata};
+
                     frame_count <= frame_count + 1'b1;
                     line_count  <= 16'd0;
                     pixel_in_line <= 16'd0;
                 end
             end
-            if (s_axis_tuser) begin
-                // start of frame: reset running CRC
-                frame_crc <= 32'd0;
-                line_count <= 16'd0;
-                pixel_in_line <= 16'd0;
-            end
-            if (s_axis_tvalid && s_axis_tready && s_axis_tlast) begin
-                last_frame_crc <= frame_crc;
-            end
         end
     end
 
     // ------------------------------------------------------------------------
-    // Stub: Future logic for HDMI/TMDS tuser (SOF) and tlast (end-of-line/frame)
-    // TODO: Implement proper handling of tuser and tlast for HDMI/TMDS testbench integration
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            // ...existing code...
-        end else begin
-            if (s_axis_tvalid && s_axis_tready) begin
-                // TODO: Add logic for tuser (SOF) and tlast (end-of-line/frame)
-                // For now, only basic beat/frame counting is implemented
-            end
-        end
-    end
+    // Note: `tuser` is treated as Start-Of-Frame when seen on a valid beat.
+    // `tlast` denotes end-of-line / end-of-frame as implemented above.
+    // Further HDMI/TMDS-specific parsing can be added if required by tests.
 
 `ifdef FORMAL
     // SVA: tvalid/tready handshake only when tvalid

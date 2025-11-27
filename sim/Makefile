@@ -5,10 +5,13 @@ SIM_DIR      := $(PROJECT_ROOT)/sim
 TOP_MODULE   := voxel_framebuffer_top
 
 CXX_SRCS     := viewer_main.cpp \
+				 harness_common.cpp \
+				 render_instrumentation.cpp \
                  platform/platform_stub.cpp \
                  platform/backend_selector.cpp \
                  platform/backend_sdl.cpp \
                  platform/backend_headless.cpp \
+				 platform/backend_aalib.cpp \
                  platform/backend_gl.cpp \
                  platform/backend_vulkan.cpp \
                  platform/backend_wayland.cpp \
@@ -109,6 +112,11 @@ TEST_FRAME     := $(TEST_BUILD_DIR)/frame_test.ppm
 GOLDEN_FRAME   := $(SIM_DIR)/tests/golden_frame.ppm
 
 .PHONY: test_frame smoke quick purge_obj_dir lint bench
+# Unit test: AXI WRAP
+.PHONY: test_axi_wrap
+test_axi_wrap:
+	@echo "Running AXI WRAP unit test"
+	@cd tests && bash ./run_axi_wrap_test.sh
 test_frame: $(CXX_EXE)
 	@mkdir -p $(TEST_BUILD_DIR)
 	@rm -f $(TEST_FRAME) $(TEST_BUILD_DIR)/frame_diff.log

@@ -1,0 +1,33 @@
+name: AXI Wrap CI
+
+on:
+  push:
+    branches: [ main, 'test/**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test-axi-wrap:
+    name: Build sim and run AXI wrap test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install apt dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git wget curl pkg-config python3 python3-pip
+          sudo apt-get install -y verilator g++ make libsdl2-dev libsdl2-ttf-dev
+
+      - name: Show Verilator version
+        run: verilator --version || true
+
+      - name: Make wrapper executable
+        run: chmod +x ./scripts/build_and_run_axi_wrap.sh
+
+      - name: Build and run AXI WRAP test (wrapper)
+        run: |
+          set -euo pipefail
+          ./scripts/build_and_run_axi_wrap.sh
