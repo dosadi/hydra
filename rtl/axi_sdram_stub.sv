@@ -427,7 +427,9 @@ module axi_sdram_stub #(
                 w_delay_q[w_tail] <= WRITE_LATENCY[7:0] + jitter;
                 w_size_q[w_tail]  <= s_axi_awsize;
                 w_burst_q[w_tail] <= s_axi_awburst;
-                w_err_q[w_tail]   <= (s_axi_awaddr >> MEM_ADDR_SHIFT) >= MEM_WORDS;
+                // Mark error if address out of range or unsupported burst type
+                w_err_q[w_tail]   <= (s_axi_awaddr >> MEM_ADDR_SHIFT) >= MEM_WORDS
+                                    || (s_axi_awburst != BURST_INCR && s_axi_awburst != 2'b00);
                 w_valid_q[w_tail] <= 1'b1;
                 w_tail            <= (w_tail + 1) % MAX_OUTSTANDING;
                 s_axi_awready     <= 1'b0;
@@ -528,7 +530,9 @@ module axi_sdram_stub #(
                 r_delay_q[r_tail] <= READ_LATENCY[7:0];
                 r_size_q[r_tail]  <= s_axi_arsize;
                 r_burst_q[r_tail] <= s_axi_arburst;
-                r_err_q[r_tail]   <= (s_axi_araddr >> MEM_ADDR_SHIFT) >= MEM_WORDS;
+                // Mark error if address out of range or unsupported burst type
+                r_err_q[r_tail]   <= (s_axi_araddr >> MEM_ADDR_SHIFT) >= MEM_WORDS
+                                    || (s_axi_arburst != BURST_INCR && s_axi_arburst != 2'b00);
                 r_valid_q[r_tail] <= 1'b1;
                 r_tail            <= (r_tail + 1) % MAX_OUTSTANDING;
                 s_axi_arready     <= 1'b0;
@@ -610,6 +614,8 @@ module axi_sdram_stub #(
     input  wire [AXI_REGION_WIDTH-1:0] s_axi_awregion,
     input  wire [AXI_QOS_WIDTH-1:0]    s_axi_arqos,
     input  wire [AXI_REGION_WIDTH-1:0] s_axi_arregion,
-    // TODO: Implement burst types, QoS, and region handling for full AXI support
+    // NOTE: For now we accept INCR bursts and FIXED bursts; other burst types
+    // will cause a SLVERR response. Extending to WRAP bursts and QoS/region
+    // handling is future work.
 
 endmodule
