@@ -1,0 +1,62 @@
+name: Sim Smoke (AALIB headless)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [ main ]
+
+jobs:
+  sim-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator g++ make python3 python3-pip
+
+      - name: Run sim smoke (dry-run)
+        env:
+          HYDRA_BACKEND: AALIB
+        run: |
+          chmod +x ./scripts/auto_iterate.sh
+          ./scripts/auto_iterate.sh --dry-run
+name: Sim Smoke Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'update/**'
+
+jobs:
+  sim-test:
+    name: Build and run sim smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator g++ make libsdl2-dev libsdl2-ttf-dev python3 python3-pip
+
+      - name: Build sim
+        run: |
+          cd sim
+          make -j$(nproc)
+
+      - name: Run non-interactive frame test
+        run: |
+          cd sim
+          FRAME_DUMP=build/frame_test.ppm AUTO_EXIT=1 ./sim_voxel
+
+      - name: Compare frame with golden
+        run: |
+          python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm
