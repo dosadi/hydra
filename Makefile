@@ -36,7 +36,7 @@ help:
 	@echo "  make cam-reset     - Reset camera/flags/selection via libhydra (uses /dev/hydra_pcie)"
 	@echo "  make mmap-smoke    - Map BAR0 and dump ID/REV/STATUS (skips if missing)"
 	@echo "  make bar1-hexdump  - Map BAR1 and hexdump a small range (skips if missing)"
-	@echo "  make cam-flags-demo- Sample: set camera/flags/selection via libhydra"
+	@echo "  make cam-flags-demo - Sample: set camera/flags/selection via libhydra"
 	@echo "  make backend-probe - Probe SDL backends (best effort; skips if SDL missing)"
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
