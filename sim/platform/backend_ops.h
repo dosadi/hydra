@@ -23,3 +23,4 @@ BackendOps get_ops_fbdev();
 BackendOps get_ops_win32();
 BackendOps get_ops_macos();
 BackendOps get_ops_headless();
+BackendOps get_ops_aalib();

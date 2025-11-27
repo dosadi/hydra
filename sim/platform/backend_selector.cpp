@@ -24,6 +24,7 @@ PlatformBackend select_default_backend() {
         else if (strcasecmp(v, "FBDEV") == 0)   { env_backend = PlatformBackend::Fbdev; env_backend_set = true; }
         else if (strcasecmp(v, "WIN32") == 0)   { env_backend = PlatformBackend::Win32; env_backend_set = true; }
         else if (strcasecmp(v, "MACOS") == 0)   { env_backend = PlatformBackend::MacOS; env_backend_set = true; }
+        else if (strcasecmp(v, "AALIB") == 0)   { env_backend = PlatformBackend::AALIB; env_backend_set = true; }
         else if (strcasecmp(v, "HEADLESS") == 0) { env_backend = PlatformBackend::Headless; env_backend_set = true; }
 
         if (env_backend_set) {
@@ -41,6 +42,7 @@ PlatformBackend select_default_backend() {
         PlatformBackend::Vulkan,
         PlatformBackend::GL,
         PlatformBackend::Wayland,
+            PlatformBackend::AALIB,
         PlatformBackend::X11,
         PlatformBackend::SDL,
         PlatformBackend::Fbdev,
@@ -94,6 +96,11 @@ void shutdown_backend(PlatformBackend backend, PlatformContext& ctx) {
 
 void platform_log_capabilities() {
     std::fprintf(stderr, "[hydra] compiled backends: SDL");
+#ifdef HYDRA_ENABLE_AALIB
+    std::fprintf(stderr, " AAlib");
+#else
+    std::fprintf(stderr, " AAlib");
+#endif
 #ifdef HYDRA_ENABLE_GL
     std::fprintf(stderr, " GL");
 #endif

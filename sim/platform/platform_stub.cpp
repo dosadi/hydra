@@ -57,6 +57,7 @@ bool platform_backend_supported(PlatformBackend backend) {
 #endif
         case PlatformBackend::Win32:  return is_windows();
         case PlatformBackend::MacOS:  return is_macos();
+            case PlatformBackend::AALIB: return true;
         default: return false;
     }
 }
@@ -81,6 +82,7 @@ static BackendOps get_ops(PlatformBackend backend) {
         case PlatformBackend::Vulkan: return get_ops_vulkan();
         case PlatformBackend::Wayland:return get_ops_wayland();
         case PlatformBackend::X11:    return get_ops_x11();
+        case PlatformBackend::AALIB: return get_ops_aalib();
         case PlatformBackend::Fbdev:  return get_ops_fbdev();
         case PlatformBackend::Win32:  return get_ops_win32();
         case PlatformBackend::MacOS:  return get_ops_macos();

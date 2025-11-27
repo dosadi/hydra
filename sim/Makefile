@@ -5,10 +5,13 @@ SIM_DIR      := $(PROJECT_ROOT)/sim
 TOP_MODULE   := voxel_framebuffer_top
 
 CXX_SRCS     := viewer_main.cpp \
+				 harness_common.cpp \
+				 render_instrumentation.cpp \
                  platform/platform_stub.cpp \
                  platform/backend_selector.cpp \
                  platform/backend_sdl.cpp \
                  platform/backend_headless.cpp \
+				 platform/backend_aalib.cpp \
                  platform/backend_gl.cpp \
                  platform/backend_vulkan.cpp \
                  platform/backend_wayland.cpp \

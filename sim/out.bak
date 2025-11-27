@@ -1,0 +1,6 @@
+cd ../sim && verilator -Wall --Wno-fatal --Wno-WIDTHEXPAND --Wno-UNUSEDSIGNAL --Wno-UNUSEDPARAM --Wno-BLKSEQ --Wno-INITIALDLY --cc voxel_framebuffer_top.sv --top-module voxel_framebuffer_top --public-flat-rw -GMAX_RAY_STEPS=32 -GRAY_STEP_SHIFT=8 -O3 --exe viewer_main.cpp platform/platform_stub.cpp platform/backend_selector.cpp platform/backend_sdl.cpp platform/backend_headless.cpp platform/backend_gl.cpp platform/backend_vulkan.cpp platform/backend_wayland.cpp platform/backend_x11.cpp platform/backend_fbdev.cpp platform/backend_win32.cpp platform/backend_macos.cpp -I../rtl -CFLAGS '-I/usr/include/SDL2 -D_REENTRANT ' -LDFLAGS '-lSDL2 -lSDL2_ttf '
+make -C obj_dir -f Vvoxel_framebuffer_top.mk
+make[1]: Entering directory '/workspaces/hydra/sim/obj_dir'
+make[1]: Nothing to be done for 'default'.
+make[1]: Leaving directory '/workspaces/hydra/sim/obj_dir'
+cp obj_dir/Vvoxel_framebuffer_top sim_voxel

@@ -1,3 +1,18 @@
+// Minimal placeholder for sim viewer translation unit.
+// The canonical harness is `sim/live_sdl_main.cpp` (compiled via
+// `viewer_main.cpp` which includes that file). Keep this file tiny
+// so accidental compilation of a second large translation unit
+// doesn't introduce duplicate symbol definitions.
+
+#include <cstdio>
+
+int viewer_placeholder_noop(void) {
+    std::fprintf(stderr, "[hydra] viewer.cpp placeholder active (no-op)\n");
+    return 0;
+}
+
+// If you need an alternate harness, create a new translation unit
+// instead of duplicating the large harness implementation here.
 
 // Minimal placeholder for sim viewer translation unit.
 // The canonical harness is `sim/live_sdl_main.cpp` (compiled once).

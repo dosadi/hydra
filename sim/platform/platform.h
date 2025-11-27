@@ -17,6 +17,7 @@ enum class PlatformBackend {
     Fbdev,
     Win32,
     MacOS,
+    AALIB,
     Headless
 };
 
