@@ -199,6 +199,82 @@ module axi_sdram_stub #(
             (s_axi_arvalid |-> !$isunknown(s_axi_araddr));
         endproperty
         no_xz_on_valid_sva: assert property (no_xz_on_valid);
+
+        // SVA: Setup time for AWVALID before AWREADY
+        property awvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awvalid |-> $stable(s_axi_awvalid) throughout [*1:$] s_axi_awready;
+        endproperty
+        awvalid_setup_sva: assert property (awvalid_setup);
+
+        // SVA: Hold time for AWVALID after AWREADY
+        property awvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awready |-> $stable(s_axi_awvalid) throughout [*1:2];
+        endproperty
+        awvalid_hold_sva: assert property (awvalid_hold);
+
+        // SVA: Pulse width for AWVALID
+        property awvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awvalid |-> ##[1:8] !s_axi_awvalid;
+        endproperty
+        awvalid_pulse_width_sva: assert property (awvalid_pulse_width);
+
+        // Repeat for WVALID, ARVALID, RVALID
+        property wvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wvalid |-> $stable(s_axi_wvalid) throughout [*1:$] s_axi_wready;
+        endproperty
+        wvalid_setup_sva: assert property (wvalid_setup);
+
+        property wvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wready |-> $stable(s_axi_wvalid) throughout [*1:2];
+        endproperty
+        wvalid_hold_sva: assert property (wvalid_hold);
+
+        property wvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wvalid |-> ##[1:8] !s_axi_wvalid;
+        endproperty
+        wvalid_pulse_width_sva: assert property (wvalid_pulse_width);
+
+        property arvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arvalid |-> $stable(s_axi_arvalid) throughout [*1:$] s_axi_arready;
+        endproperty
+        arvalid_setup_sva: assert property (arvalid_setup);
+
+        property arvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arready |-> $stable(s_axi_arvalid) throughout [*1:2];
+        endproperty
+        arvalid_hold_sva: assert property (arvalid_hold);
+
+        property arvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arvalid |-> ##[1:8] !s_axi_arvalid;
+        endproperty
+        arvalid_pulse_width_sva: assert property (arvalid_pulse_width);
+
+        property rvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rvalid |-> $stable(s_axi_rvalid) throughout [*1:$] s_axi_rready;
+        endproperty
+        rvalid_setup_sva: assert property (rvalid_setup);
+
+        property rvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rready |-> $stable(s_axi_rvalid) throughout [*1:2];
+        endproperty
+        rvalid_hold_sva: assert property (rvalid_hold);
+
+        property rvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rvalid |-> ##[1:8] !s_axi_rvalid;
+        endproperty
+        rvalid_pulse_width_sva: assert property (rvalid_pulse_width);
 `endif
     // ------------------------------------------------------------------------
     // Outstanding transaction counters
@@ -297,6 +373,39 @@ module axi_sdram_stub #(
     wire [ADDR_WIDTH-1:0] r_addr_next = r_addr + (1 << r_size);
     localparam integer MEM_ADDR_SHIFT = 3;
     wire [7:0] jitter = (WAIT_JITTER == 0) ? 8'd0 : (lfsr & {8{(WAIT_JITTER!=0)}}) % (WAIT_JITTER+1);
+
+    // ------------------------------------------------------------------------
+    // Timing realism: add configurable response delay for AW/W and AR/R channels
+    reg [7:0] aw_delay_cnt, ar_delay_cnt;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            aw_delay_cnt <= 0;
+            ar_delay_cnt <= 0;
+            s_axi_awready <= 0;
+            s_axi_arready <= 0;
+        end else begin
+            // AW channel delay
+            if (s_axi_awvalid && !s_axi_awready) begin
+                aw_delay_cnt <= WRITE_LATENCY;
+                s_axi_awready <= 0;
+            end else if (aw_delay_cnt > 0) begin
+                aw_delay_cnt <= aw_delay_cnt - 1;
+                if (aw_delay_cnt == 1) s_axi_awready <= 1;
+            end else begin
+                s_axi_awready <= 0;
+            end
+            // AR channel delay
+            if (s_axi_arvalid && !s_axi_arready) begin
+                ar_delay_cnt <= READ_LATENCY;
+                s_axi_arready <= 0;
+            end else if (ar_delay_cnt > 0) begin
+                ar_delay_cnt <= ar_delay_cnt - 1;
+                if (ar_delay_cnt == 1) s_axi_arready <= 1;
+            end else begin
+                s_axi_arready <= 0;
+            end
+        end
+    end
 
     // Write address acceptance
     always @(posedge clk or negedge rst_n) begin
@@ -492,5 +601,15 @@ module axi_sdram_stub #(
             end
         end
     end
+
+    // ------------------------------------------------------------------------
+    // Stub parameters and interface signals for advanced AXI features
+    parameter integer AXI_QOS_WIDTH = 4;
+    parameter integer AXI_REGION_WIDTH = 4;
+    input  wire [AXI_QOS_WIDTH-1:0]    s_axi_awqos,
+    input  wire [AXI_REGION_WIDTH-1:0] s_axi_awregion,
+    input  wire [AXI_QOS_WIDTH-1:0]    s_axi_arqos,
+    input  wire [AXI_REGION_WIDTH-1:0] s_axi_arregion,
+    // TODO: Implement burst types, QoS, and region handling for full AXI support
 
 endmodule

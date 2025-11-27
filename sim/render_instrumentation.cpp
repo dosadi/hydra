@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <chrono>
 #include <iostream>
-#include <cstdint>
 
 RenderInstrumentation::RenderInstrumentation(bool enabled, std::string command_line)
     : enabled_(enabled), command_line_(std::move(command_line)) {
