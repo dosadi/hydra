@@ -11,6 +11,9 @@
 #include "platform/backend_selector.h"
 #include "platform/platform.h"
 
+// Shared harness declarations
+#include "harness_common.h"
+
 #include <cstdint>
 #include <cstdio>
 #include <vector>
@@ -54,22 +57,19 @@ static void record_color(ColorRange& range, uint32_t argb) {
 static const int   SCREEN_WIDTH  = 480;
 static const int   SCREEN_HEIGHT = 360;
 static const int   HUD_HEIGHT    = 80;
-static const float FX            = 256.0f;  // fixed-point scale
-static bool        g_vsync       = true;
+
+const float FX            = 256.0f;  // fixed-point scale
+bool        g_vsync       = true;
 
 vluint64_t main_time = 0;
 double sc_time_stamp() { return main_time; }
 
-enum class PixelViewMode {
-    Color = 0,
-    Word0,
-    Word2,
-    SidebandMix,
-};
 
-static PixelViewMode g_pixel_view_mode = PixelViewMode::Color;
+// PixelViewMode is defined in harness_common.h
 
-static const char* pixel_view_mode_name(PixelViewMode m) {
+PixelViewMode g_pixel_view_mode = PixelViewMode::Color;
+
+const char* pixel_view_mode_name(PixelViewMode m) {
     switch (m) {
         case PixelViewMode::Color:      return "color";
         case PixelViewMode::Word0:      return "word0";
@@ -79,7 +79,7 @@ static const char* pixel_view_mode_name(PixelViewMode m) {
     }
 }
 
-static PixelViewMode pixel_view_from_string(const char* s) {
+PixelViewMode pixel_view_from_string(const char* s) {
     if (!s) return PixelViewMode::Color;
     if (strcasecmp(s, "color") == 0)    return PixelViewMode::Color;
     if (strcasecmp(s, "word0") == 0)    return PixelViewMode::Word0;
@@ -135,24 +135,31 @@ static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
 }
 
 // Depth-fog configuration and application
-static bool g_fog_enabled = false;
-static uint32_t g_fog_color = 0xFFE0E0E0; // ARGB
-static float g_fog_density = 1.0f; // linear density multiplier
+
+struct PipelineConfig {
+    bool fog_enabled = false;
+    uint32_t fog_color = 0xFFE0E0E0; // ARGB
+    float fog_density = 1.0f;
+    // Future: bool aa_enabled = false;
+    // Future: bool tonemap_enabled = false;
+    // Add more pipeline toggles here
+};
+
+static PipelineConfig g_pipeline_config;
 
 static uint32_t apply_fog(uint32_t src_argb, uint8_t depth_byte) {
-    if (!g_fog_enabled) return src_argb;
+    if (!g_pipeline_config.fog_enabled) return src_argb;
     float d = static_cast<float>(depth_byte) / 255.0f; // 0..1, 0=near,1=far
-    // simple linear/exponential blend control
-    float factor = d * g_fog_density;
+    float factor = d * g_pipeline_config.fog_density;
     if (factor > 1.0f) factor = 1.0f;
 
     uint8_t sr = (src_argb >> 16) & 0xFF;
     uint8_t sg = (src_argb >> 8)  & 0xFF;
     uint8_t sb =  src_argb        & 0xFF;
 
-    uint8_t fr = (g_fog_color >> 16) & 0xFF;
-    uint8_t fg = (g_fog_color >> 8)  & 0xFF;
-    uint8_t fb =  g_fog_color        & 0xFF;
+    uint8_t fr = (g_pipeline_config.fog_color >> 16) & 0xFF;
+    uint8_t fg = (g_pipeline_config.fog_color >> 8)  & 0xFF;
+    uint8_t fb =  g_pipeline_config.fog_color        & 0xFF;
 
     uint8_t rr = static_cast<uint8_t>(sr * (1.0f - factor) + fr * factor);
     uint8_t gg = static_cast<uint8_t>(sg * (1.0f - factor) + fg * factor);
@@ -174,7 +181,7 @@ static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
     return (uint32_t(x) << 12) | (uint32_t(y) << 6) | uint32_t(z);
 }
 
-static bool env_truthy(const char* key) {
+bool env_truthy(const char* key) {
     if (const char* v = std::getenv(key)) {
         return v[0] != '\0' && v[0] != '0' && strcasecmp(v, "false") != 0;
     }
@@ -263,7 +270,7 @@ static void apply_cli_overrides(int argc, char** argv) {
     }
 }
 
-static std::string flatten_cli_args(int argc, char** argv) {
+std::string flatten_cli_args(int argc, char** argv) {
     std::string out;
     for (int i = 0; i < argc; ++i) {
         if (i) out += ' ';
@@ -277,83 +284,8 @@ static std::string flatten_cli_args(int argc, char** argv) {
 // Forward declarations used by instrumentation helpers
 static void die(const std::string& s);
 
-struct RenderInstrumentationConfig {
-    float cam_pos_x = 0.0f;
-    float cam_pos_y = 0.0f;
-    float cam_pos_z = 0.0f;
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    bool smooth_surfaces = false;
-    bool curvature = false;
-    bool extra_light = false;
-    bool diag_slice = false;
-    bool ray_jitter = false;
-    bool hud_enabled = true;
-    float fps_target = 0.0f;
-    bool vsync = true;
-    std::string backend_name;
-    std::string backend_info;
-    std::string pixel_view;
-};
-
-struct RenderInstrumentation {
-    RenderInstrumentation(bool enabled, std::string command_line)
-        : enabled_(enabled), command_line_(std::move(command_line)) {
-        if (!enabled_)
-            return;
-        std::filesystem::create_directories("out");
-        csv_.open("out/render_pipeline_baseline.csv", std::ios::app);
-        if (!csv_)
-            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
-        if (csv_.tellp() == 0)
-            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
-    }
-
-    bool active() const { return enabled_; }
-
-    void write_config(const RenderInstrumentationConfig& cfg) {
-        if (!enabled_)
-            return;
-        std::ofstream cfg_out("out/render_pipeline_baseline.cfg");
-        if (!cfg_out)
-            die("failed to write out/render_pipeline_baseline.cfg");
-        cfg_out << "instrument_command=" << command_line_ << "\n";
-        cfg_out << "backend=" << cfg.backend_name << "\n";
-        cfg_out << "backend_info=" << cfg.backend_info << "\n";
-        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
-        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
-        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
-        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
-                << ",curvature:" << (cfg.curvature ? "1" : "0")
-                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
-                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
-                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
-        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
-        cfg_out << "fps_target=" << cfg.fps_target << "\n";
-        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
-    }
-
-    void record(uint64_t frame,
-                double fps,
-                double ray_loop_ms,
-                double hud_present_ms,
-                double framebuffer_copy_ms,
-                double frame_total_ms) {
-        if (!enabled_)
-            return;
-        auto now = std::chrono::system_clock::now();
-        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        csv_ << frame << ',' << ts_ms << ',' << fps << ','
-             << ray_loop_ms << ',' << hud_present_ms << ','
-             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
-        csv_.flush();
-    }
-
-private:
-    bool enabled_;
-    std::ofstream csv_;
-    std::string command_line_;
-};
+// Use external RenderInstrumentation implementation to keep the harness small.
+#include "render_instrumentation.h"
 
 static std::string g_backend_info;
 
@@ -587,19 +519,18 @@ int main(int argc, char** argv) {
     bool last_frame_color_stats_valid = false;
 
     // Configure depth fog from environment
-    g_fog_enabled = env_truthy("HYDRA_FOG");
+    g_pipeline_config.fog_enabled = env_truthy("HYDRA_FOG");
     if (const char* fog_col = std::getenv("HYDRA_FOG_COLOR")) {
-        // accept formats like "0xRRGGBB" or "RRGGBB"
         unsigned long v = std::strtoul(fog_col, nullptr, 0);
-        g_fog_color = 0xFF000000u | (uint32_t(v) & 0x00FFFFFFu);
+        g_pipeline_config.fog_color = 0xFF000000u | (uint32_t(v) & 0x00FFFFFFu);
     }
     if (const char* fog_den = std::getenv("HYDRA_FOG_DENSITY")) {
         char* endptr = nullptr;
         float d = std::strtof(fog_den, &endptr);
-        if (endptr && endptr != fog_den) g_fog_density = d;
+        if (endptr && endptr != fog_den) g_pipeline_config.fog_density = d;
     }
-    if (g_fog_enabled) {
-        std::fprintf(stderr, "[hydra] Depth fog enabled color=%08x density=%.3f\n", g_fog_color, g_fog_density);
+    if (g_pipeline_config.fog_enabled) {
+        std::fprintf(stderr, "[hydra] Depth fog enabled color=%08x density=%.3f\n", g_pipeline_config.fog_color, g_pipeline_config.fog_density);
     }
 
     // Ensure SDL grabs keyboard focus; allow renderer selection via SDL hints/env.
@@ -1489,7 +1420,7 @@ int main(int argc, char** argv) {
                     uint32_t w2 = top->pixel_word2;
                     uint32_t pixel_value = pixel96_to_argb(w0, w1, w2);
                     uint8_t depth_byte = (w0 >> 16) & 0xFF;
-                    if (g_fog_enabled) {
+                    if (g_pipeline_config.fog_enabled) {
                         pixel_value = apply_fog(pixel_value, depth_byte);
                     }
                     framebuffer[addr] = pixel_value;

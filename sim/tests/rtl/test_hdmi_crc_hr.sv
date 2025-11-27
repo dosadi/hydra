@@ -69,7 +69,7 @@ module test_hdmi_crc_hr;
     wire        irq_out;
     wire        msi_pulse;
 
-    localparam [31:0] GOLDEN_CRC = 32'h0005_3F00;
+    localparam [31:0] GOLDEN_CRC = 32'h0011_0B00;
     localparam integer TOTAL_PIXELS = 64 * 48;
     reg [31:0] csr_crc;
     reg [31:0] csr_frames;

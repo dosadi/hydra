@@ -1,11 +1,21 @@
 
+// Minimal placeholder for sim viewer translation unit.
+// The canonical harness is `sim/live_sdl_main.cpp` (compiled once).
+// Keep this file tiny so accidental compilation of a second large
+// translation unit doesn't introduce duplicate symbol definitions.
+
+#include <cstdio>
+
+int viewer_placeholder_noop(void) {
+	std::fprintf(stderr, "[hydra] viewer.cpp placeholder active (no-op)\n");
+	return 0;
+}
 // viewer.cpp removed: harness is provided by `live_sdl_main.cpp` and
 // the thin wrapper `viewer_main.cpp`. This file kept as a placeholder
 // to avoid accidental re-addition of the large duplicated source.
 //
 // If you need an alternate harness, edit `live_sdl_main.cpp` or create
 // a new translation unit instead of duplicating code here.
-
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -28,64 +38,19 @@
 #include <fstream>
 #include <filesystem>
 #include <strings.h>
-#include <unistd.h>
+// viewer.cpp intentionally minimal to avoid duplicate definitions.
+// The canonical harness is `live_sdl_main.cpp` and build uses
+// `viewer_main.cpp` which `#include`s that file. Keep this file tiny
+// so accidental compilation of a second large translation unit doesn't
+// introduce duplicate symbols.
 
-struct ColorRange {
-    uint8_t min_r;
-    uint8_t min_g;
-    uint8_t min_b;
-    uint8_t max_r;
-    uint8_t max_g;
-    uint8_t max_b;
-};
+// This file is a deliberate placeholder. Do not duplicate the harness
+// here. If you want an alternate harness, create a new file instead.
 
-static ColorRange color_range_default() {
-    return ColorRange{0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00};
-}
+// No code follows.
 
-static void record_color(ColorRange& range, uint32_t argb) {
-    uint8_t r = (argb >> 16) & 0xFF;
-    uint8_t g = (argb >>  8) & 0xFF;
-    uint8_t b = (argb      ) & 0xFF;
-    range.min_r = std::min(range.min_r, r);
-    range.min_g = std::min(range.min_g, g);
-    range.min_b = std::min(range.min_b, b);
-    range.max_r = std::max(range.max_r, r);
-    range.max_g = std::max(range.max_g, g);
-    range.max_b = std::max(range.max_b, b);
-}
+// No code follows.
 
-static const int   SCREEN_WIDTH  = 480;
-static const int   SCREEN_HEIGHT = 360;
-static const int   HUD_HEIGHT    = 80;
-static const float FX            = 256.0f;  // fixed-point scale
-static bool        g_vsync       = true;
-
-vluint64_t main_time = 0;
-double sc_time_stamp() { return main_time; }
-
-enum class PixelViewMode {
-    Color = 0,
-    Word0,
-    Word2,
-    SidebandMix,
-};
-
-static PixelViewMode g_pixel_view_mode = PixelViewMode::Color;
-
-static const char* pixel_view_mode_name(PixelViewMode m) {
-    switch (m) {
-        case PixelViewMode::Color:      return "color";
-        case PixelViewMode::Word0:      return "word0";
-        case PixelViewMode::Word2:      return "word2";
-        case PixelViewMode::SidebandMix:return "sideband";
-        default:                        return "unknown";
-    }
-}
-
-static PixelViewMode pixel_view_from_string(const char* s) {
-    if (!s) return PixelViewMode::Color;
-    if (strcasecmp(s, "color") == 0)    return PixelViewMode::Color;
     if (strcasecmp(s, "word0") == 0)    return PixelViewMode::Word0;
     if (strcasecmp(s, "depth") == 0)    return PixelViewMode::Word0;
     if (strcasecmp(s, "word2") == 0)    return PixelViewMode::Word2;
@@ -123,411 +88,18 @@ static uint32_t pixel96_to_argb(uint32_t w0, uint32_t w1, uint32_t w2) {
         case PixelViewMode::Word0:
             return visualize_word(w0);
         case PixelViewMode::Word2:
-            return visualize_word(w2);
-        case PixelViewMode::SidebandMix: {
-            uint8_t depth_like = (w0 >> 16) & 0xFF;
-            uint8_t emissive   = (w2 >> 16) & 0xFF;
-            uint8_t diag_bits  = (w0 >> 8)  & 0xFF;
-            return (0xFFu << 24) |
-                   (uint32_t(emissive)   << 16) |
-                   (uint32_t(depth_like) << 8)  |
-                    uint32_t(diag_bits);
-        }
-        default:
-            return visualize_word(w1);
-    }
-}
+			// Minimal placeholder for sim viewer translation unit.
+			// The canonical harness lives in `sim/live_sdl_main.cpp` and
+			// `sim/viewer_main.cpp` includes that file. Keep this file tiny
+			// so accidental compilation of a second large translation unit
+			// doesn't introduce duplicate symbol definitions.
 
-// Depth-fog configuration and application
-static bool g_fog_enabled = false;
-static uint32_t g_fog_color = 0xFFE0E0E0; // ARGB
-static float g_fog_density = 1.0f; // linear density multiplier
+			#include <cstdio>
 
-static uint32_t apply_fog(uint32_t src_argb, uint8_t depth_byte) {
-    if (!g_fog_enabled) return src_argb;
-    float d = static_cast<float>(depth_byte) / 255.0f; // 0..1, 0=near,1=far
-    // simple linear/exponential blend control
-    float factor = d * g_fog_density;
-    if (factor > 1.0f) factor = 1.0f;
-
-    uint8_t sr = (src_argb >> 16) & 0xFF;
-    uint8_t sg = (src_argb >> 8)  & 0xFF;
-    uint8_t sb =  src_argb        & 0xFF;
-
-    uint8_t fr = (g_fog_color >> 16) & 0xFF;
-    uint8_t fg = (g_fog_color >> 8)  & 0xFF;
-    uint8_t fb =  g_fog_color        & 0xFF;
-
-    uint8_t rr = static_cast<uint8_t>(sr * (1.0f - factor) + fr * factor);
-    uint8_t gg = static_cast<uint8_t>(sg * (1.0f - factor) + fg * factor);
-    uint8_t bb = static_cast<uint8_t>(sb * (1.0f - factor) + fb * factor);
-
-    return (0xFFu << 24) | (uint32_t(rr) << 16) | (uint32_t(gg) << 8) | uint32_t(bb);
-}
-
-static uint32_t spectrum_pixel(uint32_t addr) {
-    uint32_t x = addr % SCREEN_WIDTH;
-    uint32_t y = addr / SCREEN_WIDTH;
-    uint8_t r = (x * 255) / (SCREEN_WIDTH - 1);
-    uint8_t g = (y * 255) / (SCREEN_HEIGHT - 1);
-    uint8_t b = ((x + y) * 255) / ((SCREEN_WIDTH + SCREEN_HEIGHT) - 2);
-    return (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
-}
-
-static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
-    return (uint32_t(x) << 12) | (uint32_t(y) << 6) | uint32_t(z);
-}
-
-static bool env_truthy(const char* key) {
-    if (const char* v = std::getenv(key)) {
-        return v[0] != '\0' && v[0] != '0' && strcasecmp(v, "false") != 0;
-    }
-    return false;
-}
-
-static void apply_cli_overrides(int argc, char** argv) {
-    auto missing_value = [](const char* flag) {
-        std::fprintf(stderr, "[hydra] Missing value for %s\n", flag);
-    };
-    auto set_override = [](const char* key, const char* value, const char* note = nullptr) {
-        if (!value) return;
-        setenv(key, value, 1);
-        if (note) {
-            std::fprintf(stderr, "[hydra] CLI override: %s=%s (%s)\n", key, value, note);
-        } else {
-            std::fprintf(stderr, "[hydra] CLI override: %s=%s\n", key, value);
-        }
-    };
-    auto match_arg = [&](const char* arg, const char* long_flag, int& i) -> const char* {
-        size_t len = std::strlen(long_flag);
-        if (std::strncmp(arg, long_flag, len) != 0)
-            return nullptr;
-        if (arg[len] == '=') {
-            return arg + len + 1;
-        }
-        if (i + 1 < argc) {
-            return argv[++i];
-        }
-        missing_value(long_flag);
-        return nullptr;
-    };
-
-    bool show_caps = false;
-
-    for (int i = 1; i < argc; ++i) {
-        const char* arg = argv[i];
-        if (!arg) continue;
-        if (std::strcmp(arg, "--show-capabilities") == 0 || std::strcmp(arg, "--caps") == 0) {
-            show_caps = true;
-        } else if (std::strcmp(arg, "--quiet") == 0 || std::strcmp(arg, "-q") == 0) {
-            setenv("HYDRA_QUIET", "1", 1);
-        } else if (std::strcmp(arg, "--verbose") == 0 || std::strcmp(arg, "-v") == 0) {
-            setenv("HYDRA_VERBOSE", "1", 1);
-        } else if ((std::strcmp(arg, "--backend") == 0 || std::strcmp(arg, "-b") == 0) && i + 1 < argc) {
-            const char* val = argv[++i];
-            setenv("HYDRA_BACKEND", val, 1);
-            std::fprintf(stderr, "[hydra] CLI override: backend=%s\n", val);
-        } else if (const char* val = match_arg(arg, "--backend", i)) {
-            set_override("HYDRA_BACKEND", val);
-        } else if ((std::strcmp(arg, "--sdl-driver") == 0 || std::strcmp(arg, "--video-driver") == 0) && i + 1 < argc) {
-            const char* val = argv[++i];
-            setenv("SDL_VIDEODRIVER", val, 1);
-            std::fprintf(stderr, "[hydra] CLI override: SDL_VIDEODRIVER=%s\n", val);
-        } else if (const char* val = match_arg(arg, "--sdl-driver", i)) {
-            set_override("SDL_VIDEODRIVER", val, "SDL video driver");
-        } else if (const char* val = match_arg(arg, "--video-driver", i)) {
-            set_override("SDL_VIDEODRIVER", val, "SDL video driver");
-        } else if (std::strcmp(arg, "--instrument") == 0) {
-            setenv("HYDRA_RENDER_INSTRUMENT", "1", 1);
-            std::fprintf(stderr, "[hydra] CLI override: render instrumentation enabled\n");
-        } else if (const char* val = match_arg(arg, "--cam-pos", i)) {
-            set_override("HYDRA_CAM_POS", val, "camera position (x,y,z)");
-        } else if (const char* val = match_arg(arg, "--cam-ang", i)) {
-            set_override("HYDRA_CAM_ANG", val, "camera yaw,pitch");
-        } else if (const char* val = match_arg(arg, "--move-speed", i)) {
-            set_override("HYDRA_MOVE_SPEED", val, "move speed");
-        } else if (const char* val = match_arg(arg, "--move-speed-fast", i)) {
-            set_override("HYDRA_MOVE_SPEED_FAST", val, "fast move speed");
-        } else if (const char* val = match_arg(arg, "--turn-speed", i)) {
-            set_override("HYDRA_TURN_SPEED_KEYS", val, "key turn speed");
-        } else if (const char* val = match_arg(arg, "--mouse-sens", i)) {
-            set_override("HYDRA_MOUSE_SENS", val, "mouse sensitivity");
-        } else if (const char* val = match_arg(arg, "--fps-target", i)) {
-            set_override("HYDRA_FPS_TARGET", val, "frame pacing target");
-        } else if (const char* val = match_arg(arg, "--pixel-view", i)) {
-            set_override("HYDRA_PIXEL_VIEW", val, "pixel view mode");
-        } else if (const char* val = match_arg(arg, "--seed", i)) {
-            set_override("HYDRA_WORLD_SEED", val, "world/procedural seed");
-        }
-    }
-
-    if (show_caps) {
-        platform_log_capabilities();
-        std::exit(0);
-    }
-}
-
-static std::string g_backend_info;
-
-static const char* backend_name(PlatformBackend b) {
-    switch (b) {
-        case PlatformBackend::SDL:    return "SDL";
-        case PlatformBackend::GL:     return "GL";
-        case PlatformBackend::Vulkan: return "Vulkan";
-        case PlatformBackend::Wayland:return "Wayland";
-        case PlatformBackend::X11:    return "X11";
-        case PlatformBackend::Fbdev:  return "fbdev";
-        case PlatformBackend::Win32:  return "Win32";
-        case PlatformBackend::MacOS:  return "macOS";
-        case PlatformBackend::Headless: return "Headless";
-        default: return "Unknown";
-    }
-}
-
-static void log_backend_caps(PlatformBackend requested, PlatformBackend backend, bool vsync) {
-    const char* video_driver = SDL_GetCurrentVideoDriver();
-    const char* render_driver = SDL_GetHint(SDL_HINT_RENDER_DRIVER);
-
-    std::fprintf(stderr,
-        "[hydra] backend requested=%s actual=%s vsync=%s video_driver=%s render_driver=%s\n",
-        backend_name(requested),
-        backend_name(backend),
-        vsync ? "on" : "off",
-        video_driver ? video_driver : "(unknown)",
-        render_driver ? render_driver : "(default)");
-
-    std::fprintf(stderr, "[hydra] compiled backends: SDL");
-#ifdef HYDRA_ENABLE_GL
-    std::fprintf(stderr, " GL");
-#endif
-#ifdef HYDRA_ENABLE_VULKAN
-    std::fprintf(stderr, " Vulkan");
-#endif
-#ifdef HYDRA_ENABLE_WAYLAND
-    std::fprintf(stderr, " Wayland");
-#endif
-#ifdef HYDRA_ENABLE_X11
-    std::fprintf(stderr, " X11");
-#endif
-    std::fprintf(stderr, " Headless\n");
-}
-
-static void log_input_caps() {
-    const char* grab_hint = SDL_GetHint(SDL_HINT_GRAB_KEYBOARD);
-    const char* mouse_hint = SDL_GetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP);
-
-    int joysticks = SDL_NumJoysticks();
-    int controllers = 0;
-    for (int i = 0; i < joysticks; ++i) {
-        if (SDL_IsGameController(i)) {
-            ++controllers;
-        }
-    }
-
-    int touch_devices = SDL_GetNumTouchDevices();
-
-    std::fprintf(stderr,
-        "[hydra] input: keyboard=assumed mouse_capture_hint=%s mouse_relative_hint=%s touch_devices=%d joysticks=%d controllers=%d\n",
-        grab_hint ? grab_hint : "(default)",
-        mouse_hint ? mouse_hint : "(default)",
-        touch_devices,
-        joysticks,
-        controllers);
-}
-
-struct InputState {
-    bool forward     = false;
-    bool back        = false;
-    bool strafe_left = false;
-    bool strafe_right = false;
-    bool up          = false;
-    bool down        = false;
-    bool yaw_left    = false;
-    bool yaw_right   = false;
-    bool pitch_up    = false;
-    bool pitch_down  = false;
-    bool fast        = false;
-};
-
-static inline void update_key_state(InputState& keys, SDL_Scancode sc,
-                                    SDL_Keycode keycode, bool pressed) {
-    switch (sc) {
-        case SDL_SCANCODE_W: keys.forward      = pressed; break;
-        case SDL_SCANCODE_S: keys.back         = pressed; break;
-        case SDL_SCANCODE_A: keys.strafe_left  = pressed; break;
-        case SDL_SCANCODE_D: keys.strafe_right = pressed; break;
-        case SDL_SCANCODE_Q: keys.down         = pressed; break;
-        case SDL_SCANCODE_E: keys.up           = pressed; break;
-        case SDL_SCANCODE_LEFT:  keys.yaw_left  = pressed; break;
-        case SDL_SCANCODE_RIGHT: keys.yaw_right = pressed; break;
-        case SDL_SCANCODE_UP:    keys.pitch_up  = pressed; break;
-        case SDL_SCANCODE_DOWN:  keys.pitch_down= pressed; break;
-        case SDL_SCANCODE_LSHIFT:
-        case SDL_SCANCODE_RSHIFT: keys.fast     = pressed; break;
-        default: break;
-    }
-
-    // Fallback to keycodes in case scancodes are missing or unusual.
-    SDL_Keycode kc = keycode;
-    if (kc >= 'A' && kc <= 'Z')
-        kc = kc - 'A' + 'a';
-
-    switch (kc) {
-        case SDLK_w: keys.forward      = pressed; break;
-        case SDLK_s: keys.back         = pressed; break;
-        case SDLK_a: keys.strafe_left  = pressed; break;
-        case SDLK_d: keys.strafe_right = pressed; break;
-        case SDLK_q: keys.down         = pressed; break;
-        case SDLK_e: keys.up           = pressed; break;
-        case SDLK_LEFT:  keys.yaw_left  = pressed; break;
-        case SDLK_RIGHT: keys.yaw_right = pressed; break;
-        case SDLK_UP:    keys.pitch_up  = pressed; break;
-        case SDLK_DOWN:  keys.pitch_down= pressed; break;
-        case SDLK_LSHIFT:
-        case SDLK_RSHIFT: keys.fast     = pressed; break;
-        default: break;
-    }
-}
-
-static void die(const std::string& s) {
-    std::fprintf(stderr, "Error: %s\n", s.c_str());
-    std::exit(1);
-}
-
-static void draw_text_to_fb(std::vector<uint32_t>& fb, int fb_w, int fb_h,
-                             TTF_Font* font,
-                             const std::string& txt,
-                             int x, int y,
-                             SDL_Color color = {255,255,255,255})
-{
-    SDL_Surface* surf = TTF_RenderText_Blended(font, txt.c_str(), color);
-    if (!surf) return;
-
-    SDL_PixelFormat* fmt = surf->format;
-    if (!fmt || fmt->BytesPerPixel != 4) {
-        SDL_Surface* conv = SDL_ConvertSurfaceFormat(surf, SDL_PIXELFORMAT_ARGB8888, 0);
-        SDL_FreeSurface(surf);
-        surf = conv;
-        if (!surf) return;
-        fmt = surf->format;
-    }
-
-    uint8_t* src = static_cast<uint8_t*>(surf->pixels);
-    int pitch = surf->pitch;
-    for (int j = 0; j < surf->h; ++j) {
-        int dst_y = y + j;
-        if (dst_y < 0 || dst_y >= fb_h) continue;
-        uint32_t* row = reinterpret_cast<uint32_t*>(src + j * pitch);
-        for (int i = 0; i < surf->w; ++i) {
-            int dst_x = x + i;
-            if (dst_x < 0 || dst_x >= fb_w) continue;
-            uint32_t src_px = row[i];
-            uint8_t a = (src_px >> 24) & 0xFF;
-            if (a == 0) continue;
-            uint8_t sr = (src_px >> 16) & 0xFF;
-            uint8_t sg = (src_px >> 8)  & 0xFF;
-            uint8_t sb =  src_px        & 0xFF;
-
-            uint32_t& dst_px = fb[static_cast<size_t>(dst_y) * fb_w + dst_x];
-            uint8_t dr = (dst_px >> 16) & 0xFF;
-            uint8_t dg = (dst_px >> 8)  & 0xFF;
-            uint8_t db =  dst_px        & 0xFF;
-
-            uint8_t inv_a = 255 - a;
-            uint8_t rr = static_cast<uint8_t>((sr * a + dr * inv_a) / 255);
-            uint8_t gg = static_cast<uint8_t>((sg * a + dg * inv_a) / 255);
-            uint8_t bb = static_cast<uint8_t>((sb * a + db * inv_a) / 255);
-
-            dst_px = (0xFFu << 24) | (uint32_t(rr) << 16) | (uint32_t(gg) << 8) | uint32_t(bb);
-        }
-    }
-
-    SDL_FreeSurface(surf);
-}
-
-struct RenderInstrumentationConfig {
-    float cam_pos_x = 0.0f;
-    float cam_pos_y = 0.0f;
-    float cam_pos_z = 0.0f;
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    bool smooth_surfaces = false;
-    bool curvature = false;
-    bool extra_light = false;
-    bool diag_slice = false;
-    bool ray_jitter = false;
-    bool hud_enabled = true;
-    float fps_target = 0.0f;
-    bool vsync = true;
-    std::string backend_name;
-    std::string backend_info;
-    std::string pixel_view;
-};
-
-struct RenderInstrumentation {
-    RenderInstrumentation(bool enabled, std::string command_line)
-        : enabled_(enabled), command_line_(std::move(command_line)) {
-        if (!enabled_)
-            return;
-        std::filesystem::create_directories("out");
-        csv_.open("out/render_pipeline_baseline.csv", std::ios::app);
-        if (!csv_)
-            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
-        if (csv_.tellp() == 0)
-            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
-    }
-
-    bool active() const { return enabled_; }
-
-    void write_config(const RenderInstrumentationConfig& cfg) {
-        if (!enabled_)
-            return;
-        std::ofstream cfg_out("out/render_pipeline_baseline.cfg");
-        if (!cfg_out)
-            die("failed to write out/render_pipeline_baseline.cfg");
-        cfg_out << "instrument_command=" << command_line_ << "\n";
-        cfg_out << "backend=" << cfg.backend_name << "\n";
-        cfg_out << "backend_info=" << cfg.backend_info << "\n";
-        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
-        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
-        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
-        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
-                << ",curvature:" << (cfg.curvature ? "1" : "0")
-                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
-                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
-                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
-        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
-        cfg_out << "fps_target=" << cfg.fps_target << "\n";
-        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
-    }
-
-    void record(uint64_t frame,
-                double fps,
-                double ray_loop_ms,
-                double hud_present_ms,
-                double framebuffer_copy_ms,
-                double frame_total_ms) {
-        if (!enabled_)
-            return;
-        auto now = std::chrono::system_clock::now();
-        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        csv_ << frame << ',' << ts_ms << ',' << fps << ','
-             << ray_loop_ms << ',' << hud_present_ms << ','
-             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
-        csv_.flush();
-    }
-
-private:
-    bool enabled_;
-    std::ofstream csv_;
-    std::string command_line_;
-};
-
-int main(int argc, char** argv) {
-    Verilated::commandArgs(argc, argv);
-    apply_cli_overrides(argc, argv);
-
-    const bool render_instrument_mode = env_truthy("HYDRA_RENDER_INSTRUMENT");
+			int viewer_placeholder_noop(void) {
+				std::fprintf(stderr, "[hydra] viewer.cpp placeholder active (no-op)\n");
+				return 0;
+			}
     RenderInstrumentation render_instrument(render_instrument_mode, flatten_cli_args(argc, argv));
 
     Vvoxel_framebuffer_top* top = new Vvoxel_framebuffer_top;
