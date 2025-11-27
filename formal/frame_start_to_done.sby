@@ -1,0 +1,19 @@
+[options]
+mode prove
+
+[engines]
+smtbmc
+
+[script]
+read -formal ../rtl/voxel_framebuffer_top.sv
+prep -top voxel_framebuffer_top
+
+[files]
+../rtl/voxel_framebuffer_top.sv
+
+[prove]
+
+# Prove that every frame start pulse eventually leads to a frame_done pulse
+# (Add this property in voxel_framebuffer_top.sv for formal tools)
+# property frame_start_to_done; @(posedge clk) disable iff (!rst_n) start_frame_ext |-> ##[1:$] frame_done; endproperty
+# frame_start_to_done_sva: assert property (frame_start_to_done);

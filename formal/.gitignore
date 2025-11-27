@@ -1,0 +1,5 @@
+# Ignore SymbiYosys output directories
+sby_config/
+*.sbyout/
+*.vcd
+*.log
