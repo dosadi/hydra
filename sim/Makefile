@@ -88,7 +88,7 @@ VERILATOR_FLAGS := \
     --public-flat-rw \
     -GMAX_RAY_STEPS=32 \
     -GRAY_STEP_SHIFT=8 \
-    -O3 --exe $(CXX_SRCS) \
+    -O3 --inline-mult --threads 4 --exe $(CXX_SRCS) \
     -I$(RTL_DIR)
 
 ifeq ($(CCACHE),1)
