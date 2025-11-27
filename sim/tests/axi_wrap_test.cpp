@@ -4,10 +4,12 @@
 #include <cstdint>
 
 static void tick(Vaxi_sdram_stub* top) {
-    top->clk = 0;
-    top->eval();
+    // Inputs should be set before clk rising edge
+    top->eval(); // propagate input changes before clock edge
     top->clk = 1;
-    top->eval();
+    top->eval(); // evaluate on rising edge
+    top->clk = 0;
+    top->eval(); // evaluate on falling edge
 }
 
 int main(int argc, char **argv) {
@@ -17,12 +19,10 @@ int main(int argc, char **argv) {
     // Initialize signals
     top->clk = 0;
     top->rst_n = 0;
-    top->s_axi_awvalid = 0;
+    top->s_axi_awvalidx = 0;
     top->s_axi_wvalid = 0;
     top->s_axi_wlast = 0;
     top->s_axi_bready = 1; // we will accept responses
-    top->s_axi_arvalid = 0;
-    top->s_axi_rready = 1;
     top->dbg_we = 0;
     top->dbg_re = 0;
 
@@ -36,20 +36,56 @@ int main(int argc, char **argv) {
     uint8_t awlen = 3; // 4 beats
     uint8_t awsize = 3; // 8 bytes
     uint8_t awburst = 2; // WRAP (2'b10)
+    std::cerr << "TEST HARNESS: AWLEN=" << int(awlen) << "\n";
 
     // Drive AW
+    top->s_axi_awid = 0; // Ensure AWID is set
     top->s_axi_awaddr = base_addr;
     top->s_axi_awlen  = awlen;
     top->s_axi_awsize = awsize;
     top->s_axi_awburst= awburst;
-    top->s_axi_awvalid= 1;
-
+    top->s_axi_awvalidx= 1;
+    std::cerr << "drive AW: awvalidx="<<int(top->s_axi_awvalidx)
+              <<" awid="<<int(top->s_axi_awid)
+              <<" awaddr="<<top->s_axi_awaddr<<" awlen="<<int(top->s_axi_awlen)
+              <<" awsize="<<int(top->s_axi_awsize)<<" awburst="<<int(top->s_axi_awburst)
+              <<" rst_n="<<int(top->rst_n)<<" clk="<<int(top->clk)<<"\n";
+    // Print all AW signals before tick
+    std::cerr << "HARNESS DEBUG: before tick, s_axi_awvalidx=" << int(top->s_axi_awvalidx)
+              << " awready=" << int(top->s_axi_awready)
+              << " awaddr=" << top->s_axi_awaddr
+              << " awlen=" << int(top->s_axi_awlen)
+              << " awsize=" << int(top->s_axi_awsize)
+              << " awburst=" << int(top->s_axi_awburst)
+              << " rst_n=" << int(top->rst_n)
+              << " clk=" << int(top->clk) << "\n";
     // Wait for AWREADY
     for (int i = 0; i < 200; ++i) {
         tick(top);
+        std::cerr << "HARNESS DEBUG: after tick " << i << ", s_axi_awvalidx=" << int(top->s_axi_awvalidx)
+                  << " awready=" << int(top->s_axi_awready)
+                  << " awaddr=" << top->s_axi_awaddr
+                  << " awlen=" << int(top->s_axi_awlen)
+                  << " awsize=" << int(top->s_axi_awsize)
+                  << " awburst=" << int(top->s_axi_awburst)
+                  << " rst_n=" << int(top->rst_n)
+                  << " clk=" << int(top->clk)
+                  << " (C++ side)\n";
         if (top->s_axi_awready) break;
+        if ((i & 31) == 0) std::cerr << "waiting AWREADY i=" << i
+                         << " awready=" << int(top->s_axi_awready)
+                         << " wready=" << int(top->s_axi_wready)
+                         << " bvalid=" << int(top->s_axi_bvalid) << "\n";
     }
-    top->s_axi_awvalid = 0;
+    top->s_axi_awvalidx = 0;
+    // Send W beats
+
+    // Observe signals for a few cycles to debug timing
+    for (int t = 0; t < 20; ++t) {
+        tick(top);
+        std::cerr << "after AW: t="<<t<<" awready="<<int(top->s_axi_awready)
+                  <<" wready="<<int(top->s_axi_wready)<<" bvalid="<<int(top->s_axi_bvalid)<<"\n";
+    }
 
     // Send W beats
     const uint64_t patterns[4] = {0x1111111111111111ULL, 0x2222222222222222ULL,
@@ -59,22 +95,43 @@ int main(int argc, char **argv) {
         top->s_axi_wstrb = 0xFF;
         top->s_axi_wlast = (b == awlen) ? 1 : 0;
         top->s_axi_wvalid= 1;
+        std::cerr << "TEST HARNESS: send W beat=" << b << " wlast=" << int(top->s_axi_wlast) << "\n";
+        std::cerr << "send W: b="<<b<<" wvalid="<<int(top->s_axi_wvalid)
+              <<" wlast="<<int(top->s_axi_wlast)<<" wready(before)="<<int(top->s_axi_wready)<<"\n";
         // wait for WREADY
         for (int i = 0; i < 200; ++i) {
             tick(top);
-            if (top->s_axi_wready) break;
+            if (top->s_axi_wready) {
+                // For last beat, hold wvalid/wlast high for 5 extra cycles
+                if (b == awlen) {
+                    for (int hold = 0; hold < 5; ++hold) tick(top);
+                    // Extra tick after last W beat to ensure BVALID is visible
+                    tick(top);
+                }
+                top->s_axi_wvalid = 0;
+                top->s_axi_wlast = 0;
+                break;
+            }
+            if ((i & 31) == 0) std::cerr << "waiting WREADY b="<<b<<" i="<<i
+                                         <<" wready="<<int(top->s_axi_wready)
+                                         <<" bvalid="<<int(top->s_axi_bvalid)<<"\n";
         }
-        top->s_axi_wvalid = 0;
-        top->s_axi_wlast = 0;
     }
 
     // Wait for BVALID and handshake
     for (int i = 0; i < 500; ++i) {
         tick(top);
-        if (top->s_axi_bvalid) break;
+        std::cerr << "HARNESS: wait BVALID i=" << i << " bvalid=" << int(top->s_axi_bvalid)
+                  << " bready=" << int(top->s_axi_bready) << " t=" << i << "\n";
+        if (top->s_axi_bvalid) {
+            std::cerr << "HARNESS: BVALID seen at i=" << i << " t=" << i << "\n";
+            break;
+        }
     }
     if (!top->s_axi_bvalid) {
-        std::cerr << "ERROR: no BVALID seen\n";
+        std::cerr << "ERROR: no BVALID seen. status: awready=" << top->s_axi_awready
+                  << " wready=" << top->s_axi_wready << " bvalid=" << top->s_axi_bvalid
+                  << "\n";
         return 2;
     }
     // accept response
