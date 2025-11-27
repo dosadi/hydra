@@ -25,6 +25,7 @@ VERILATOR    ?= verilator
 CXX          ?= g++
 SANITIZE     ?= 0
 CCACHE       ?= 0
+FAST         ?= 0
 
 SDL_CONFIG   ?= sdl2-config
 SDL_CONFIG_AVAILABLE := $(shell command -v $(SDL_CONFIG) >/dev/null 2>&1 && echo 1 || echo 0)
@@ -80,6 +81,11 @@ ifeq ($(SANITIZE),1)
   VERILATOR_LDFLAGS += -fsanitize=address,undefined
 endif
 
+ifeq ($(PROFILE),1)
+  EXTRA_CFLAGS += -pg
+  VERILATOR_LDFLAGS += -pg
+endif
+
 VERILATOR_FLAGS := \
     -Wall --Wno-fatal \
     --Wno-WIDTHEXPAND --Wno-UNUSEDSIGNAL --Wno-UNUSEDPARAM --Wno-BLKSEQ --Wno-INITIALDLY \
@@ -88,11 +94,12 @@ VERILATOR_FLAGS := \
     --public-flat-rw \
     -GMAX_RAY_STEPS=32 \
     -GRAY_STEP_SHIFT=8 \
-    -O3 --inline-mult --threads 4 --exe $(CXX_SRCS) \
+    $(if $(filter 1,$(FAST)),-O1,--inline-mult -O3) \
+    --threads $(if $(filter 1,$(FAST)),1,4) \
+    --exe $(CXX_SRCS) \
     -I$(RTL_DIR)
 
 ifeq ($(CCACHE),1)
-  VERILATOR_FLAGS += --ccache
   CXX := ccache $(CXX)
 endif
 

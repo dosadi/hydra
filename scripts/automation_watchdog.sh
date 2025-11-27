@@ -8,7 +8,9 @@ echo "[automation-watchdog] running repo automation bundle"
 (cd "$ROOT" && python3 scripts/todo_sweep.py)
 (cd "$ROOT" && python3 scripts/check_required_files.py)
 (cd "$ROOT" && python3 scripts/check_todo_unique.py)
-(cd "$ROOT" && python3 scripts/todo_metadata.py)
+(cd "$ROOT" && python3 scripts/meta_refresh.py)
+(cd "$ROOT" && python3 scripts/validate_dependency_map.py --fail-on-missing > out/meta_dependency_failures.txt 2>&1 || true)
+(cd "$ROOT" && python3 scripts/meta_status_report.py)
 (cd "$ROOT" && python3 scripts/ai_health_dashboard.py)
 (cd "$ROOT" && python3 scripts/ai_dashboard_briefing.py)
 
