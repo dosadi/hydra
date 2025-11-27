@@ -63,16 +63,9 @@ static bool        g_vsync       = true;
 vluint64_t main_time = 0;
 double sc_time_stamp() { return main_time; }
 
-enum class PixelViewMode {
-    Color = 0,
-    Word0,
-    Word2,
-    SidebandMix,
-};
-
 static PixelViewMode g_pixel_view_mode = PixelViewMode::Color;
 
-static const char* pixel_view_mode_name(PixelViewMode m) {
+const char* pixel_view_mode_name(PixelViewMode m) {
     switch (m) {
         case PixelViewMode::Color:      return "color";
         case PixelViewMode::Word0:      return "word0";
@@ -82,7 +75,7 @@ static const char* pixel_view_mode_name(PixelViewMode m) {
     }
 }
 
-static PixelViewMode pixel_view_from_string(const char* s) {
+PixelViewMode pixel_view_from_string(const char* s) {
     if (!s) return PixelViewMode::Color;
     if (strcasecmp(s, "color") == 0)    return PixelViewMode::Color;
     if (strcasecmp(s, "word0") == 0)    return PixelViewMode::Word0;
@@ -177,15 +170,11 @@ static inline uint32_t voxel_addr_from_xyz(uint8_t x, uint8_t y, uint8_t z) {
     return (uint32_t(x) << 12) | (uint32_t(y) << 6) | uint32_t(z);
 }
 
-static bool env_truthy(const char* key) {
+bool env_truthy(const char* key) {
     if (const char* v = std::getenv(key)) {
         return v[0] != '\0' && v[0] != '0' && strcasecmp(v, "false") != 0;
     }
     return false;
-}
-
-static void platform_log_capabilities() {
-    std::fprintf(stderr, "[hydra] platform capabilities: SDL default\n");
 }
 
 static void apply_cli_overrides(int argc, char** argv) {
@@ -270,16 +259,7 @@ static void apply_cli_overrides(int argc, char** argv) {
     }
 }
 
-static std::string flatten_cli_args(int argc, char** argv) {
-    std::string out;
-    for (int i = 0; i < argc; ++i) {
-        if (i) out += ' ';
-        if (argv[i]) {
-            out += argv[i];
-        }
-    }
-    return out;
-}
+
 
 // Forward declarations used by instrumentation helpers
 static void die(const std::string& s);
@@ -465,7 +445,7 @@ static void draw_text_to_fb(std::vector<uint32_t>& fb, int fb_w, int fb_h,
 SDL_FreeSurface(surf);
 }
 
-static std::string flatten_cli_args(int argc, char** argv) {
+std::string flatten_cli_args(int argc, char** argv) {
     std::string out;
     for (int i = 0; i < argc; ++i) {
         if (i) out += ' ';
@@ -476,94 +456,8 @@ static std::string flatten_cli_args(int argc, char** argv) {
     return out;
 }
 
-struct RenderInstrumentationConfig {
-    float cam_pos_x = 0.0f;
-    float cam_pos_y = 0.0f;
-    float cam_pos_z = 0.0f;
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    bool smooth_surfaces = false;
-    bool curvature = false;
-    bool extra_light = false;
-    bool diag_slice = false;
-    bool ray_jitter = false;
-    bool hud_enabled = true;
-    float fps_target = 0.0f;
-    bool vsync = true;
-    std::string backend_name;
-    std::string backend_info;
-    std::string pixel_view;
-};
-
-struct RenderInstrumentation {
-    RenderInstrumentation(bool enabled, std::string command_line)
-        : enabled_(enabled), command_line_(std::move(command_line)) {
-        if (!enabled_)
-            return;
-        std::filesystem::path out_dir;
-        if (const char* override_out = std::getenv("HYDRA_OUT_DIR")) {
-            out_dir = override_out;
-        } else {
-            out_dir = std::filesystem::current_path();
-            if (out_dir.filename() == "sim") {
-                out_dir = out_dir.parent_path();
-            }
-            out_dir /= "out";
-        }
-        std::filesystem::create_directories(out_dir);
-        out_dir_ = out_dir;
-        csv_.open((out_dir_ / "render_pipeline_baseline.csv").string(), std::ios::app);
-        if (!csv_)
-            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
-        if (csv_.tellp() == 0)
-            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
-    }
-
-    bool active() const { return enabled_; }
-
-    void write_config(const RenderInstrumentationConfig& cfg) {
-        if (!enabled_)
-            return;
-        std::ofstream cfg_out((out_dir_ / "render_pipeline_baseline.cfg").string());
-        if (!cfg_out)
-            die("failed to write out/render_pipeline_baseline.cfg");
-        cfg_out << "instrument_command=" << command_line_ << "\n";
-        cfg_out << "backend=" << cfg.backend_name << "\n";
-        cfg_out << "backend_info=" << cfg.backend_info << "\n";
-        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
-        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
-        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
-        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
-                << ",curvature:" << (cfg.curvature ? "1" : "0")
-                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
-                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
-                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
-        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
-        cfg_out << "fps_target=" << cfg.fps_target << "\n";
-        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
-    }
-
-    void record(uint64_t frame,
-                double fps,
-                double ray_loop_ms,
-                double hud_present_ms,
-                double framebuffer_copy_ms,
-                double frame_total_ms) {
-        if (!enabled_)
-            return;
-        auto now = std::chrono::system_clock::now();
-        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        csv_ << frame << ',' << ts_ms << ',' << fps << ','
-             << ray_loop_ms << ',' << hud_present_ms << ','
-             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
-        csv_.flush();
-    }
-
-private:
-    bool enabled_;
-    std::ofstream csv_;
-    std::string command_line_;
-};
+// Render instrumentation types/impl are provided by
+// `harness_common.h` and `render_instrumentation.h`.
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);

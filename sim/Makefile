@@ -5,6 +5,7 @@ SIM_DIR      := $(PROJECT_ROOT)/sim
 TOP_MODULE   := voxel_framebuffer_top
 
 CXX_SRCS     := viewer_main.cpp \
+				 render_instrumentation.cpp \
                  platform/platform_stub.cpp \
                  platform/backend_selector.cpp \
                  platform/backend_sdl.cpp \
@@ -19,7 +20,16 @@ CXX_SRCS     := viewer_main.cpp \
 CXX_EXE      := sim_voxel
 
 VERILATOR    ?= verilator
+# Allow opting into LLVM/Clang toolchain. Set `USE_CLANG=1` to prefer clang++.
 CXX          ?= g++
+ifeq ($(USE_CLANG),1)
+	CLANG_PRESENT := $(shell command -v clang++ >/dev/null 2>&1 && echo 1 || echo 0)
+	ifeq ($(CLANG_PRESENT),1)
+		CXX := clang++
+	else
+		$(error USE_CLANG=1 but clang++ not found in PATH)
+	endif
+endif
 SANITIZE     ?= 0
 CCACHE       ?= 0
 
@@ -174,6 +184,7 @@ help:
 	@echo "  make purge_obj_dir - Delete obj_dir if Verilator version changed"
 	@echo "  make clean      - Remove build artifacts"
 	@echo ""
+ 	@echo "Clang/LLVM support: set USE_CLANG=1 to build with clang++ (requires clang++ in PATH)"
 	@echo "Optional backend flags (build time):"
 	@echo "  make GL=1       - Enable OpenGL backend"
 	@echo "  make X11=1      - Enable X11 backend"

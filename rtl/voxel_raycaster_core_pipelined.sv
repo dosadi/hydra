@@ -291,16 +291,9 @@ module voxel_raycaster_core_pipelined #(
         // ------------------------------------------------------------------------
         // Stub: Material ID usage for advanced shading/material effects
         // TODO: Integrate material_id into shading pipeline for future features
-        reg [7:0] material_id;
-        always @(posedge clk or negedge rst_n) begin
-            if (!rst_n) begin
-                material_id <= 8'd0;
-            end else begin
-                // TODO: Use material_id for advanced shading/material effects
-                // Currently set to zero for debug compatibility
-                material_id <= 8'd0;
-            end
-        end
+        // Use a simple combinational derived material id here instead of
+        // introducing a nested sequential `always` block inside the task.
+        out_material_id = {voxel_material_type, 4'h0};
         // ------------------------------------------------------------------------
 
         if (voxel_material_type == 4'd3)       out_reflection = 8'd255;
