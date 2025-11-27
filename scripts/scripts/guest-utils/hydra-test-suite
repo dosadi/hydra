@@ -1,0 +1,4 @@
+#!/bin/bash
+# Placeholder tiny test-suite script
+set -euo pipefail
+echo "Hydra test-suite placeholder: run tests here."

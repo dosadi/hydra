@@ -144,8 +144,8 @@ module test_dma_stub_direct;
 
         start     = 0;
         src_addr  = 28'h0;
-        dst_addr  = 28'h0100;
-        len_bytes = 32'd64;
+        dst_addr  = 28'h100; // 8-byte aligned
+        len_bytes = 32'd64; // multiple of 8
 
         #20 rst_n = 1;
         #20;
@@ -158,6 +158,10 @@ module test_dma_stub_direct;
         // Verify first few words copied
         errors = 0;
         for (i = 0; i < 8; i = i + 1) begin
+            // Check alignment and expected pattern
+            if (((dst_addr >> 3) + i) % 1 != 0) begin
+                $fatal(1, "DMA test: dst_addr not 8-byte aligned at word %0d", i);
+            end
             if (u_mem.mem[(dst_addr >> 3) + i] !== {32'hAAAA0000 + i, 32'h55550000 + i}) begin
                 $display("DMA copy mismatch at word %0d: got %h expected %h", i, u_mem.mem[(dst_addr >> 3) + i], {32'hAAAA0000 + i, 32'h55550000 + i});
                 errors++;

@@ -68,6 +68,99 @@ module voxel_framebuffer_top #(
     input  wire         soft_reset_ext
 );
 
+    // ------------------------------------------------------------------------
+    // Framebuffer SVAs and Coverage
+    // ------------------------------------------------------------------------
+    // Track last pixel address for monotonicity check
+    reg [31:0] last_pixel_addr;
+    reg        pixel_addr_valid;
+
+`ifdef FORMAL
+    // SVA: Frame start must eventually result in frame_done
+    property frame_start_leads_to_done;
+        @(posedge clk) disable iff (!rst_n)
+        start_frame_ext |-> ##[1:$] frame_done;
+    endproperty
+    frame_start_leads_to_done_sva: assert property (frame_start_leads_to_done);
+
+    // SVA: Frame done only when not busy
+    property frame_done_when_idle;
+        @(posedge clk) disable iff (!rst_n)
+        frame_done |-> !core_busy;
+    endproperty
+    frame_done_when_idle_sva: assert property (frame_done_when_idle);
+
+    // SVA: Pixel address monotonicity
+    property pixel_addr_monotonic;
+        @(posedge clk) disable iff (!rst_n)
+        pixel_write_en |-> pixel_addr >= $past(pixel_addr);
+    endproperty
+    pixel_addr_monotonic_sva: assert property (pixel_addr_monotonic);
+
+    // SVA: Pixel write enable only when busy
+    property pixel_write_en_when_busy;
+        @(posedge clk) disable iff (!rst_n)
+        pixel_write_en |-> core_busy;
+    endproperty
+    pixel_write_en_when_busy_sva: assert property (pixel_write_en_when_busy);
+
+    // Coverage: Pixel address distribution
+    covergroup cg_pixel_addr @(posedge clk);
+        addr_bins: coverpoint pixel_addr {
+            bins low[]    = {[0:1023]};
+            bins mid[]    = {[1024:SCREEN_WIDTH*SCREEN_HEIGHT/2]};
+            bins high[]   = {[SCREEN_WIDTH*SCREEN_HEIGHT/2+1:SCREEN_WIDTH*SCREEN_HEIGHT-1]};
+        }
+    endgroup
+    cg_pixel_addr_inst = new();
+
+    // Coverage: Write enable pulse coverage
+    covergroup cg_pixel_write_en @(posedge clk);
+        write_en: coverpoint pixel_write_en;
+    endgroup
+    cg_pixel_write_en_inst = new();
+`endif
+
+    // SVA: Frame done pulse only when not busy (all pixels written)
+    property frame_done_when_idle;
+        @(posedge clk) disable iff (!rst_n)
+        frame_done |-> !core_busy;
+    endproperty
+    frame_done_when_idle_sva: assert property (frame_done_when_idle);
+
+    // SVA: Every frame start pulse must eventually result in a frame_done pulse
+    // NOTE: Verilator does not support SVA sequence delays (##[n:m]).
+    // Full liveness check (frame start always leads to frame_done) requires a formal tool or custom testbench monitor.
+
+    // Covergroup: Pixel address distribution
+    // covergroup cg_pixel_addr @(posedge clk);
+    //     addr_bins: coverpoint pixel_addr {
+    //         bins low[]    = {[0:1023]};
+    //         bins mid[]    = {[1024:SCREEN_WIDTH*SCREEN_HEIGHT/2]};
+    //         bins high[]   = {[SCREEN_WIDTH*SCREEN_HEIGHT/2+1:SCREEN_WIDTH*SCREEN_HEIGHT-1]};
+    //     }
+    // endgroup
+    // cg_pixel_addr_inst = new();
+
+    // Covergroup: Write enable pulse coverage
+    // covergroup cg_pixel_write_en @(posedge clk);
+    //     write_en: coverpoint pixel_write_en;
+    // endgroup
+    // cg_pixel_write_en_inst = new();
+
+    // Track last pixel address for SVAs
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            last_pixel_addr   <= 32'd0;
+            pixel_addr_valid  <= 1'b0;
+        end else begin
+            if (pixel_write_en) begin
+                last_pixel_addr  <= pixel_addr;
+                pixel_addr_valid <= 1'b1;
+            end
+        end
+    end
+
     // Camera registers (host-writeable)
     reg signed [15:0] cam_x;
     reg signed [15:0] cam_y;
@@ -391,6 +484,20 @@ module voxel_framebuffer_top #(
                 mem_write_cycles <= mem_write_cycles + 64'd1;
             if (geom_rd_en && mem_write_en)
                 mem_readwrite_cycles <= mem_readwrite_cycles + 64'd1;
+        end
+    end
+
+    // ------------------------------------------------------------------------
+    // Stub: Robust memory write arbitration between debug writes and world_gen
+    // TODO: Implement priority arbitration logic for debug writes vs. world_gen
+    reg mem_write_arb;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            mem_write_arb <= 0;
+        end else begin
+            // TODO: Add arbitration logic here
+            // For now, debug writes override world_gen
+            mem_write_arb <= dbg_ext_write_en ? 1'b1 : 1'b0;
         end
     end
 

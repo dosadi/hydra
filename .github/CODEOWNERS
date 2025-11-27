@@ -22,7 +22,7 @@
 # Simulation harness and platform backends
 /sim/                                   @dosadi
 /sim/platform/                          @dosadi
-/sim/live_sdl_main.cpp                  @dosadi
+/sim/viewer.cpp                          @dosadi
 
 # Build system
 /Makefile                               @dosadi

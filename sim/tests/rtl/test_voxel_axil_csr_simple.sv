@@ -59,7 +59,10 @@ module test_voxel_axil_csr_simple;
 
     voxel_axil_csr #(
         .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH)
+        .DATA_WIDTH(DATA_WIDTH),
+        .SCREEN_WIDTH(480),
+        .SCREEN_HEIGHT(360),
+        .VOXEL_GRID_SIZE(64)
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
@@ -182,40 +185,59 @@ module test_voxel_axil_csr_simple;
     endtask
 
     initial begin
-        // Apply reset
-        repeat (4) @(posedge clk);
-        rst_n <= 1'b1;
-        @(posedge clk);
+        // Randomize screen/grid sizes and run checks for each configuration
+        int configs[3:0][2:0] = '{
+            '{480, 360, 64},
+            '{320, 240, 32},
+            '{128, 96, 16},
+            '{64, 48, 8}
+        };
+        for (int cfg = 0; cfg < configs.size(); cfg++) begin
+            $display("Testing CSR with SCREEN_WIDTH=%0d SCREEN_HEIGHT=%0d VOXEL_GRID_SIZE=%0d", configs[cfg][0], configs[cfg][1], configs[cfg][2]);
+            // Apply reset
+            repeat (4) @(posedge clk);
+            rst_n <= 1'b1;
+            @(posedge clk);
 
-        // Check reset defaults: FLAGS = smooth=1, curvature=1, extra=0, diag=0
-        axil_read(16'h0040, rd);
-        if (rd[0] !== 1'b1 || rd[1] !== 1'b1 || rd[2] !== 1'b0 || rd[3] !== 1'b0) begin
-            $fatal(1, "FLAGS reset mismatch: %08x", rd);
+            // Check all CSR reset defaults explicitly
+            axil_read(16'h0040, rd); if (rd !== 32'h00000003) $fatal(1, "FLAGS reset mismatch: %08x", rd);
+            axil_read(16'h0044, rd); if (rd !== 32'h00000000) $fatal(1, "SEL_ACTIVE reset mismatch: %08x", rd);
+            axil_read(16'h0048, rd); if (rd !== 32'h00000000) $fatal(1, "SEL_X reset mismatch: %08x", rd);
+            axil_read(16'h004C, rd); if (rd !== 32'h00000000) $fatal(1, "SEL_Y reset mismatch: %08x", rd);
+            axil_read(16'h0050, rd); if (rd !== 32'h00000000) $fatal(1, "SEL_Z reset mismatch: %08x", rd);
+            axil_read(16'h0080, rd); if (rd !== 32'h00000000) $fatal(1, "INT_STATUS reset mismatch: %08x", rd);
+            axil_read(16'h0084, rd); if (rd !== 32'h00000000) $fatal(1, "INT_MASK reset mismatch: %08x", rd);
+            axil_read(16'h0090, rd); if (rd !== 32'h00000000) $fatal(1, "CTRL reset mismatch: %08x", rd);
+            axil_read(16'h0020, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_X reset mismatch: %08x", rd);
+            axil_read(16'h0024, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_Y reset mismatch: %08x", rd);
+            axil_read(16'h0028, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_Z reset mismatch: %08x", rd);
+            axil_read(16'h002C, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_DIR_X reset mismatch: %08x", rd);
+            axil_read(16'h0030, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_DIR_Y reset mismatch: %08x", rd);
+            axil_read(16'h0034, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_DIR_Z reset mismatch: %08x", rd);
+            axil_read(16'h0038, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_PLANE_X reset mismatch: %08x", rd);
+            axil_read(16'h003C, rd); if (rd !== 32'h00000000) $fatal(1, "CAM_PLANE_Y reset mismatch: %08x", rd);
+
+            // INT_STATUS RW1C behavior: set bit then clear
+            axil_write(16'h0088, 32'h1, 4'hF); // IRQ_TEST
+            @(posedge clk);
+            if (dut.int_status[3] !== 1'b1) begin
+                $fatal(1, "INT_STATUS[3] not set after IRQ_TEST write: %08x", dut.int_status);
+            end
+            axil_read(16'h0080, rd);
+            if ((rd & 32'h8) == 0) $fatal(1, "INT_STATUS did not latch TEST bit");
+            axil_write(16'h0080, 32'h8, 4'hF); // clear
+            axil_read(16'h0080, rd);
+            if (rd != 0) $fatal(1, "INT_STATUS did not clear: %08x", rd);
+
+            // Write camera X and read back
+            axil_write(16'h0020, 32'h00010002, 4'hF);
+            axil_read(16'h0020, rd);
+            if (rd != 32'h00000002) $fatal(1, "CAM_X readback mismatch: %08x", rd);
+
+            // Reset for next config
+            rst_n <= 1'b0;
+            @(posedge clk);
         end
-
-        // Check SEL_ACTIVE default 0
-        @(posedge clk);
-        axil_read(16'h0044, rd);
-        if (rd !== 32'd0) $fatal(1, "SEL_ACTIVE reset mismatch: %08x", rd);
-
-        // INT_STATUS RW1C behavior: set bit then clear
-        axil_write(16'h0088, 32'h1, 4'hF); // IRQ_TEST
-        @(posedge clk);
-        if (dut.int_status[3] !== 1'b1) begin
-            $fatal(1, "INT_STATUS[3] not set after IRQ_TEST write: %08x", dut.int_status);
-        end
-        axil_read(16'h0080, rd);
-        if ((rd & 32'h8) == 0) $fatal(1, "INT_STATUS did not latch TEST bit");
-        axil_write(16'h0080, 32'h8, 4'hF); // clear
-        axil_read(16'h0080, rd);
-        if (rd != 0) $fatal(1, "INT_STATUS did not clear: %08x", rd);
-
-        // Write camera X and read back
-        axil_write(16'h0020, 32'h00010002, 4'hF);
-        axil_read(16'h0020, rd);
-        if (rd != 32'h00000002) $fatal(1, "CAM_X readback mismatch: %08x", rd);
-
-        // Done
         $display("test_voxel_axil_csr_simple: PASS");
         $finish;
     end

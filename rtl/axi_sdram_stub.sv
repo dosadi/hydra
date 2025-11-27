@@ -1,10 +1,10 @@
 // ============================================================================
 // axi_sdram_stub.sv
-// - Minimal AXI4 memory model acting as a stand-in for SDRAM/DDR controllers.
-// - Single-clock, synchronous; supports incremental bursts (AWLEN/ARLEN) with
-//   fixed DATA_WIDTH and ADDR_WIDTH. No reordering; accepts one transaction at
-//   a time on each channel.
-// ============================================================================
+// Minimal AXI4 memory model acting as a stand-in for SDRAM/DDR controllers.
+// Single-clock, synchronous; supports incremental bursts (AWLEN/ARLEN) with fixed DATA_WIDTH and ADDR_WIDTH.
+// No reordering; accepts one transaction at a time on each channel.
+// NOTE: This is a stub for simulation and integration. For full SDRAM/DDR support, extend with timing, refresh, and error handling.
+// TODO: Add support for advanced AXI features, timing closure, and real memory backends.
 `timescale 1ns/1ps
 
 module axi_sdram_stub #(
@@ -117,6 +117,224 @@ module axi_sdram_stub #(
     reg [7:0] lfsr;
 
     integer i;
+
+    // ------------------------------------------------------------------------
+    // AXI Protocol SVAs and Coverage
+        // SVA: AWVALID and WVALID must not be asserted simultaneously unless AWREADY and WREADY are both high
+        property aw_w_valid_exclusive;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_awvalid && s_axi_wvalid) |-> (s_axi_awready && s_axi_wready);
+        endproperty
+        aw_w_valid_exclusive_sva: assert property (aw_w_valid_exclusive);
+
+        // SVA: ARVALID and RVALID must not be asserted simultaneously unless ARREADY and RREADY are both high
+        property ar_r_valid_exclusive;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_arvalid && s_axi_rvalid) |-> (s_axi_arready && s_axi_rready);
+        endproperty
+        ar_r_valid_exclusive_sva: assert property (ar_r_valid_exclusive);
+
+`ifdef FORMAL
+        // SVA: AW handshake only when AWVALID
+        property aw_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awready |-> s_axi_awvalid;
+        endproperty
+        aw_handshake_only_on_valid_sva: assert property (aw_handshake_only_on_valid);
+
+        // SVA: W handshake only when WVALID
+        property w_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wready |-> s_axi_wvalid;
+        endproperty
+        w_handshake_only_on_valid_sva: assert property (w_handshake_only_on_valid);
+
+        // SVA: AR handshake only when ARVALID
+        property ar_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arready |-> s_axi_arvalid;
+        endproperty
+        ar_handshake_only_on_valid_sva: assert property (ar_handshake_only_on_valid);
+
+        // SVA: R handshake only when RVALID
+        property r_handshake_only_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rready |-> s_axi_rvalid;
+        endproperty
+        r_handshake_only_on_valid_sva: assert property (r_handshake_only_on_valid);
+
+        // SVA: Outstanding transactions do not exceed MAX_OUTSTANDING
+        property max_outstanding_write;
+            @(posedge clk) disable iff (!rst_n)
+            w_head - w_tail <= MAX_OUTSTANDING;
+        endproperty
+        max_outstanding_write_sva: assert property (max_outstanding_write);
+
+        property max_outstanding_read;
+            @(posedge clk) disable iff (!rst_n)
+            r_head - r_tail <= MAX_OUTSTANDING;
+        endproperty
+        max_outstanding_read_sva: assert property (max_outstanding_read);
+
+        // SVA: Error response only on error
+        property error_response_only_on_error;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_bvalid && s_axi_bresp == RESP_SLVERR) |-> w_err;
+        endproperty
+        error_response_only_on_error_sva: assert property (error_response_only_on_error);
+
+        // SVA: Reset deasserts all valid/ready signals
+        property valid_ready_deassert_on_reset;
+            @(posedge clk) disable iff (!rst_n)
+            !rst_n |-> !(s_axi_awvalid || s_axi_wvalid || s_axi_arvalid || s_axi_rvalid || s_axi_awready || s_axi_wready || s_axi_arready || s_axi_rready);
+        endproperty
+        valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
+
+        // SVA: Data integrity (no X/Z on outgoing signals when valid)
+        property no_xz_on_valid;
+            @(posedge clk) disable iff (!rst_n)
+            (s_axi_awvalid |-> !$isunknown(s_axi_awaddr)) &&
+            (s_axi_wvalid |-> !$isunknown(s_axi_wdata)) &&
+            (s_axi_wvalid |-> !$isunknown(s_axi_wstrb)) &&
+            (s_axi_arvalid |-> !$isunknown(s_axi_araddr));
+        endproperty
+        no_xz_on_valid_sva: assert property (no_xz_on_valid);
+
+        // SVA: Setup time for AWVALID before AWREADY
+        property awvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awvalid |-> $stable(s_axi_awvalid) throughout [*1:$] s_axi_awready;
+        endproperty
+        awvalid_setup_sva: assert property (awvalid_setup);
+
+        // SVA: Hold time for AWVALID after AWREADY
+        property awvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awready |-> $stable(s_axi_awvalid) throughout [*1:2];
+        endproperty
+        awvalid_hold_sva: assert property (awvalid_hold);
+
+        // SVA: Pulse width for AWVALID
+        property awvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_awvalid |-> ##[1:8] !s_axi_awvalid;
+        endproperty
+        awvalid_pulse_width_sva: assert property (awvalid_pulse_width);
+
+        // Repeat for WVALID, ARVALID, RVALID
+        property wvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wvalid |-> $stable(s_axi_wvalid) throughout [*1:$] s_axi_wready;
+        endproperty
+        wvalid_setup_sva: assert property (wvalid_setup);
+
+        property wvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wready |-> $stable(s_axi_wvalid) throughout [*1:2];
+        endproperty
+        wvalid_hold_sva: assert property (wvalid_hold);
+
+        property wvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_wvalid |-> ##[1:8] !s_axi_wvalid;
+        endproperty
+        wvalid_pulse_width_sva: assert property (wvalid_pulse_width);
+
+        property arvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arvalid |-> $stable(s_axi_arvalid) throughout [*1:$] s_axi_arready;
+        endproperty
+        arvalid_setup_sva: assert property (arvalid_setup);
+
+        property arvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arready |-> $stable(s_axi_arvalid) throughout [*1:2];
+        endproperty
+        arvalid_hold_sva: assert property (arvalid_hold);
+
+        property arvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_arvalid |-> ##[1:8] !s_axi_arvalid;
+        endproperty
+        arvalid_pulse_width_sva: assert property (arvalid_pulse_width);
+
+        property rvalid_setup;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rvalid |-> $stable(s_axi_rvalid) throughout [*1:$] s_axi_rready;
+        endproperty
+        rvalid_setup_sva: assert property (rvalid_setup);
+
+        property rvalid_hold;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rready |-> $stable(s_axi_rvalid) throughout [*1:2];
+        endproperty
+        rvalid_hold_sva: assert property (rvalid_hold);
+
+        property rvalid_pulse_width;
+            @(posedge clk) disable iff (!rst_n)
+            s_axi_rvalid |-> ##[1:8] !s_axi_rvalid;
+        endproperty
+        rvalid_pulse_width_sva: assert property (rvalid_pulse_width);
+`endif
+    // ------------------------------------------------------------------------
+    // Outstanding transaction counters
+    wire [31:0] aw_outstanding = (w_tail >= w_head) ? (w_tail - w_head) : (MAX_OUTSTANDING + w_tail - w_head);
+    wire [31:0] ar_outstanding = (r_tail >= r_head) ? (r_tail - r_head) : (MAX_OUTSTANDING + r_tail - r_head);
+    wire aw_active = w_active;
+    wire ar_active = r_active;
+
+    // SVA: AWREADY only high when not exceeding MAX_OUTSTANDING
+    property awready_limit;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_awready |-> (aw_outstanding < MAX_OUTSTANDING);
+    endproperty
+    awready_limit_sva: assert property (awready_limit);
+
+    // SVA: WREADY only high when a valid AW transaction is active
+    property wready_awactive;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_wready |-> aw_active;
+    endproperty
+    wready_awactive_sva: assert property (wready_awactive);
+
+    // SVA: ARREADY only high when not exceeding MAX_OUTSTANDING
+    property arready_limit;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_arready |-> (ar_outstanding < MAX_OUTSTANDING);
+    endproperty
+    arready_limit_sva: assert property (arready_limit);
+
+    // SVA: RVALID only high when a read transaction is active
+    property rvalid_aractive;
+        @(posedge clk) disable iff (!rst_n)
+        s_axi_rvalid |-> ar_active;
+    endproperty
+    rvalid_aractive_sva: assert property (rvalid_aractive);
+
+    // Covergroup: Burst lengths and wait states
+    covergroup cg_axi_burst @(posedge clk);
+        burst_len: coverpoint s_axi_awlen {
+            bins short[] = {[0:3]};
+            bins medium[] = {[4:15]};
+            bins long[] = {[16:255]};
+        }
+        wait_jitter: coverpoint WAIT_JITTER {
+            bins none = {0};
+            bins low = {[1:2]};
+            bins high = {[3:8]};
+        }
+    endgroup
+    cg_axi_burst_inst = new();
+
+    // Covergroup: Backpressure events (AWREADY/WREADY/ARREADY/RREADY stalls)
+    covergroup cg_axi_backpressure @(posedge clk);
+        aw_stall: coverpoint !s_axi_awready;
+        w_stall:  coverpoint !s_axi_wready;
+        ar_stall: coverpoint !s_axi_arready;
+        r_stall:  coverpoint !s_axi_rready;
+    endgroup
+    cg_axi_backpressure_inst = new();
+
 `ifndef SYNTHESIS
     initial begin
         for (i = 0; i < MEM_WORDS; i = i + 1)
@@ -155,6 +373,39 @@ module axi_sdram_stub #(
     wire [ADDR_WIDTH-1:0] r_addr_next = r_addr + (1 << r_size);
     localparam integer MEM_ADDR_SHIFT = 3;
     wire [7:0] jitter = (WAIT_JITTER == 0) ? 8'd0 : (lfsr & {8{(WAIT_JITTER!=0)}}) % (WAIT_JITTER+1);
+
+    // ------------------------------------------------------------------------
+    // Timing realism: add configurable response delay for AW/W and AR/R channels
+    reg [7:0] aw_delay_cnt, ar_delay_cnt;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            aw_delay_cnt <= 0;
+            ar_delay_cnt <= 0;
+            s_axi_awready <= 0;
+            s_axi_arready <= 0;
+        end else begin
+            // AW channel delay
+            if (s_axi_awvalid && !s_axi_awready) begin
+                aw_delay_cnt <= WRITE_LATENCY;
+                s_axi_awready <= 0;
+            end else if (aw_delay_cnt > 0) begin
+                aw_delay_cnt <= aw_delay_cnt - 1;
+                if (aw_delay_cnt == 1) s_axi_awready <= 1;
+            end else begin
+                s_axi_awready <= 0;
+            end
+            // AR channel delay
+            if (s_axi_arvalid && !s_axi_arready) begin
+                ar_delay_cnt <= READ_LATENCY;
+                s_axi_arready <= 0;
+            end else if (ar_delay_cnt > 0) begin
+                ar_delay_cnt <= ar_delay_cnt - 1;
+                if (ar_delay_cnt == 1) s_axi_arready <= 1;
+            end else begin
+                s_axi_arready <= 0;
+            end
+        end
+    end
 
     // Write address acceptance
     always @(posedge clk or negedge rst_n) begin
@@ -350,5 +601,15 @@ module axi_sdram_stub #(
             end
         end
     end
+
+    // ------------------------------------------------------------------------
+    // Stub parameters and interface signals for advanced AXI features
+    parameter integer AXI_QOS_WIDTH = 4;
+    parameter integer AXI_REGION_WIDTH = 4;
+    input  wire [AXI_QOS_WIDTH-1:0]    s_axi_awqos,
+    input  wire [AXI_REGION_WIDTH-1:0] s_axi_awregion,
+    input  wire [AXI_QOS_WIDTH-1:0]    s_axi_arqos,
+    input  wire [AXI_REGION_WIDTH-1:0] s_axi_arregion,
+    // TODO: Implement burst types, QoS, and region handling for full AXI support
 
 endmodule

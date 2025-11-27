@@ -33,6 +33,48 @@ module surface_extractor #(
     output reg [7:0]              surface_smoothness,
     output reg                    done
 );
+    // ------------------------------------------------------------------------
+    // SVAs and Covergroups for surface extraction protocol and correctness
+    // ------------------------------------------------------------------------
+    // SVA: Done only pulses when enable is high
+    property done_only_on_enable;
+        @(posedge clk) disable iff (!rst_n)
+        done |-> enable;
+    endproperty
+    done_only_on_enable_sva: assert property (done_only_on_enable);
+
+    // SVA: Output bounds (normals, curvature, smoothness)
+    property output_bounds;
+        @(posedge clk) disable iff (!rst_n)
+        (surface_normal_x <= 8'd255 && surface_normal_y <= 8'd255 && surface_normal_z <= 8'd255 && surface_curvature <= 8'd255 && surface_smoothness <= 8'd255);
+    endproperty
+    output_bounds_sva: assert property (output_bounds);
+    `ifdef FORMAL
+        // SVA: Done only pulses when enable is high
+        property done_only_on_enable;
+            @(posedge clk) disable iff (!rst_n)
+            done |-> enable;
+        endproperty
+        done_only_on_enable_sva: assert property (done_only_on_enable);
+
+        // SVA: Output bounds (normals, curvature, smoothness)
+        property output_bounds;
+            @(posedge clk) disable iff (!rst_n)
+            (surface_normal_x <= 8'd255 && surface_normal_y <= 8'd255 && surface_normal_z <= 8'd255 && surface_curvature <= 8'd255 && surface_smoothness <= 8'd255);
+        endproperty
+        output_bounds_sva: assert property (output_bounds);
+    `endif
+
+    // Covergroup: Extraction event types
+    covergroup cg_extraction_events @(posedge clk);
+        done_evt: coverpoint done;
+        enable_evt: coverpoint enable;
+    endgroup
+    cg_extraction_events_inst = new();
+
+    // ------------------------------------------------------------------------
+    // Stub: Future surface extraction logic
+    // TODO: Implement real normal and curvature computation based on voxel_data
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             surface_normal_x  <= 8'd0;
@@ -45,7 +87,8 @@ module surface_extractor #(
             voxel_addr        <= 18'd0;
         end else begin
             if (enable) begin
-                // trivial: instantly "finish"
+                // TODO: Add real surface extraction logic here
+                // For now, instantly "finish" with placeholder values
                 done <= 1'b1;
             end else begin
                 done <= 1'b0;

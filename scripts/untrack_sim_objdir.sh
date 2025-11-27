@@ -17,7 +17,7 @@ fi
 echo "[untrack_sim_objdir] The following tracked files under sim/obj_dir will be removed from git (kept on disk):"
 git ls-files -- "sim/obj_dir" || true
 
-read -p "Proceed to untrack and commit these changes? [y/N] " ans
+read -r -p "Proceed to untrack and commit these changes? [y/N] " ans
 if [[ "$ans" != "y" && "$ans" != "Y" ]]; then
     echo "Aborted."
     exit 1
