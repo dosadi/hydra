@@ -30,9 +30,12 @@ gcc -I "${ROOT_DIR}/drivers/linux/uapi" -O2 -o "${ROOT_DIR}/scripts/hydra_irq_te
 
 if command -v pkg-config >/dev/null && pkg-config --exists libdrm; then
   echo "[hydra] Building DRM info tool"
-  if ! gcc -I "${ROOT_DIR}/drivers/linux/uapi" $(pkg-config --cflags libdrm) \
+  # Capture pkg-config flags into arrays to avoid word-splitting pitfalls
+  CFLAGS=( $(pkg-config --cflags libdrm) )
+  LIBS=( $(pkg-config --libs libdrm) )
+  if ! gcc -I "${ROOT_DIR}/drivers/linux/uapi" "${CFLAGS[@]}" \
        -o "${ROOT_DIR}/scripts/hydra_drm_info" "${ROOT_DIR}/scripts/hydra_drm_info.c" \
-       $(pkg-config --libs libdrm); then
+       "${LIBS[@]}"; then
     echo "[hydra] DRM info build failed (missing headers or libs?), skipping"
   fi
 else

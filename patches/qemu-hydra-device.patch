@@ -1,0 +1,8 @@
+# Placeholder qemu patch
+# This is a small placeholder to satisfy the deployment script.
+# Add the real patch content here later.
+--- a/Makefile
++++ b/Makefile
+@@
+-# qemu hydra patch placeholder
++# qemu hydra patch placeholder

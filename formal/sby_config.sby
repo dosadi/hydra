@@ -1,0 +1,14 @@
+[options]
+mode prove
+
+[engines]
+smtbmc
+
+[script]
+read -formal ../rtl/voxel_framebuffer_top.sv
+read -formal ../rtl/voxel_raycaster_core_pipelined.sv
+prep -top voxel_framebuffer_top
+
+[files]
+../rtl/voxel_framebuffer_top.sv
+../rtl/voxel_raycaster_core_pipelined.sv

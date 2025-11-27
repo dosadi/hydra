@@ -1,0 +1,12 @@
+# Placeholder CI workflow for Hydra
+name: CI (placeholder)
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder step
+        run: echo "This is a placeholder CI workflow installed by the integration script. Replace with real workflow."

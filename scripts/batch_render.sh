@@ -152,7 +152,7 @@ fi
 
 # Render frames
 for i in $(seq 0 $((NUM_FRAMES - 1))); do
-    FRAME_PATH="$OUTPUT_DIR/${OUTPUT_PREFIX}_$(printf '%04d' $i).ppm"
+    FRAME_PATH="$OUTPUT_DIR/${OUTPUT_PREFIX}_$(printf '%04d' "$i").ppm"
 
     if [ $BENCHMARK -eq 1 ]; then
         FRAME_START=$(date +%s%N)
@@ -174,16 +174,16 @@ for i in $(seq 0 $((NUM_FRAMES - 1))); do
     if [ $BENCHMARK -eq 1 ]; then
         FRAME_END=$(date +%s%N)
         FRAME_TIME=$(( (FRAME_END - FRAME_START) / 1000000 ))  # Convert to ms
-        FRAME_TIMES+=($FRAME_TIME)
+        FRAME_TIMES+=("$FRAME_TIME")
 
         if [ $VERBOSE -eq 1 ]; then
             echo -e "  ${GREEN}✓${NC} Rendered in ${FRAME_TIME}ms"
         else
-            printf "${GREEN}█${NC}"
+            printf '%s' "${GREEN}█${NC}"
         fi
     else
         if [ $VERBOSE -eq 0 ]; then
-            printf "${GREEN}█${NC}"
+            printf '%s' "${GREEN}█${NC}"
         fi
     fi
 done
@@ -216,8 +216,8 @@ if [ $BENCHMARK -eq 1 ]; then
 
     for t in "${FRAME_TIMES[@]}"; do
         AVG_TIME=$((AVG_TIME + t))
-        [ $t -lt $MIN_TIME ] && MIN_TIME=$t
-        [ $t -gt $MAX_TIME ] && MAX_TIME=$t
+        [ "$t" -lt "$MIN_TIME" ] && MIN_TIME=$t
+        [ "$t" -gt "$MAX_TIME" ] && MAX_TIME=$t
     done
     AVG_TIME=$((AVG_TIME / NUM_FRAMES))
 

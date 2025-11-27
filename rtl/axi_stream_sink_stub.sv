@@ -67,4 +67,41 @@ module axi_stream_sink_stub #(
         end
     end
 
+    // ------------------------------------------------------------------------
+    // Stub: Future logic for HDMI/TMDS tuser (SOF) and tlast (end-of-line/frame)
+    // TODO: Implement proper handling of tuser and tlast for HDMI/TMDS testbench integration
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            // ...existing code...
+        end else begin
+            if (s_axis_tvalid && s_axis_tready) begin
+                // TODO: Add logic for tuser (SOF) and tlast (end-of-line/frame)
+                // For now, only basic beat/frame counting is implemented
+            end
+        end
+    end
+
+`ifdef FORMAL
+    // SVA: tvalid/tready handshake only when tvalid
+    property tready_only_on_tvalid;
+        @(posedge clk) disable iff (!rst_n)
+        s_axis_tready |-> s_axis_tvalid;
+    endproperty
+    tready_only_on_tvalid_sva: assert property (tready_only_on_tvalid);
+
+    // SVA: Frame count only increments on tlast
+    property frame_count_on_tlast;
+        @(posedge clk) disable iff (!rst_n)
+        (frame_count != $past(frame_count)) |-> s_axis_tlast;
+    endproperty
+    frame_count_on_tlast_sva: assert property (frame_count_on_tlast);
+
+    // SVA: CRC update only on tlast
+    property last_frame_crc_on_tlast;
+        @(posedge clk) disable iff (!rst_n)
+        (last_frame_crc != $past(last_frame_crc)) |-> s_axis_tlast;
+    endproperty
+    last_frame_crc_on_tlast_sva: assert property (last_frame_crc_on_tlast);
+`endif
+
 endmodule

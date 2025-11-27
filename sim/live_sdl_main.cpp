@@ -11,6 +11,9 @@
 #include "platform/backend_selector.h"
 #include "platform/platform.h"
 
+// Shared harness declarations
+#include "harness_common.h"
+
 #include <cstdint>
 #include <cstdio>
 #include <vector>
@@ -281,83 +284,8 @@ static std::string flatten_cli_args(int argc, char** argv) {
 // Forward declarations used by instrumentation helpers
 static void die(const std::string& s);
 
-struct RenderInstrumentationConfig {
-    float cam_pos_x = 0.0f;
-    float cam_pos_y = 0.0f;
-    float cam_pos_z = 0.0f;
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    bool smooth_surfaces = false;
-    bool curvature = false;
-    bool extra_light = false;
-    bool diag_slice = false;
-    bool ray_jitter = false;
-    bool hud_enabled = true;
-    float fps_target = 0.0f;
-    bool vsync = true;
-    std::string backend_name;
-    std::string backend_info;
-    std::string pixel_view;
-};
-
-struct RenderInstrumentation {
-    RenderInstrumentation(bool enabled, std::string command_line)
-        : enabled_(enabled), command_line_(std::move(command_line)) {
-        if (!enabled_)
-            return;
-        std::filesystem::create_directories("out");
-        csv_.open("out/render_pipeline_baseline.csv", std::ios::app);
-        if (!csv_)
-            die("failed to open out/render_pipeline_baseline.csv for instrumentation logging");
-        if (csv_.tellp() == 0)
-            csv_ << "frame,timestamp_ms,fps,ray_loop_ms,hud_present_ms,framebuffer_copy_ms,frame_total_ms\n";
-    }
-
-    bool active() const { return enabled_; }
-
-    void write_config(const RenderInstrumentationConfig& cfg) {
-        if (!enabled_)
-            return;
-        std::ofstream cfg_out("out/render_pipeline_baseline.cfg");
-        if (!cfg_out)
-            die("failed to write out/render_pipeline_baseline.cfg");
-        cfg_out << "instrument_command=" << command_line_ << "\n";
-        cfg_out << "backend=" << cfg.backend_name << "\n";
-        cfg_out << "backend_info=" << cfg.backend_info << "\n";
-        cfg_out << "pixel_view=" << cfg.pixel_view << "\n";
-        cfg_out << "camera_pos=" << cfg.cam_pos_x << "," << cfg.cam_pos_y << "," << cfg.cam_pos_z << "\n";
-        cfg_out << "camera_ang=" << cfg.yaw << "," << cfg.pitch << "\n";
-        cfg_out << "flags=smooth:" << (cfg.smooth_surfaces ? "1" : "0")
-                << ",curvature:" << (cfg.curvature ? "1" : "0")
-                << ",extra_light:" << (cfg.extra_light ? "1" : "0")
-                << ",diag_slice:" << (cfg.diag_slice ? "1" : "0")
-                << ",ray_jitter:" << (cfg.ray_jitter ? "1" : "0") << "\n";
-        cfg_out << "hud_enabled=" << (cfg.hud_enabled ? "1" : "0") << "\n";
-        cfg_out << "fps_target=" << cfg.fps_target << "\n";
-        cfg_out << "vsync=" << (cfg.vsync ? "1" : "0") << "\n";
-    }
-
-    void record(uint64_t frame,
-                double fps,
-                double ray_loop_ms,
-                double hud_present_ms,
-                double framebuffer_copy_ms,
-                double frame_total_ms) {
-        if (!enabled_)
-            return;
-        auto now = std::chrono::system_clock::now();
-        auto ts_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        csv_ << frame << ',' << ts_ms << ',' << fps << ','
-             << ray_loop_ms << ',' << hud_present_ms << ','
-             << framebuffer_copy_ms << ',' << frame_total_ms << '\n';
-        csv_.flush();
-    }
-
-private:
-    bool enabled_;
-    std::ofstream csv_;
-    std::string command_line_;
-};
+// Use external RenderInstrumentation implementation to keep the harness small.
+#include "render_instrumentation.h"
 
 static std::string g_backend_info;
 
@@ -1106,7 +1034,6 @@ int main(int argc, char** argv) {
     if (cam_ang_env) std::fprintf(stderr, "[hydra] HYDRA_CAM_ANG=%s\n", cam_ang_env);
     if (const char* v = std::getenv("HYDRA_WORLD_SEED")) std::fprintf(stderr, "[hydra] HYDRA_WORLD_SEED=%s\n", v);
     if (pixel_view_env) std::fprintf(stderr, "[hydra] HYDRA_PIXEL_VIEW=%s\n", pixel_view_env);
-    if (const char* v = std::getenv("HYDRA_WORLD_SEED")) std::fprintf(stderr, "[hydra] HYDRA_WORLD_SEED=%s\n", v);
     if (safe_capture_mode) std::fprintf(stderr, "[hydra] HYDRA_SAFE_CAPTURE=1\n");
     std::fprintf(stderr, "[hydra] Camera: pos=(%.1f,%.1f,%.1f) yaw=%.2f pitch=%.2f\n",
                  pos_x, pos_y, pos_z, yaw, pitch);
