@@ -703,3 +703,11 @@ Tracks testing infrastructure expansion, CI pipeline hardening, regression test 
 **Document Version:** 2.0 (Expanded)
 **Created:** 2025-11-25
 **Status:** Active tracker for testing and CI infrastructure
+
+- **[P2]:** Test Bug Report
+  - **Description:** This is a test bug report from the chunk processor
+  - **Source:** External chunk processing
+  - **Status:** New bug report - needs investigation
+  - **Reproduction:** Steps to reproduce the bug
+  - **Expected:** Expected behavior
+  - **Actual:** Actual behavior

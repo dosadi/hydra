@@ -21,6 +21,7 @@ help:
 	@echo "  make docs          - Run docs lint (local link check)"
 	@echo "  make docs-lint     - Same as docs (kept for clarity)"
 	@echo "  make docs-only     - Docs-only pass (docs-lint + spellcheck)"
+	@echo "  make doxygen       - Generate Doxygen API docs for libhydra"
 	@echo "  make diff-summary  - Summarize git diff stats and TODO touches (for PRs)"
 	@echo "  make fmt           - Format C/C++/SV sources (clang-format/verible if available)"
 	@echo "  make package       - Bundle sim binary/tests/docs into out/hydra-package.tar.gz"
@@ -52,8 +53,13 @@ help:
 	@echo "  make build-check   - Check build artifact freshness"
 	@echo "  make build-freshen - Analyze build freshening plan"
 	@echo "  make touch-check-all   - Check both docs and build freshness"
-	@echo "  make touch-freshen-all - Auto-freshen all Tier 1 items"
 	@echo "  make automate-priority - Run comprehensive priority sector automation"
+	@echo "  make automate-top-level - Run full top-level automation orchestrator"
+	@echo "  make automate-quick     - Run quick automation subset"
+	@echo "  make automate-agents    - Run agent coordination checks"
+	@echo ""
+	@echo "  make full-automation   - Run all automation (priority + touch + quality + validation)"
+	@echo "  make ci-validate       - CI-like validation (build + test + quality checks)"
 	@echo ""
 	@echo "  make libhydra      - Build libhydra.a static library"
 	@echo "  make blit-smoketest- Build user blit smoke test"
@@ -156,6 +162,18 @@ docs docs-lint:
 docs-only:
 	@$(MAKE) docs
 	@$(MAKE) spellcheck
+
+doxygen:
+	@if command -v doxygen >/dev/null 2>&1; then \
+		echo "Generating Doxygen API documentation..."; \
+		cd docs && doxygen Doxyfile; \
+		echo "API docs generated in docs/api/html/"; \
+		echo "Open docs/api/html/index.html in your browser"; \
+	else \
+		echo "Doxygen not found. Install with: apt install doxygen"; \
+		echo "Then run: make doxygen"; \
+		exit 1; \
+	fi
 
 diff-summary:
 	@./scripts/diff_summary.sh
@@ -265,6 +283,36 @@ touch-freshen-all: doc-freshen
 automate-priority:
 	@echo "Running comprehensive priority sector automation..."
 	@./scripts/automate_priority.sh
+
+# Top-level automation orchestrator (comprehensive project health)
+automate-top-level:
+	@echo "Running top-level automation orchestrator..."
+	@./scripts/automate_top_level.sh full
+
+# Quick automation (fast feedback subset)
+automate-quick:
+	@echo "Running quick automation..."
+	@./scripts/automate_top_level.sh quick
+
+# Agent coordination checks
+automate-agents:
+	@echo "Running agent coordination checks..."
+	@./scripts/automate_top_level.sh agents
+
+# Comprehensive automation suite (runs all high-level checks and automation)
+full-automation: automate-priority touch-check-all docs-only lint verilator-check files todo-unique
+	@echo "✓ Full automation suite complete"
+	@echo "  - Priority sectors: build, test, quality, docs, benchmark, security, integration"
+	@echo "  - Touch system: docs and build freshness"
+	@echo "  - Code quality: docs lint, spellcheck, shellcheck, whitespace"
+	@echo "  - Validation: Verilator version, required files, TODO uniqueness"
+
+# CI-like validation (what runs in automated CI)
+ci-validate: sim test sdk-setup lint docs-only verilator-check files todo-unique touch-check-all
+	@echo "✓ CI validation complete"
+	@echo "  - Build: sim, SDK, tests"
+	@echo "  - Quality: lint, docs, version checks"
+	@echo "  - Validation: files, TODOs, touch system"
 
 clean:
 	@$(MAKE) -C sim clean || true

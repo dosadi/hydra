@@ -31,15 +31,15 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `0x0000` `ID`          (RO): [31:16] vendor, [15:0] device.
 - `0x0004` `REV`         (RO): [7:0] rev, [15:8] build, [31:16] reserved.  
   Current: rev `0x07`, build `0x01` for release 0.0.7; bump on any register map change.
-- `0x0010` `CTRL`        (RW): [0]=soft_reset, [1]=start_frame, [2]=diag_slice_en, [3]=extra_light_en.
-- `0x0014` `STATUS`      (RO): [0]=busy, [1]=frame_done, [2]=dma_busy, [3]=dma_done, [4]=blit_busy, [5]=blit_done, [31:6]=resvd.
+- `0x0010` `CTRL`        (RW): [0]=soft_reset, [1]=start_frame, [2]=diag_slice_en, [3]=extra_light_en, [4]=ray_jitter_en.
+- `0x0014` `STATUS`      (RO): [0]=busy, [1]=frame_done, [2]=dma_busy, [3]=dma_done, [4]=blit_busy, [5]=blit_done, [6]=region0_busy, [7]=region0_done.
 - `0x0020..0x003C` Camera (RW): cam_x/y/z, cam_dir_x/y/z, cam_plane_x/y (signed 16-bit each, packed 32-bit).
-- `0x0040` `FLAGS`       (RW): [0]=smooth, [1]=curvature, [2]=extra_light, [3]=diag_slice.
+- `0x0040` `FLAGS`       (RW): [0]=smooth, [1]=curvature, [2]=extra_light, [3]=diag_slice, [4]=ray_jitter.
 - `0x0044..0x0050` Selection (RW): sel_active, sel_x, sel_y, sel_z (6-bit fields in 32-bit words).
 - `0x0054` `FB_BASE`     (RW): framebuffer base address (BAR1/SDRAM).
 - `0x0058` `FB_STRIDE`   (RW): bytes per line.
-- `0x0060..0x0070` DMA regs (RW): SRC, DST, LEN (bytes), CMD [0]=start, STATUS [0]=done, [1]=busy, [2]=err.
-- `0x0080` `INT_STATUS`  (RW1C): [0]=frame_done, [1]=dma_done, [2]=dma_err, [3]=irq_test, [4]=blit_done.
+- `0x0060..0x0070` DMA regs (RW): SRC, DST, LEN (bytes), CMD [0]=start, STATUS [0]=busy, [1]=done, [2]=err.
+- `0x0080` `INT_STATUS`  (RW1C): [0]=frame_done, [1]=dma_done, [2]=dma_err, [3]=irq_test, [4]=blit_done, [5]=region0_done.
 - `0x0084` `INT_MASK`    (RW): same bits as STATUS.
 - `0x0088` `IRQ_TEST`    (WO): [0]=pulse INT_STATUS[3] (sim MSI test).
 - `0x00A0..0x00A8` Debug voxel write: ADDR (18-bit), DATA_LO (32), DATA_HI (32), CTRL [0]=write_pulse.
@@ -47,8 +47,8 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `0x00B4` `HDMI_FRAMES` (RO, sim): frame counter from AXI sink.
 - `0x00B8` `HDMI_LINE`   (RO, sim): last line count observed.
 - `0x00BC` `HDMI_PIX`    (RO, sim): last pixel-in-line counter.
-- `0x0100..` 3D blitter stub: CTRL/STATUS/SRC/DST/LEN/STRIDE, SURF_BASE/SURF_LEN/SURF_STATS for the surface extractor stub, pixel read/write, object attribute table, FIFO data port.
-- `0x0150..` Region-0 automatic extractor (experimental): REGION0_CFG/MIN/MAX/STATUS/SURF_STATS implement a fixed-function per-volume extraction pass that currently only synthesizes stats.
+- `0x0100..0x0140` 3D blitter stub: CTRL/STATUS/SRC/DST/LEN/STRIDE, SURF_BASE/SURF_LEN/SURF_STATS for the surface extractor stub, pixel read/write, object attribute table, FIFO data port.
+- `0x0150..0x0160` Region-0 automatic extractor (experimental): REGION0_CFG/MIN/MAX/STATUS/SURF_STATS implement a fixed-function per-volume extraction pass that currently only synthesizes stats.
 - Reserved: 0x0170..0xFFFF for future (perf counters, extended extractor controls).
 
 ### Reset defaults (expected values after power-on or soft reset)
@@ -58,8 +58,11 @@ This is a working outline for the Hydra PCIe device: blocks, formats, and a stra
 - `SEL_ACTIVE` = 0, `SEL_X/Y/Z` = 0
 - `FB_BASE` = 0x0000_0000, `FB_STRIDE` = 0x0000_0000
 - `DMA_STATUS` = 0 (busy/done cleared); `INT_STATUS` = 0; `INT_MASK` = 0
-- Blitter stub registers: CTRL/STATUS/SRC/DST/LEN/STRIDE/SURF_* = 0
-- Debug write addr/data = 0
+- `CAM_X/Y/Z` = 0, `CAM_DIR_X/Y/Z` = 0, `CAM_PLANE_X/Y` = 0
+- `DMA_SRC/DST/LEN` = 0
+- `DBG_ADDR/DATA_LO/DATA_HI` = 0
+- Blitter registers (0x0100-0x0140): All 0
+- Region-0 extractor (0x0150-0x0160): All 0
 
 Driver probe validation (recommended for 0.0.7):
 - Read `ID`/`REV` and compare against driver expectations; fail if unknown.

@@ -12,6 +12,8 @@ echo "- Testing automation (frame regression, RTL benches)"
 echo "- Code quality automation (lint, format, checks)"
 echo "- Documentation automation (freshening, touch system)"
 echo "- Benchmarking automation"
+echo "- Security automation (secrets, permissions, vulnerabilities)"
+echo "- Integration automation (backends, Docker, CMake)"
 echo ""
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -161,6 +163,48 @@ benchmark_sector() {
     log "✓ Benchmark sector automation complete"
 }
 
+# Security sector automation
+security_sector() {
+    log "=== SECURITY SECTOR AUTOMATION ==="
+
+    # Check for secrets or sensitive data
+    if command -v git >/dev/null 2>&1; then
+        run_cmd "Checking for accidentally committed secrets" git log --all --full-history -- "*.key" "*.pem" "*.p12" "*.pfx" || warn "Secret check completed with warnings"
+    fi
+
+    # Check file permissions
+    run_cmd "Checking file permissions" find . -type f \( -name "*.sh" -o -name "*.py" \) -exec test -x {} \; -print | wc -l || warn "Some scripts may not be executable"
+
+    # Dependency vulnerability check (if tools available)
+    if command -v pip-audit >/dev/null 2>&1 && [ -f requirements.txt ]; then
+        run_cmd "Checking Python dependencies for vulnerabilities" pip-audit --requirement requirements.txt || warn "Dependency audit completed with warnings"
+    fi
+
+    log "✓ Security sector automation complete"
+}
+
+# Integration sector automation
+integration_sector() {
+    log "=== INTEGRATION SECTOR AUTOMATION ==="
+
+    # Cross-platform compatibility check
+    if [ -f scripts/check_backends.sh ]; then
+        run_cmd "Checking backend compatibility" ./scripts/check_backends.sh || warn "Backend check had issues"
+    fi
+
+    # Docker build test
+    if [ -f docker/Dockerfile ]; then
+        run_cmd "Testing Docker build" docker build --no-cache --pull -t hydra-test docker/ || warn "Docker build test failed"
+    fi
+
+    # CMake preset validation
+    if command -v cmake >/dev/null 2>&1; then
+        run_cmd "Validating CMake presets" cmake --list-presets || warn "CMake preset validation had issues"
+    fi
+
+    log "✓ Integration sector automation complete"
+}
+
 # Main automation flow
 main() {
     local sectors=()
@@ -169,6 +213,8 @@ main() {
     local skip_quality=false
     local skip_docs=false
     local skip_bench=false
+    local skip_security=false
+    local skip_integration=false
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -178,15 +224,19 @@ main() {
             --skip-quality) skip_quality=true ;;
             --skip-docs) skip_docs=true ;;
             --skip-bench) skip_bench=true ;;
+            --skip-security) skip_security=true ;;
+            --skip-integration) skip_integration=true ;;
             --help)
                 echo "Usage: $0 [options]"
                 echo "Options:"
-                echo "  --skip-build    Skip build automation"
-                echo "  --skip-test     Skip test automation"
-                echo "  --skip-quality  Skip code quality automation"
-                echo "  --skip-docs     Skip documentation automation"
-                echo "  --skip-bench    Skip benchmark automation"
-                echo "  --help          Show this help"
+                echo "  --skip-build       Skip build automation"
+                echo "  --skip-test        Skip test automation"
+                echo "  --skip-quality     Skip code quality automation"
+                echo "  --skip-docs        Skip documentation automation"
+                echo "  --skip-bench       Skip benchmark automation"
+                echo "  --skip-security    Skip security automation"
+                echo "  --skip-integration Skip integration automation"
+                echo "  --help             Show this help"
                 exit 0
                 ;;
             *)
@@ -222,6 +272,16 @@ main() {
     if [ "$skip_bench" = false ]; then
         benchmark_sector
         sectors+=("benchmark")
+    fi
+
+    if [ "$skip_security" = false ]; then
+        security_sector
+        sectors+=("security")
+    fi
+
+    if [ "$skip_integration" = false ]; then
+        integration_sector
+        sectors+=("integration")
     fi
 
     echo ""

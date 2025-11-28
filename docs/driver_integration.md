@@ -86,3 +86,125 @@ FreeBSD (PCI stub):
 Expected readings at probe (both OSes):
 - `ID`: vendor `0x1BAD`, device `0x2024`; `REV`: rev `0x02`, build `0x01` (for 0.0.3-era map).
 - Reset defaults: `FLAGS` smooth=1, curvature=1, extra_light=0, diag_slice=0; `INT_STATUS`/`INT_MASK`/`DMA_STATUS` zeroed; `FB_BASE`/`FB_STRIDE` zeroed; selection inactive.
+
+## FreeBSD Driver Parity Status
+
+### Current Implementation Status
+
+| Feature | Linux | FreeBSD | Notes |
+|---------|-------|---------|-------|
+| **PCI Device Detection** | ✅ Full | ✅ Stub | Both detect Hydra PCI devices |
+| **BAR Mapping** | ✅ BAR0 + BAR1 | ❌ Not implemented | FreeBSD stub doesn't map BARs yet |
+| **Interrupt Handling** | ✅ MSI/MSI-X/Legacy | ❌ Not implemented | FreeBSD stub lacks IRQ setup |
+| **IOCTL Interface** | ✅ Full UAPI | ❌ Not implemented | FreeBSD has no IOCTLs yet |
+| **Debugfs/sysctl** | ✅ Debugfs | ✅ Basic sysctl | FreeBSD has basic kmod loading stats |
+| **DMA Support** | ✅ Stubbed | ❌ Not implemented | Neither has real DMA yet |
+| **DRM/KMS** | ✅ Stub | ❌ Not planned | Linux-only graphics stack integration |
+| **Build System** | ✅ Out-of-tree | ✅ Stub Makefile | Both support kmod building |
+| **CI Integration** | ❌ Manual | ✅ Best-effort VM | FreeBSD builds in CI, Linux doesn't |
+
+### IOCTL Parity Matrix
+
+| IOCTL | Linux Status | FreeBSD Status | Description |
+|-------|-------------|----------------|-------------|
+| `HYDRA_IOCTL_INFO` | ✅ Implemented | ❌ Planned | Device info (vendor/device/IRQ/BARs) |
+| `HYDRA_IOCTL_RD32` | ✅ Implemented | ❌ Planned | 32-bit BAR0 read |
+| `HYDRA_IOCTL_WR32` | ✅ Implemented | ❌ Planned | 32-bit BAR0 write |
+| `HYDRA_IOCTL_DMA` | ✅ Stubbed | ❌ Planned | DMA operation setup |
+| `HYDRA_IOCTL_BLIT` | ✅ Stubbed | ❌ Planned | 3D blitter control |
+| `DRM_IOCTL_HYDRA_INFO` | ✅ Implemented | ❌ N/A | DRM-specific device info |
+
+### Build and Installation
+
+**Linux:**
+```bash
+# Build
+cd drivers/linux
+make -C /lib/modules/$(uname -r)/build M=$(pwd) modules
+
+# Install
+sudo insmod hydra_pcie_drv.ko
+
+# Verify
+ls /dev/hydra_pcie
+ls /sys/kernel/debug/hydra_pcie/
+```
+
+**FreeBSD:**
+```bash
+# Build (requires kernel sources)
+cd drivers/bsd
+make -f Makefile.kmod
+
+# Install
+sudo kldload ./hydra.ko
+
+# Verify (limited functionality)
+kldstat | grep hydra
+sysctl dev.hydra  # Basic stats only
+```
+
+### Testing and Validation
+
+**Linux Testing:**
+- Full IOCTL test suite available
+- Debugfs for register inspection
+- Integration with libhydra userspace library
+- DMA and blitter stub testing
+
+**FreeBSD Testing:**
+- Basic kmod load/unload testing
+- QEMU VM setup for development
+- Limited to kernel module validation
+- No userspace integration yet
+
+### Development Status
+
+**FreeBSD Driver Roadmap:**
+1. **Phase 1 (Current)**: PCI device detection and basic kmod framework
+2. **Phase 2 (Planned)**: BAR mapping and basic IOCTLs (INFO/RD32/WR32)
+3. **Phase 3 (Future)**: Full DMA and blitter support
+4. **Phase 4 (Distant)**: DRM/KMS integration (if needed)
+
+**Parity Timeline:**
+- Basic BAR/IOCTL support: ~2-4 weeks development
+- Full DMA integration: ~4-6 weeks (depends on Linux DMA work)
+- Complete feature parity: ~8-12 weeks
+
+### Usage Recommendations
+
+**For Development:**
+- Use Linux for full driver development and testing
+- Use FreeBSD QEMU setup for basic kmod validation
+- Cross-platform testing focuses on Linux first
+
+**For Production:**
+- Linux is the primary supported platform
+- FreeBSD support is experimental/stub-level
+- Windows/macOS support is not yet implemented
+
+### Known Limitations
+
+**FreeBSD Specific:**
+- No BAR memory mapping (reads/writes not possible)
+- No interrupt handling or MSI setup
+- No userspace IOCTL interface
+- Limited debugging facilities (basic sysctl only)
+- QEMU-based development environment required
+
+**Cross-Platform:**
+- DMA implementation is stubbed on both platforms
+- 3D blitter is bring-up level on both platforms
+- DRM integration is Linux-only
+- No Windows or macOS driver implementation yet
+
+### Contributing
+
+To improve FreeBSD support:
+1. Study `drivers/bsd/hydra_pci_stub.c` and expand PCI attachment
+2. Add BAR mapping similar to Linux driver
+3. Implement IOCTL handlers using FreeBSD's ioctl framework
+4. Add interrupt handling and MSI support
+5. Create userspace library (libhydra-bsd)
+
+See `docs/freebsd_qemu.md` for development environment setup.

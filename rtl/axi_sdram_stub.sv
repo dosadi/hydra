@@ -287,6 +287,34 @@ module axi_sdram_stub #(
             );
         endproperty
         wrap_address_within_bounds_sva: assert property (wrap_address_within_bounds);
+
+        // SVA: AWREADY stability during WAIT_JITTER (ready should not glitch when jitter enabled)
+        property awready_stable_under_jitter;
+            @(posedge clk) disable iff (!rst_n)
+            (WAIT_JITTER > 0 && s_axi_awready) |-> $stable(s_axi_awready) throughout [*1:WAIT_JITTER];
+        endproperty
+        awready_stable_under_jitter_sva: assert property (awready_stable_under_jitter);
+
+        // SVA: ARREADY stability during WAIT_JITTER (ready should not glitch when jitter enabled)
+        property arready_stable_under_jitter;
+            @(posedge clk) disable iff (!rst_n)
+            (WAIT_JITTER > 0 && s_axi_arready) |-> $stable(s_axi_arready) throughout [*1:WAIT_JITTER];
+        endproperty
+        arready_stable_under_jitter_sva: assert property (arready_stable_under_jitter);
+
+        // SVA: WREADY stability during latency (ready should not glitch during write latency)
+        property wready_stable_under_latency;
+            @(posedge clk) disable iff (!rst_n)
+            (WRITE_LATENCY > 0 && w_active && w_delay > 0) |-> !s_axi_wready;
+        endproperty
+        wready_stable_under_latency_sva: assert property (wready_stable_under_latency);
+
+        // SVA: RVALID stability during latency (valid should not glitch during read latency)
+        property rvalid_stable_under_latency;
+            @(posedge clk) disable iff (!rst_n)
+            (READ_LATENCY > 0 && r_active && r_delay > 0) |-> !s_axi_rvalid;
+        endproperty
+        rvalid_stable_under_latency_sva: assert property (rvalid_stable_under_latency);
 `endif
     // ------------------------------------------------------------------------
     // Outstanding transaction counters
@@ -420,8 +448,10 @@ module axi_sdram_stub #(
             for (i = 0; i < MAX_OUTSTANDING; i = i + 1)
                 w_valid_q[i] <= 1'b0;
         end else begin
+            // Gate AWREADY on AWVALID to avoid X/unknown accepts
             if (!w_active && !s_axi_awready && ((w_tail + 1) % MAX_OUTSTANDING != w_head)) begin
-                if (s_axi_awvalid === 1'b1)
+                // Only assert ready when valid is definitively high (not X/Z)
+                if (s_axi_awvalid === 1'b1 && !$isunknown(s_axi_awvalid))
                     s_axi_awready <= 1'b1;
             end
             if (s_axi_awready && s_axi_awvalid) begin
@@ -532,8 +562,10 @@ module axi_sdram_stub #(
             for (i = 0; i < MAX_OUTSTANDING; i = i + 1)
                 r_valid_q[i] <= 1'b0;
         end else begin
+            // Gate ARREADY on ARVALID to avoid X/unknown accepts
             if (!r_active && !s_axi_arready && ((r_tail + 1) % MAX_OUTSTANDING != r_head)) begin
-                if (s_axi_arvalid === 1'b1)
+                // Only assert ready when valid is definitively high (not X/Z)
+                if (s_axi_arvalid === 1'b1 && !$isunknown(s_axi_arvalid))
                     s_axi_arready <= 1'b1;
             end
             if (s_axi_arready && s_axi_arvalid) begin

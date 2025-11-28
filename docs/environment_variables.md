@@ -4,13 +4,11 @@ This document lists all environment variables recognized by the Hydra simulator 
 
 ## Display & Backend
 
-### `HYDRA_BACKEND`
-- **Type**: String (case-insensitive)
-- **Values**: `SDL`, `GL`, `Vulkan`, `Wayland`, `X11`, `Fbdev`, `Win32`, `macOS`, `Headless`
-- **Default**: Auto-detected (prefers GPU backends when available, falls back to SDL)
-- **Description**: Selects the platform backend for rendering. Use `Headless` for CI/testing without a display server.
-- **Example**: `HYDRA_BACKEND=headless ./sim_voxel`
-- **CLI override**: `--backend <name>` (or `--backend=name`, `-b <name>`) sets this for a single run.
+### `HYDRA_BACKEND_PREFS`
+- **Type**: String (comma-separated backend names)
+- **Default**: `VULKAN,GL,WAYLAND,X11,SDL,FBDEV,WIN32,MACOS`
+- **Description**: Backend preference order when auto-selecting. Only used when `HYDRA_BACKEND` is not explicitly set.
+- **Example**: `HYDRA_BACKEND_PREFS=SDL,GL,VULKAN ./sim_voxel`
 
 ## Camera & Movement
 
@@ -118,11 +116,19 @@ This document lists all environment variables recognized by the Hydra simulator 
 - **Description**: Exit automatically after rendering frames (useful for headless captures).
 - **Example**: `AUTO_EXIT=1 FRAME_DUMP=test.ppm ./sim_voxel`
 
-### `HYDRA_VSYNC`
-- **Type**: Boolean (presence/`1`/`true` to enable, `0`/`false` to disable)
-- **Default**: Enabled
-- **Description**: Toggle VSYNC for SDL/GL/Vulkan backends. Headless respects it as a no-op.
-- **Example**: `HYDRA_VSYNC=0 ./sim_voxel`
+### `HYDRA_FOG_COLOR`
+- **Type**: String (hex color)
+- **Format**: `RRGGBB` (hex)
+- **Default**: Not set (no fog)
+- **Description**: Fog color for atmospheric effects. Only applied when fog is enabled.
+- **Example**: `HYDRA_FOG_COLOR=404040 ./sim_voxel`
+
+### `HYDRA_FOG_DENSITY`
+- **Type**: Float
+- **Range**: `0.0` to `1.0`
+- **Default**: Not set (no fog)
+- **Description**: Fog density for atmospheric effects. Values closer to 1.0 create thicker fog.
+- **Example**: `HYDRA_FOG_DENSITY=0.1 HYDRA_FOG_COLOR=808080 ./sim_voxel`
 
 ### `HYDRA_CLEAR_EACH_FRAME`
 - **Type**: Boolean (presence = true)

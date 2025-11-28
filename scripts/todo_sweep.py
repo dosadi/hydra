@@ -15,7 +15,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 PRIORITY_RE = re.compile(r"\[(P[0-3])\]")
-TODO_RE = re.compile(r"\b(TODO|DONE)\b")
+TODO_RE = re.compile(r"\b(TODO|DONE|IN-PROGRESS)\b")
 
 
 def scan_file(path: Path) -> Counter[str]:
@@ -28,7 +28,7 @@ def scan_file(path: Path) -> Counter[str]:
         if not todo_match:
             continue
         kind = todo_match.group(1)
-        if kind == "TODO":
+        if kind in ("TODO", "IN-PROGRESS"):
             counts["todo_lines"] += 1
             if "[DONE" in line:
                 counts["todo_as_done"] += 1

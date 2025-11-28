@@ -353,6 +353,13 @@ Tracks simulation viewer features, HUD improvements, user controls, batch/headle
   - **Validation:** SSAA improves quality
   - **Deliverable:** SSAA factor control
 
+- **TODO [P3]:** Refactor monolithic viewer architecture into modular components
+  - **Effort:** 10 days
+  - **Priority:** P3 - Code maintainability
+  - **Dependencies:** None
+  - **Validation:** Code split into logical modules, maintainability improved
+  - **Deliverable:** Modular viewer architecture (see docs/refactor_viewer_architecture.md)
+
 ### Accessibility
 - **TODO [P3]:** Add colorblind modes (deuteranopia, protanopia, tritanopia)
   - **Effort:** 3 days

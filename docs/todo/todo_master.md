@@ -265,8 +265,39 @@ Shared list so we stay aligned across runs/agents. Status tags: `todo`, `in-prog
 - TODO [P2]: Add sample PR descriptions/commit message examples that align with repo guidance.
 
 ## Master Follow-ups
-- TODO [P1]: Link the AI health dashboard summary into this master tracker by referencing `out/ai_health_dashboard.txt` and the new `docs/todo/todo_ai_dashboard.md`, so this file reflects the latest unknown tracker priorities automatically.
-- TODO [P1]: Persist the dependency graph insights from `docs/todo/todo_dependency_map.md` here (e.g., highlight blockers) so reviewers can see cross-file dependencies without leaving the master index.
+- DONE: Link the AI health dashboard summary into this master tracker by referencing `out/ai_health_dashboard.txt` and the new `docs/todo/todo_ai_dashboard.md`, so this file reflects the latest unknown tracker priorities automatically.
+- DONE: Persist the dependency graph insights from `docs/todo/todo_dependency_map.md` here (e.g., highlight blockers) so reviewers can see cross-file dependencies without leaving the master index.
 - TODO [P2]: Add a short script that refreshes `docs/todo/todo_tracker_metadata.json` and updates this master list's summary statistics (total TODOs/unknowns) whenever new trackers are added.
 - TODO [P2]: Document the preferred AI prep flow (calls to `scripts/check_build_requirements.py`, `scripts/todo_metadata.py`, `scripts/ai_session_report.py`) here so contributors can see the overall automation chain before editing any tracker.
 - TODO [P3]: Include a section that lists deprecated/archived TODO files (e.g., earlier sessions moved to `docs/archive/`) so we know which trackers no longer require updates.
+
+## AI Dashboard & Dependency Insights
+
+### Current AI Health Dashboard Summary
+- **Generated:** 2025-11-27T22:19:05.616434Z
+- **Trackers:** 104
+- **Total TODO items:** 2008
+- **Total DONE items:** 202
+- **Priority-tagged items:** 1883
+- **Unknown-priority items:** 125
+- **Top unknown-priority trackers:**
+  - `TODO_SESSION_CONTINUATION_2025_11_25.md` (17 unknown)
+  - `todo_system_summary_2025_11_25.md` (15 unknown)
+  - `TODO_README.md` (11 unknown)
+- **Leading TODO-heavy trackers:**
+  - `todo_master.md` (120 TODOs)
+  - `todo_testing_ci.md` (80 TODOs)
+  - `todo_board_hardware_design.md` (77 TODOs)
+
+*See `docs/todo/todo_ai_dashboard.md` and `out/ai_health_dashboard.txt` for full details.*
+
+### Key Dependency Blockers
+Based on `docs/todo/todo_dependency_map.md`, the following high-priority work is blocked by upstream dependencies:
+
+- **FPS targets** (`todo_system_fps.md`) blocked by rendering pipeline stability (`todo_rendering*.md`)
+- **Simulation viewer** (`todo_simulation_viewer.md`) blocked by ray engine completion (`todo_ray_engine.md`)
+- **DMA tracing** (`todo_dma_trace_artifacts.md`) blocked by PCIe DMA foundation (`todo_dma_pcie.md`)
+- **CI stability** (`todo_build_ci.md`) blocked by testing matrix completion (`todo_testing_ci.md`)
+- **AI development** (`todo_ai_development.md`) blocked by rendering pipeline unknowns (`todo_rendering_pipeline.md`)
+
+*Review `docs/todo/todo_dependency_map.md` for the complete dependency graph.*

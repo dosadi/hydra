@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 // viewer_rendering.cpp - Rendering and framebuffer management implementation
 #include "viewer_rendering.h"
 #include "viewer_globals.h"

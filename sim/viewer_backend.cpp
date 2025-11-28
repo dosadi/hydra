@@ -263,6 +263,7 @@ const char* BackendManager::backend_name(PlatformBackend b) const {
         case PlatformBackend::Fbdev:  return "fbdev";
         case PlatformBackend::Win32:  return "Win32";
         case PlatformBackend::MacOS:  return "macOS";
+        case PlatformBackend::AALIB:  return "AAlib";
         case PlatformBackend::Headless: return "Headless";
         default: return "Unknown";
     }
@@ -277,7 +278,7 @@ void BackendManager::log_backend_caps(PlatformBackend requested, PlatformBackend
         backend_name(requested), backend_name(backend), vsync ? "on" : "off",
         video_driver ? video_driver : "(unknown)", render_driver ? render_driver : "(default)");
 
-    std::fprintf(stderr, "[hydra] compiled backends: SDL");
+    std::fprintf(stderr, "[hydra] compiled backends: SDL AAlib");
 #ifdef HYDRA_ENABLE_GL
     std::fprintf(stderr, " GL");
 #endif

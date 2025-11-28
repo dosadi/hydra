@@ -58,13 +58,11 @@ module axi_sdram_stub (
 
     // AW acceptance
     always @(posedge clk or negedge rst_n) begin
-        $display("DBG: t=%0t active_aw=%0d bvalid_pending=%0d s_axi_bvalid=%0d beat_count=%0d rst_n=%0d s_axi_awvalid=%0d", $time, active_aw, bvalid_pending, s_axi_bvalid, beat_count, rst_n, s_axi_awvalid);
         if (!rst_n) begin
             s_axi_awready <= 0;
             active_aw <= 0;
         end else begin
             if (!active_aw && !s_axi_bvalid && s_axi_awvalid) begin
-                $display("AW ACCEPTED: t=%0t s_axi_awvalid=%0d s_axi_awready=%0d", $time, s_axi_awvalid, s_axi_awready);
                 s_axi_awready <= 1;
                 cur_awaddr  <= s_axi_awaddr;
                 cur_awlen   <= s_axi_awlen;
@@ -75,11 +73,10 @@ module axi_sdram_stub (
             end else begin
                 s_axi_awready <= 0;
             end
-            $display("AW always block: active_aw=%0d s_axi_bvalid=%0d s_axi_awvalid=%0d", active_aw, s_axi_bvalid, s_axi_awvalid);
         end
     end
 
-    // Write data handling and response (split for Verilator scheduling)
+    // Write data handling and response
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             s_axi_wready <= 0;
@@ -90,15 +87,12 @@ module axi_sdram_stub (
                 mem[(dbg_addr >> 3) % MEM_WORDS] <= dbg_wdata;
             end
             if (active_aw && !s_axi_bvalid) begin
-                $display("WRITE BLOCK ENTRY: t=%0t active_aw=%0d s_axi_bvalid=%0d", $time, active_aw, s_axi_bvalid);
                 s_axi_wready <= 1;
                 if (s_axi_wvalid && s_axi_wready) begin
-                    $display("WRITE: t=%0t s_axi_wvalid=%0d s_axi_wready=%0d s_axi_wlast=%0d beat_count=%0d cur_awlen=%0d", $time, s_axi_wvalid, s_axi_wready, s_axi_wlast, beat_count, cur_awlen);
                     mem[(cur_awaddr >> 3) % MEM_WORDS] <= s_axi_wdata;
                     cur_awaddr <= next_addr(cur_awaddr, cur_awburst, cur_awlen + 1'b1, cur_awsize);
-                    // Fix: assert bvalid_pending when last beat is accepted (before incrementing beat_count)
+                    // Assert bvalid_pending when last beat is accepted
                     if ((beat_count == cur_awlen) && s_axi_wlast) begin
-                        $display("BVALID trigger condition met: beat_count=%0d cur_awlen=%0d s_axi_wlast=%0d", beat_count, cur_awlen, s_axi_wlast);
                         bvalid_pending <= 1;
                         s_axi_bid <= 4'd0;
                         active_aw <= 0;
@@ -112,25 +106,22 @@ module axi_sdram_stub (
     end
 
 
-        // Response channel: separate always block for BVALID
-        always @(posedge clk or negedge rst_n) begin
-            if (!rst_n) begin
+    // Response channel
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            s_axi_bvalid <= 0;
+            beat_count <= 0;
+        end else begin
+            if (bvalid_pending) begin
+                s_axi_bvalid <= 1;
+                bvalid_pending <= 0;
+            end
+            if (s_axi_bvalid && s_axi_bready) begin
                 s_axi_bvalid <= 0;
                 beat_count <= 0;
-            end else begin
-                if (bvalid_pending) begin
-                    s_axi_bvalid <= 1;
-                    bvalid_pending <= 0;
-                    $display("STUB: BVALID asserted at t=%0t beat_count=%0d cur_awlen=%0d", $time, beat_count, cur_awlen);
-                end
-                if (s_axi_bvalid && s_axi_bready) begin
-                    $display("STUB: BVALID handshake: s_axi_bvalid=%0d s_axi_bready=%0d t=%0t", s_axi_bvalid, s_axi_bready, $time);
-                    s_axi_bvalid <= 0;
-                    beat_count <= 0;
-                    $display("STUB: s_axi_bvalid CLEARED and beat_count reset t=%0t", $time);
-                end
             end
         end
+    end
 
     // next address helper (supports INCR and WRAP)
     function automatic [27:0] next_addr;
@@ -156,47 +147,6 @@ module axi_sdram_stub (
         end
     end
     endfunction
-
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            s_axi_wready <= 0;
-            s_axi_bvalid <= 0;
-            bvalid_pending <= 0;
-        end else begin
-            if (dbg_we) begin
-                mem[(dbg_addr >> 3) % MEM_WORDS] <= dbg_wdata;
-            end
-            // Write data handling
-            if (active_aw && !s_axi_bvalid) begin
-                $display("WRITE BLOCK ENTRY: t=%0t active_aw=%0d s_axi_bvalid=%0d", $time, active_aw, s_axi_bvalid);
-                s_axi_wready <= 1;
-                if (s_axi_wvalid && s_axi_wready) begin
-                    $display("WRITE: t=%0t s_axi_wvalid=%0d s_axi_wready=%0d s_axi_wlast=%0d beat_count=%0d cur_awlen=%0d", $time, s_axi_wvalid, s_axi_wready, s_axi_wlast, beat_count, cur_awlen);
-                    mem[(cur_awaddr >> 3) % MEM_WORDS] <= s_axi_wdata;
-                    cur_awaddr <= next_addr(cur_awaddr, cur_awburst, cur_awlen + 1'b1, cur_awsize);
-                    // Increment beat_count after each accepted beat
-                    beat_count <= beat_count + 1'b1;
-                    // If last beat (AWLEN+1 beats and WLAST), assert BVALID next cycle
-                    if ((beat_count + 1 == cur_awlen + 1) && s_axi_wlast) begin
-                        $display("BVALID will be asserted: beat_count=%0d cur_awlen=%0d wlast=%0d", beat_count + 1, cur_awlen, s_axi_wlast);
-                        $display("STUB: asserting s_axi_bvalid=1 at t=%0t", $time);
-                        s_axi_bvalid <= 1;
-                        s_axi_bid <= 4'd0;
-                        active_aw <= 0;
-                    end
-                end
-            end else begin
-                s_axi_wready <= 0;
-            end
-            // Clear BVALID and reset beat_count on handshake
-            if (s_axi_bvalid && s_axi_bready) begin
-                $display("STUB: BVALID handshake: s_axi_bvalid=%0d s_axi_bready=%0d t=%0t", s_axi_bvalid, s_axi_bready, $time);
-                s_axi_bvalid <= 0;
-                beat_count <= 0;
-                $display("STUB: s_axi_bvalid CLEARED and beat_count reset t=%0t", $time);
-            end
-        end
-    end
 
     // Debug read
     always @(posedge clk) begin

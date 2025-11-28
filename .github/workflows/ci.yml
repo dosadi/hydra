@@ -82,7 +82,7 @@ jobs:
       - name: Build sim
         run: |
           cd sim
-          make -j$(nproc)
+          make FAST=1 -j$(nproc)
 
       - name: Run frame regression test
         id: frame_test

@@ -14,7 +14,7 @@ module voxel_axil_csr #(
     parameter integer VOXEL_GRID_SIZE = 64,
     parameter [15:0]  VENDOR_ID  = 16'h1BAD,
     parameter [15:0]  DEVICE_ID  = 16'h2024,
-    parameter [7:0]   REV_ID     = 8'h02,
+    parameter [7:0]   REV_ID     = 8'h07,
     parameter [7:0]   BUILD_ID   = 8'h01
 )(
     input  wire                     clk,
@@ -1006,5 +1006,19 @@ module voxel_axil_csr #(
         s_axil_rvalid |-> ##[1:8] !s_axil_rvalid;
     endproperty
     rvalid_pulse_width_sva: assert property (rvalid_pulse_width);
+
+    // CDC SVA: Reset recovery time (async assert, sync deassert)
+    property reset_recovery;
+        @(posedge clk)
+        !$rose(rst_n) |-> ##[1:5] $stable(rst_n);  // Reset should be stable after deassertion
+    endproperty
+    reset_recovery_sva: assert property (reset_recovery);
+
+    // CDC SVA: No glitches on reset input
+    property reset_glitch_free;
+        @(posedge clk)
+        !$isunknown(rst_n);
+    endproperty
+    reset_glitch_free_sva: assert property (reset_glitch_free);
 `endif
 endmodule

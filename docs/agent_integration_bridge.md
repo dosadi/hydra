@@ -10,7 +10,7 @@ This repo currently sees work from multiple AI instances/teams. To keep the hand
 
 ## Inter-AI Client Interaction
 
-- **Align on the shared instructions** before tinkering: review `AGENTS.md`, `CLAUDE.md`, and `docs/ai_resource_strategy.md` to understand the repo structure, build/test commands, and AI probe requirements each client should honor.
+- **Align on the shared instructions** before tinkering: review `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, and `docs/ai_resource_strategy.md` to understand the repo structure, build/test commands, and AI probe requirements each client should honor.
 - **Keep the TODO trackers synchronized** by updating `docs/TODO_SESSION_CONTINUATION_2025_11_25.md`, `docs/TODO_MASTER_INDEX.md`, and the relevant tracker file (e.g., `docs/todo/todo_ai_development.md`, `docs/todo/todo_extension_interface.md`) with your priority tag and next action(s) before handing back control.
 - **Document exclusive or high-risk work** (e.g., sim outputs, automation changes) with a reference to `docs/issue_draft_lock_coordination.md`, noting if you temporarily “lock” a resource or run long jobs so future agents can coordinate without stepping on each other.
 - **Actionable handoff checklist**:
@@ -22,10 +22,10 @@ This repo currently sees work from multiple AI instances/teams. To keep the hand
 ## Inter-AI Coordination Log
 
 - **Session Date:** 2025-11-26 (this update)
-  - **Files Touched:** `docs/agent_integration_bridge.md`
-  - **Key Actions:** Added the Inter-AI Client Interaction section to relate `AGENTS.md`/`CLAUDE.md`/`docs/ai_resource_strategy.md` to the TODO coordination workflow plus the actionable checklist.
-  - **Next Priorities:** Tag the relevant tracker(s) you touched (e.g., `docs/todo/todo_ai_development.md`) with a `[P*]` bullet describing the follow-up research or doc cross-link you expect the next client to handle.
-  - **Blockers / Notes:** None beyond the usual automation probes invoked by this session.
+  - **Files Touched:** `docs/agent_integration_bridge.md`, `AGENTS.md`, `CODEX.md`, `docs/agent_template.md`
+  - **Key Actions:** Created comprehensive CODEX.md documentation, updated AGENTS.md to properly document multiple agents, added agent_template.md for future agent onboarding, updated agent integration bridge references
+  - **Next Priorities:** Consider adding documentation for additional AI agents (Cursor, Windsurf, etc.), implement external chat client integration webhook handler
+  - **Blockers / Notes:** None - agent documentation suite now complete for Claude and Codex
 
 ## Handoff Template
 

@@ -6,9 +6,6 @@
 #include <cstdint>
 #include <string>
 
-// Forward declarations
-class Vvoxel_framebuffer_top___024root;
-
 // Input state structure
 struct InputState {
     bool forward = false;
@@ -54,7 +51,7 @@ public:
     // Event handlers with required parameters
     void handle_window_event(const SDL_WindowEvent& ev, bool headless_backend);
     void handle_key_event(const SDL_KeyboardEvent& ev, bool log_keys, int& log_keys_count,
-                         Vvoxel_framebuffer_top___024root* root, bool headless_backend);
+                         bool headless_backend);
     void handle_mouse_motion(const SDL_MouseMotionEvent& ev, float& yaw, float& pitch,
                            float mouse_sens, bool invert_y_mouse);
 

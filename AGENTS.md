@@ -1,4 +1,49 @@
-# Repository Guidelines
+# AI Agent Documentation Suite
+
+This repository supports multiple AI coding assistants. Each agent has specific guidance and coordination protocols documented below.
+
+## Supported Agents
+
+### Claude Code
+- **Documentation**: `CLAUDE.md`
+- **Primary Interface**: claude.ai/code
+- **Specialties**: Comprehensive project understanding, documentation, multi-file changes
+- **Coordination**: Updates `docs/agent_integration_bridge.md` for handoffs
+
+### Codex CLI
+- **Documentation**: `CODEX.md`
+- **Primary Interface**: GitHub Copilot CLI
+- **Specialties**: Terminal-based development, lock coordination, session management
+- **Coordination**: Uses lock broker for multi-session safety, updates TODO trackers
+
+### General Agent Guidelines
+- **Documentation**: This file (`AGENTS.md`)
+- **Applies to**: Any AI assistant working on the repository
+- **Coordination**: Follow protocols in `docs/agent_integration_bridge.md`
+
+## Agent Coordination Protocols
+
+### Session Management
+1. **Check current state**: Review `docs/agent_integration_bridge.md` and `docs/TODO_SESSION_CONTINUATION_2025_11_25.md`
+2. **Run health checks**: Execute `scripts/todo_sweep.py` and `scripts/check_required_files.py`
+3. **Document work**: Update continuity logs and TODO trackers
+4. **Coordinate locks**: Use lock broker for shared resources (Codex CLI)
+
+### File Organization
+- **Agent-specific docs**: `CLAUDE.md`, `CODEX.md`, etc.
+- **Coordination docs**: `docs/agent_integration_bridge.md`, `docs/ai_resource_strategy.md`
+- **Lock coordination**: `docs/rfc/lock_coordination.md`, `prototypes/codex-lock-broker/`
+
+### Adding New Agents
+When adding support for a new AI agent:
+
+1. Create `{AGENT_NAME}.md` in repository root
+2. Follow the template structure from existing agent docs
+3. Update this file to include the new agent
+4. Add agent-specific coordination protocols to `docs/agent_integration_bridge.md`
+5. Use `docs/agent_template.md` as a starting point for new agent documentation
+
+## Repository Guidelines
 
 ## Project Structure & Module Organization
 - `rtl/` houses the SystemVerilog core; `voxel_framebuffer_top.sv` is the top.

@@ -1,34 +1,25 @@
-#include "backend_ops.h"
+#include "backend_gl.h"
 
 #if defined(HYDRA_ENABLE_GL) && (defined(__has_include) ? __has_include(<SDL2/SDL.h>) && __has_include(<SDL2/SDL_opengl.h>) : 0)
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+GLBackend::GLBackend() : context_(nullptr) {}
 
-struct GlContext {
-    SDL_Window*   window = nullptr;
-    SDL_GLContext glctx  = nullptr;
-    int           width  = 0;
-    int           height = 0;
-};
-
-static void gl_shutdown(PlatformContext& ctx) {
-    if (!ctx.user) return;
-    GlContext* gc = static_cast<GlContext*>(ctx.user);
-    if (gc->glctx) {
-        SDL_GL_DeleteContext(gc->glctx);
-        gc->glctx = nullptr;
+GLBackend::~GLBackend() {
+    if (context_) {
+        if (context_->glctx) {
+            SDL_GL_DeleteContext(context_->glctx);
+            context_->glctx = nullptr;
+        }
+        if (context_->window) {
+            SDL_DestroyWindow(context_->window);
+            context_->window = nullptr;
+        }
+        delete context_;
+        context_ = nullptr;
     }
-    if (gc->window) {
-        SDL_DestroyWindow(gc->window);
-        gc->window = nullptr;
-    }
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
-    delete gc;
-    ctx.user = nullptr;
 }
 
-static bool gl_init(PlatformContext& ctx, const PlatformConfig& cfg) {
+bool GLBackend::init(PlatformContext& ctx, const PlatformConfig& cfg) {
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0)
         return false;
 
@@ -69,22 +60,22 @@ static bool gl_init(PlatformContext& ctx, const PlatformConfig& cfg) {
     glDisable(GL_DEPTH_TEST);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    GlContext* gc = new GlContext();
-    gc->window = window;
-    gc->glctx = glctx;
-    gc->width = cfg.width;
-    gc->height = cfg.height;
-    ctx.user = gc;
+    context_ = new GLContext();
+    context_->window = window;
+    context_->glctx = glctx;
+    context_->width = cfg.width;
+    context_->height = cfg.height;
+    ctx.user = context_;
     return true;
 }
 
-static void gl_present(PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
-    if (!ctx.user || !pixels || w <= 0 || h <= 0) return;
-    GlContext* gc = static_cast<GlContext*>(ctx.user);
-    SDL_GL_MakeCurrent(gc->window, gc->glctx);
+void GLBackend::present(PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
+    if (!context_ || !pixels || w <= 0 || h <= 0) return;
+
+    SDL_GL_MakeCurrent(context_->window, context_->glctx);
 
     int win_w = 0, win_h = 0;
-    SDL_GetWindowSize(gc->window, &win_w, &win_h);
+    SDL_GetWindowSize(context_->window, &win_w, &win_h);
     glViewport(0, 0, win_w, win_h);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -102,21 +93,24 @@ static void gl_present(PlatformContext& ctx, const uint32_t* pixels, int w, int 
     glRasterPos2i(-1, 1);
     glDrawPixels(w, h, GL_BGRA, GL_UNSIGNED_BYTE, pixels);
 
-    SDL_GL_SwapWindow(gc->window);
+    SDL_GL_SwapWindow(context_->window);
 }
 
-BackendOps get_ops_gl() {
-    BackendOps ops;
-    ops.init = gl_init;
-    ops.present = gl_present;
-    ops.shutdown = gl_shutdown;
-    return ops;
-}
-
-#else
-
-BackendOps get_ops_gl() {
-    return make_stub_ops();
+void GLBackend::shutdown(PlatformContext& ctx) {
+    if (context_) {
+        if (context_->glctx) {
+            SDL_GL_DeleteContext(context_->glctx);
+            context_->glctx = nullptr;
+        }
+        if (context_->window) {
+            SDL_DestroyWindow(context_->window);
+            context_->window = nullptr;
+        }
+        delete context_;
+        context_ = nullptr;
+    }
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    ctx.user = nullptr;
 }
 
 #endif

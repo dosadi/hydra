@@ -10,6 +10,13 @@
 // Include backend classes
 #include "backend_sdl.h"
 #include "backend_headless.h"
+#include "backend_aalib.h"
+#if defined(HYDRA_ENABLE_GL) && (defined(__has_include) ? __has_include(<SDL2/SDL.h>) && __has_include(<SDL2/SDL_opengl.h>) : 0)
+#include "backend_gl.h"
+#endif
+#if defined(HYDRA_ENABLE_VULKAN) && (defined(__has_include) ? __has_include(<vulkan/vulkan.h>) && __has_include(<SDL2/SDL_vulkan.h>) : 0)
+#include "backend_vulkan.h"
+#endif
 // TODO: include others
 
 static bool env_equals(const char* key, const char* val) {
@@ -104,12 +111,7 @@ void shutdown_backend(PlatformContext& ctx) {
 }
 
 void platform_log_capabilities() {
-    std::fprintf(stderr, "[hydra] compiled backends: SDL");
-#ifdef HYDRA_ENABLE_AALIB
-    std::fprintf(stderr, " AAlib");
-#else
-    std::fprintf(stderr, " AAlib");
-#endif
+    std::fprintf(stderr, "[hydra] compiled backends: SDL AAlib");
 #ifdef HYDRA_ENABLE_GL
     std::fprintf(stderr, " GL");
 #endif
@@ -131,6 +133,16 @@ BackendPtr create_backend(PlatformBackend backend) {
             return std::make_unique<SDLBackend>();
         case PlatformBackend::Headless:
             return std::make_unique<HeadlessBackend>();
+        case PlatformBackend::AALIB:
+            return std::make_unique<AALibBackend>();
+#if defined(HYDRA_ENABLE_GL) && (defined(__has_include) ? __has_include(<SDL2/SDL.h>) && __has_include(<SDL2/SDL_opengl.h>) : 0)
+        case PlatformBackend::GL:
+            return std::make_unique<GLBackend>();
+#endif
+#if defined(HYDRA_ENABLE_VULKAN) && (defined(__has_include) ? __has_include(<vulkan/vulkan.h>) && __has_include(<SDL2/SDL_vulkan.h>) : 0)
+        case PlatformBackend::Vulkan:
+            return std::make_unique<VulkanBackend>();
+#endif
         // TODO: add other backends
         default:
             return nullptr;

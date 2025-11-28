@@ -1,0 +1,45 @@
+name: Automated TODO Management
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  todo-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyyaml requests
+    
+    - name: Run TODO sweep
+      run: |
+        python scripts/todo_sweep.py --check
+    
+    - name: Check TODO uniqueness
+      run: |
+        python scripts/check_todo_unique.py
+    
+    - name: Generate TODO report
+      run: |
+        python scripts/todo_sweep.py --report > todo_report.md
+    
+    - name: Upload TODO report
+      uses: actions/upload-artifact@v3
+      with:
+        name: todo-report
+        path: todo_report.md

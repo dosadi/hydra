@@ -19,13 +19,14 @@
 
 ## Complete Tracker List (Alphabetical)
 
-### Meta Documents (6 files)
+### Meta Documents (7 files)
 
 | File | Purpose | Lines |
 |------|---------|-------|
 | `TODO_README.md` | Quick start, navigation, system overview | ~320 |
 | `TODO_MASTER_INDEX.md` | This file - complete tracker reference | ~300 |
 | `TODO_SESSION_CONTINUATION_2025_11_25.md` | Recent session updates, cleanup work | ~480 |
+| `external_chat_client_integration.md` | External chat client input processing system | ~120 |
 | `todo_dependency_map.md` | Tracker dependency matrix | ~100 |
 | `todo_ai_development.md` | AI tooling/workflow TODOs | ~40 |
 | `todo_system_summary_2025_11_25.md` | Session summary, metrics, recommendations | ~350 |

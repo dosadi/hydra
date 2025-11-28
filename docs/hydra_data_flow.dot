@@ -1,0 +1,93 @@
+digraph hydra_data_flow {
+  rankdir=TB;
+  node [shape=box, fontsize=10, style=filled];
+
+  // RTL Layer
+  subgraph cluster_rtl {
+    label="RTL Layer (FPGA/Verilator)";
+    style=filled; color=lightblue;
+
+    voxel_rtl [label="voxel_framebuffer_top.sv\n(Raycaster + Voxel World)", fillcolor=lightcyan];
+    csr_rtl [label="voxel_axil_csr.sv\n(CSR Registers)", fillcolor=lightcyan];
+    dma_rtl [label="axi_dma_stub.sv\n(DMA Engine)", fillcolor=lightcyan];
+    sdram_rtl [label="axi_sdram_stub.sv\n(SDRAM Stub)", fillcolor=lightcyan];
+    hdmi_rtl [label="axi_stream_sink_stub.sv\n(HDMI Sink)", fillcolor=lightcyan];
+  }
+
+  // PCIe Layer
+  subgraph cluster_pcie {
+    label="PCIe Interface";
+    style=filled; color=lightyellow;
+
+    bar0 [label="BAR0\nAXI-Lite Window", fillcolor=lightgoldenrod1];
+    bar1 [label="BAR1\nAXI4 Memory Window", fillcolor=lightgoldenrod1];
+    litepcie [label="LitePCIe Core\n(Endpoint + DMA)", fillcolor=lightgoldenrod1, shape=box3d];
+  }
+
+  // Driver Layer
+  subgraph cluster_driver {
+    label="Driver Layer (libhydra)";
+    style=filled; color=lightgreen;
+
+    libhydra [label="libhydra.so\n(C API)", fillcolor=palegreen];
+    ioctl_csr [label="IOCTL: CSR Access\n(camera/flags/sel)", fillcolor=palegreen];
+    ioctl_dma [label="IOCTL: DMA Control\n(src/dst/len/start)", fillcolor=palegreen];
+    mmap_fb [label="MMAP: Framebuffer\n(pixel data)", fillcolor=palegreen];
+  }
+
+  // Viewer Layer
+  subgraph cluster_viewer {
+    label="Viewer Layer (sim_voxel)";
+    style=filled; color=lightcoral;
+
+    viewer_main [label="SDL Event Loop\n(input handling)", fillcolor=lightsalmon];
+    renderer [label="Renderer\n(texture upload + HUD)", fillcolor=lightsalmon];
+    framebuffer [label="CPU Framebuffer\n(ARGB8888 pixels)", fillcolor=lightsalmon];
+  }
+
+  // Data Flow Edges
+
+  // RTL Internal Connections
+  csr_rtl -> voxel_rtl [label="camera/flags/sel\nstart_frame"];
+  csr_rtl -> dma_rtl [label="DMA CSRs"];
+  dma_rtl -> sdram_rtl [label="AXI4 DMA"];
+  voxel_rtl -> hdmi_rtl [label="AXI-Stream RGB\n(pixel data)"];
+
+  // PCIe Connections
+  csr_rtl -> bar0 [label="AXI-Lite"];
+  sdram_rtl -> bar1 [label="AXI4"];
+  dma_rtl -> bar1 [label="AXI4"];
+
+  // Driver to PCIe
+  libhydra -> bar0 [label="CSR read/write"];
+  libhydra -> bar1 [label="DMA setup + data"];
+
+  // Driver API
+  libhydra -> ioctl_csr [label="hydra_csr_*()"];
+  libhydra -> ioctl_dma [label="hydra_dma_*()"];
+  libhydra -> mmap_fb [label="hydra_mmap_fb()"];
+
+  // Viewer to Driver
+  viewer_main -> libhydra [label="libhydra API calls"];
+  viewer_main -> ioctl_csr [label="camera control"];
+  viewer_main -> ioctl_dma [label="frame capture"];
+  viewer_main -> mmap_fb [label="pixel access"];
+
+  // Viewer Internal
+  mmap_fb -> framebuffer [label="pixel data"];
+  framebuffer -> renderer [label="texture upload"];
+  renderer -> viewer_main [label="render to window"];
+
+  // Key Data Paths (highlighted)
+  voxel_rtl -> hdmi_rtl [color=red, penwidth=2, label="PIXEL STREAM"];
+  hdmi_rtl -> bar1 [color=red, penwidth=2, label="FRAME DATA"];
+  bar1 -> mmap_fb [color=red, penwidth=2, label="MMAP PIXELS"];
+  csr_rtl -> bar0 [color=blue, penwidth=2, label="CSR CONTROL"];
+  bar0 -> ioctl_csr [color=blue, penwidth=2, label="IOCTL CSR"];
+  dma_rtl -> bar1 [color=green, penwidth=2, label="DMA CONTROL"];
+  bar1 -> ioctl_dma [color=green, penwidth=2, label="IOCTL DMA"];
+
+  // Legend
+  legend [label="Legend:\nRED: Pixel Data Flow\nBLUE: Control Flow\nGREEN: DMA Flow", shape=note, fontsize=8, fillcolor=white, pos="0,0!"];
+}</content>
+<parameter name="filePath">/workspaces/hydra/docs/hydra_data_flow.dot

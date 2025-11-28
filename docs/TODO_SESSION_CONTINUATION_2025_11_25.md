@@ -39,6 +39,11 @@ Blockers / Notes: Mixed-signal utilities are not installed on this machine; rele
 - **DONE:** Verified `todo_sweep.py` covers all 60 tracker files including 8 new ones (2025-11-25)
 - **DONE:** Recorded action items in major trackers with session references (build_ci, documentation, hardware_validation, security, board_fpga, mesa_drivers) (2025-11-25)
 - **DONE:** Verified TODO system integrity (all checks pass, no stale references) (2025-11-25)
+- **DONE [P0]:** Completed all P0 synthesis infrastructure tasks (SDC constraints, CDC audit, synchronizer primitives) (2025-11-28)
+- **DONE [P0]:** Completed DRAM stub RTL hardening (ready gating, SVAs for handshake stability) (2025-11-28)
+- **DONE [P0]:** Updated hydra_spec.md with complete 0.0.7 register map and CSR defaults (2025-11-28)
+- **DONE [P0]:** Documented AXI-Stream backpressure protocol for IP integration (2025-11-28)
+- **DONE [P0]:** Enhanced agent templates and top-level automation orchestrators (2025-11-28)
 
 ### Remaining
 None - all continuation TODOs completed!
@@ -103,7 +108,7 @@ This checklist tracks repository hygiene and maintenance tasks identified during
 - [x] Update main README.md with TODO system references (completed 2025-11-25 - added comprehensive TODO tracking section)
 
 ### Release Scripts & Automation
-- [ ] Update release checklist with new tracker files - See [`docs/todo/todo_documentation.md`](./todo/todo_documentation.md) (P0)
+- [ ] Update release checklist with new tracker files - See [`docs/todo/todo_documentation.md`](./todo/todo_documentation.md) **[P0]**
 - [x] Add automation watchdog coverage for new trackers (completed 2025-11-25 - verified all scripts operational, documented results)
 - [x] Verify `scripts/todo_sweep.py` includes all 60 tracker files (completed 2025-11-25 - verified all trackers scanned)
 - [x] Update `scripts/check_required_files.py` to verify new infrastructure trackers exist (completed 2025-11-25 - already implemented with check_todo_files() function)
@@ -116,9 +121,9 @@ This checklist tracks repository hygiene and maintenance tasks identified during
 - [x] Check for duplicate TODO items across trackers using `scripts/check_todo_unique.py` (completed 2025-11-25 - no duplicates found)
 
 ### Mixed-Signal Environment (if applicable)
-- [ ] Document analog/mixed-signal simulation requirements - See [`docs/mixed_signal_environment.md`](./mixed_signal_environment.md)
-- [ ] Integrate VAMS/Spice/Xyce references into relevant hardware trackers
-- [ ] Link board simulation scripts to validation workflows - See [`docs/todo/todo_board_hardware_design.md`](./todo/todo_board_hardware_design.md) (P2)
+- [ ] Document analog/mixed-signal simulation requirements - See [`docs/mixed_signal_environment.md`](./mixed_signal_environment.md) **[P2]**
+- [ ] Integrate VAMS/Spice/Xyce references into relevant hardware trackers **[P2]**
+- [ ] Link board simulation scripts to validation workflows - See [`docs/todo/todo_board_hardware_design.md`](./todo/todo_board_hardware_design.md) **[P2]**
 
 **Completion Status:** 14/16 items completed (87.5%)
 **Remaining:** 2 items (release checklist update, mixed-signal environment docs - both P2/P3)

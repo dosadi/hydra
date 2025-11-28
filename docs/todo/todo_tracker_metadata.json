@@ -1,8 +1,36 @@
 {
+  "TODO_ACTIONS.md": {
+    "done_lines": 0,
+    "last_updated": "2025-11-27T17:50:38.426288",
+    "line_count": 80,
+    "path": "docs/TODO_ACTIONS.md",
+    "priority": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0,
+      "unknown": 4
+    },
+    "todo_lines": 4
+  },
+  "TODO_ISSUES.md": {
+    "done_lines": 0,
+    "last_updated": "2025-11-27T22:05:34.302762",
+    "line_count": 71,
+    "path": "docs/TODO_ISSUES.md",
+    "priority": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0,
+      "unknown": 2
+    },
+    "todo_lines": 2
+  },
   "TODO_MASTER_INDEX.md": {
     "done_lines": 4,
-    "last_updated": "2025-11-26T13:17:40.814834",
-    "line_count": 383,
+    "last_updated": "2025-11-27T23:00:42.755553",
+    "line_count": 384,
     "path": "docs/TODO_MASTER_INDEX.md",
     "priority": {
       "P0": 0,
@@ -15,21 +43,21 @@
   },
   "TODO_PRIORITY_ANALYSIS_2025_11_25.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:45:23.205133",
-    "line_count": 158,
+    "last_updated": "2025-11-28T00:20:55.618800",
+    "line_count": 189,
     "path": "docs/TODO_PRIORITY_ANALYSIS_2025_11_25.md",
     "priority": {
       "P0": 0,
       "P1": 4,
       "P2": 7,
       "P3": 2,
-      "unknown": 5
+      "unknown": 4
     },
-    "todo_lines": 18
+    "todo_lines": 17
   },
   "TODO_README.md": {
     "done_lines": 6,
-    "last_updated": "2025-11-26T13:17:40.814834",
+    "last_updated": "2025-11-26T20:18:41.906211",
     "line_count": 341,
     "path": "docs/TODO_README.md",
     "priority": {
@@ -42,9 +70,9 @@
     "todo_lines": 11
   },
   "TODO_SESSION_CONTINUATION_2025_11_25.md": {
-    "done_lines": 7,
-    "last_updated": "2025-11-26T13:17:40.826833",
-    "line_count": 610,
+    "done_lines": 12,
+    "last_updated": "2025-11-28T00:20:40.974801",
+    "line_count": 615,
     "path": "docs/TODO_SESSION_CONTINUATION_2025_11_25.md",
     "priority": {
       "P0": 0,
@@ -55,21 +83,35 @@
     },
     "todo_lines": 19
   },
-  "_aggregate": {
-    "done_lines": 200,
+  "TODO_SUMMARY.md": {
+    "done_lines": 0,
+    "last_updated": "2025-11-27T17:50:38.428288",
+    "line_count": 50,
+    "path": "docs/TODO_SUMMARY.md",
     "priority": {
-      "P0": 88,
-      "P1": 391,
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0,
+      "unknown": 7
+    },
+    "todo_lines": 7
+  },
+  "_aggregate": {
+    "done_lines": 217,
+    "priority": {
+      "P0": 81,
+      "P1": 389,
       "P2": 893,
       "P3": 511,
-      "unknown": 113
+      "unknown": 127
     },
-    "todo_lines": 1996,
-    "tracker_count": 101
+    "todo_lines": 2001,
+    "tracker_count": 104
   },
   "todo_3d_blitter.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:40.938833",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 20,
     "path": "docs/todo/todo_3d_blitter.md",
     "priority": {
@@ -83,7 +125,7 @@
   },
   "todo_ai_dashboard.md": {
     "done_lines": 1,
-    "last_updated": "2025-11-26T14:15:26.344575",
+    "last_updated": "2025-11-27T22:19:05.615710",
     "line_count": 43,
     "path": "docs/todo/todo_ai_dashboard.md",
     "priority": {
@@ -97,7 +139,7 @@
   },
   "todo_ai_development.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T00:29:05.294302",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 26,
     "path": "docs/todo/todo_ai_development.md",
     "priority": {
@@ -111,7 +153,7 @@
   },
   "todo_axi_lite_coverage.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:40.962833",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 9,
     "path": "docs/todo/todo_axi_lite_coverage.md",
     "priority": {
@@ -125,7 +167,7 @@
   },
   "todo_axi_mem.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T23:09:05.165138",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 23,
     "path": "docs/todo/todo_axi_mem.md",
     "priority": {
@@ -139,7 +181,7 @@
   },
   "todo_board_fpga.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T23:11:14.684242",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 290,
     "path": "docs/todo/todo_board_fpga.md",
     "priority": {
@@ -153,7 +195,7 @@
   },
   "todo_board_hardware_design.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:05:35.633080",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 717,
     "path": "docs/todo/todo_board_hardware_design.md",
     "priority": {
@@ -167,7 +209,7 @@
   },
   "todo_board_level.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T22:04:14.985337",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 16,
     "path": "docs/todo/todo_board_level.md",
     "priority": {
@@ -181,7 +223,7 @@
   },
   "todo_build_ci.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T23:10:27.972554",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 20,
     "path": "docs/todo/todo_build_ci.md",
     "priority": {
@@ -195,7 +237,7 @@
   },
   "todo_build_devtools.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T19:55:53.832905",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 23,
     "path": "docs/todo/todo_build_devtools.md",
     "priority": {
@@ -209,7 +251,7 @@
   },
   "todo_build_tooling.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:21:00.403013",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 23,
     "path": "docs/todo/todo_build_tooling.md",
     "priority": {
@@ -223,7 +265,7 @@
   },
   "todo_bus_infrastructure.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T03:31:58.562645",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 9,
     "path": "docs/todo/todo_bus_infrastructure.md",
     "priority": {
@@ -237,7 +279,7 @@
   },
   "todo_chiplet_integration.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:25:07.398407",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 17,
     "path": "docs/todo/todo_chiplet_integration.md",
     "priority": {
@@ -251,7 +293,7 @@
   },
   "todo_clustering.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:03:15.043719",
+    "last_updated": "2025-11-26T20:18:41.910211",
     "line_count": 36,
     "path": "docs/todo/todo_clustering.md",
     "priority": {
@@ -265,7 +307,7 @@
   },
   "todo_community_contributors.md": {
     "done_lines": 1,
-    "last_updated": "2025-11-25T18:04:05.760317",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 441,
     "path": "docs/todo/todo_community_contributors.md",
     "priority": {
@@ -279,7 +321,7 @@
   },
   "todo_compression.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T12:28:38.602553",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 78,
     "path": "docs/todo/todo_compression.md",
     "priority": {
@@ -293,7 +335,7 @@
   },
   "todo_content_creation.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:52:17.821837",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 31,
     "path": "docs/todo/todo_content_creation.md",
     "priority": {
@@ -307,7 +349,7 @@
   },
   "todo_crossbar.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:23:57.558579",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 25,
     "path": "docs/todo/todo_crossbar.md",
     "priority": {
@@ -321,7 +363,7 @@
   },
   "todo_csr_coverage.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T03:18:11.540336",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 18,
     "path": "docs/todo/todo_csr_coverage.md",
     "priority": {
@@ -335,7 +377,7 @@
   },
   "todo_data_formats.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T18:12:47.479743",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 377,
     "path": "docs/todo/todo_data_formats.md",
     "priority": {
@@ -349,7 +391,7 @@
   },
   "todo_ddr_sdram.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T00:45:18.816295",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 38,
     "path": "docs/todo/todo_ddr_sdram.md",
     "priority": {
@@ -363,7 +405,7 @@
   },
   "todo_debugging_tools.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T23:05:43.870752",
+    "last_updated": "2025-11-26T20:36:44.272200",
     "line_count": 422,
     "path": "docs/todo/todo_debugging_tools.md",
     "priority": {
@@ -377,7 +419,7 @@
   },
   "todo_dependency_map.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:40.982833",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 31,
     "path": "docs/todo/todo_dependency_map.md",
     "priority": {
@@ -391,7 +433,7 @@
   },
   "todo_deployment_operations.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T00:50:56.578382",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 471,
     "path": "docs/todo/todo_deployment_operations.md",
     "priority": {
@@ -405,7 +447,7 @@
   },
   "todo_depth_buffer.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.002833",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 21,
     "path": "docs/todo/todo_depth_buffer.md",
     "priority": {
@@ -419,7 +461,7 @@
   },
   "todo_depth_reemissure.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.002833",
+    "last_updated": "2025-11-26T20:37:06.464200",
     "line_count": 17,
     "path": "docs/todo/todo_depth_reemissure.md",
     "priority": {
@@ -433,7 +475,7 @@
   },
   "todo_depth_reemissure_overview.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T03:23:12.395740",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 7,
     "path": "docs/todo/todo_depth_reemissure_overview.md",
     "priority": {
@@ -447,7 +489,7 @@
   },
   "todo_dma_advanced.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:22:48.242749",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 19,
     "path": "docs/todo/todo_dma_advanced.md",
     "priority": {
@@ -461,7 +503,7 @@
   },
   "todo_dma_controller.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T12:44:40.882861",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 12,
     "path": "docs/todo/todo_dma_controller.md",
     "priority": {
@@ -475,7 +517,7 @@
   },
   "todo_dma_fixture.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T03:48:03.956050",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 10,
     "path": "docs/todo/todo_dma_fixture.md",
     "priority": {
@@ -489,7 +531,7 @@
   },
   "todo_dma_hang_policy.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T22:04:14.985337",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 29,
     "path": "docs/todo/todo_dma_hang_policy.md",
     "priority": {
@@ -503,7 +545,7 @@
   },
   "todo_dma_hotplug.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T20:30:09.426101",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 27,
     "path": "docs/todo/todo_dma_hotplug.md",
     "priority": {
@@ -517,8 +559,8 @@
   },
   "todo_dma_pcie.md": {
     "done_lines": 10,
-    "last_updated": "2025-11-25T23:52:22.225458",
-    "line_count": 97,
+    "last_updated": "2025-11-27T10:43:23.878385",
+    "line_count": 101,
     "path": "docs/todo/todo_dma_pcie.md",
     "priority": {
       "P0": 0,
@@ -531,7 +573,7 @@
   },
   "todo_dma_structured_logging.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T20:29:59.186131",
+    "last_updated": "2025-11-26T20:18:41.911211",
     "line_count": 28,
     "path": "docs/todo/todo_dma_structured_logging.md",
     "priority": {
@@ -545,7 +587,7 @@
   },
   "todo_dma_trace_artifacts.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T20:30:04.818115",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 23,
     "path": "docs/todo/todo_dma_trace_artifacts.md",
     "priority": {
@@ -558,22 +600,22 @@
     "todo_lines": 7
   },
   "todo_documentation.md": {
-    "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.018833",
-    "line_count": 339,
+    "done_lines": 4,
+    "last_updated": "2025-11-28T00:16:23.199805",
+    "line_count": 351,
     "path": "docs/todo/todo_documentation.md",
     "priority": {
-      "P0": 6,
+      "P0": 3,
       "P1": 10,
       "P2": 13,
       "P3": 6,
       "unknown": 2
     },
-    "todo_lines": 37
+    "todo_lines": 34
   },
   "todo_dram_axi.md": {
     "done_lines": 4,
-    "last_updated": "2025-11-26T02:06:09.421015",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 94,
     "path": "docs/todo/todo_dram_axi.md",
     "priority": {
@@ -586,22 +628,22 @@
     "todo_lines": 54
   },
   "todo_dram_stub.md": {
-    "done_lines": 1,
-    "last_updated": "2025-11-25T22:04:14.985337",
+    "done_lines": 3,
+    "last_updated": "2025-11-28T00:15:20.773807",
     "line_count": 13,
     "path": "docs/todo/todo_dram_stub.md",
     "priority": {
-      "P0": 2,
+      "P0": 0,
       "P1": 2,
       "P2": 4,
       "P3": 0,
       "unknown": 0
     },
-    "todo_lines": 8
+    "todo_lines": 6
   },
   "todo_examples_demos.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T00:53:09.145796",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 392,
     "path": "docs/todo/todo_examples_demos.md",
     "priority": {
@@ -615,7 +657,7 @@
   },
   "todo_extension_interface.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:59:21.673666",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 25,
     "path": "docs/todo/todo_extension_interface.md",
     "priority": {
@@ -629,7 +671,7 @@
   },
   "todo_fpga.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T00:54:20.205508",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 16,
     "path": "docs/todo/todo_fpga.md",
     "priority": {
@@ -643,7 +685,7 @@
   },
   "todo_gl_support.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.018833",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 23,
     "path": "docs/todo/todo_gl_support.md",
     "priority": {
@@ -657,7 +699,7 @@
   },
   "todo_go_to_market.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:01:54.757458",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 28,
     "path": "docs/todo/todo_go_to_market.md",
     "priority": {
@@ -671,8 +713,8 @@
   },
   "todo_hardware_validation.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.030833",
-    "line_count": 455,
+    "last_updated": "2025-11-27T10:43:23.878385",
+    "line_count": 457,
     "path": "docs/todo/todo_hardware_validation.md",
     "priority": {
       "P0": 10,
@@ -685,7 +727,7 @@
   },
   "todo_hbm_integration.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:50:15.247096",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 12,
     "path": "docs/todo/todo_hbm_integration.md",
     "priority": {
@@ -699,7 +741,7 @@
   },
   "todo_hdmi.md": {
     "done_lines": 2,
-    "last_updated": "2025-11-26T00:58:31.088602",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 63,
     "path": "docs/todo/todo_hdmi.md",
     "priority": {
@@ -713,7 +755,7 @@
   },
   "todo_hdmi_display.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:14:03.536002",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 17,
     "path": "docs/todo/todo_hdmi_display.md",
     "priority": {
@@ -727,7 +769,7 @@
   },
   "todo_hdmi_stream.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T00:59:49.424347",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 15,
     "path": "docs/todo/todo_hdmi_stream.md",
     "priority": {
@@ -741,7 +783,7 @@
   },
   "todo_home_faq_legacy.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:54:36.785866",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 19,
     "path": "docs/todo/todo_home_faq_legacy.md",
     "priority": {
@@ -755,7 +797,7 @@
   },
   "todo_ic_packaging.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:19:55.487170",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 20,
     "path": "docs/todo/todo_ic_packaging.md",
     "priority": {
@@ -769,8 +811,8 @@
   },
   "todo_ip_integration.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.062834",
-    "line_count": 471,
+    "last_updated": "2025-11-27T10:43:23.879385",
+    "line_count": 473,
     "path": "docs/todo/todo_ip_integration.md",
     "priority": {
       "P0": 11,
@@ -783,7 +825,7 @@
   },
   "todo_libhydra.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:58:15.513737",
+    "last_updated": "2025-11-26T20:18:41.912211",
     "line_count": 18,
     "path": "docs/todo/todo_libhydra.md",
     "priority": {
@@ -796,22 +838,22 @@
     "todo_lines": 9
   },
   "todo_master.md": {
-    "done_lines": 133,
-    "last_updated": "2025-11-26T13:17:41.082834",
-    "line_count": 272,
+    "done_lines": 136,
+    "last_updated": "2025-11-27T23:06:05.423533",
+    "line_count": 303,
     "path": "docs/todo/todo_master.md",
     "priority": {
       "P0": 0,
-      "P1": 2,
+      "P1": 0,
       "P2": 117,
       "P3": 1,
-      "unknown": 0
+      "unknown": 2
     },
     "todo_lines": 120
   },
   "todo_memory_system.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T12:30:01.194330",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 9,
     "path": "docs/todo/todo_memory_system.md",
     "priority": {
@@ -825,7 +867,7 @@
   },
   "todo_mesa_drivers.md": {
     "done_lines": 1,
-    "last_updated": "2025-11-26T01:05:56.571258",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 383,
     "path": "docs/todo/todo_mesa_drivers.md",
     "priority": {
@@ -839,7 +881,7 @@
   },
   "todo_meta_system.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:06:49.980917",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 22,
     "path": "docs/todo/todo_meta_system.md",
     "priority": {
@@ -853,7 +895,7 @@
   },
   "todo_meta_todo_plan.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:06:54.892908",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 34,
     "path": "docs/todo/todo_meta_todo_plan.md",
     "priority": {
@@ -867,7 +909,7 @@
   },
   "todo_multicore.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:26:08.938293",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 16,
     "path": "docs/todo/todo_multicore.md",
     "priority": {
@@ -881,7 +923,7 @@
   },
   "todo_multiplatform_builds.md": {
     "done_lines": 2,
-    "last_updated": "2025-11-26T01:09:39.362655",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 17,
     "path": "docs/todo/todo_multiplatform_builds.md",
     "priority": {
@@ -895,7 +937,7 @@
   },
   "todo_performance.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:11:47.866320",
+    "last_updated": "2025-11-26T20:36:50.654200",
     "line_count": 447,
     "path": "docs/todo/todo_performance.md",
     "priority": {
@@ -909,7 +951,7 @@
   },
   "todo_physical_testing.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:18:18.099405",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 20,
     "path": "docs/todo/todo_physical_testing.md",
     "priority": {
@@ -923,7 +965,7 @@
   },
   "todo_platform_backends.md": {
     "done_lines": 10,
-    "last_updated": "2025-11-26T01:13:20.442083",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 112,
     "path": "docs/todo/todo_platform_backends.md",
     "priority": {
@@ -937,7 +979,7 @@
   },
   "todo_platform_interfaces.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:41:09.956388",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 13,
     "path": "docs/todo/todo_platform_interfaces.md",
     "priority": {
@@ -951,7 +993,7 @@
   },
   "todo_platform_system.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:33:10.217465",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 19,
     "path": "docs/todo/todo_platform_system.md",
     "priority": {
@@ -965,7 +1007,7 @@
   },
   "todo_programmers_reference.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T03:37:35.425713",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 9,
     "path": "docs/todo/todo_programmers_reference.md",
     "priority": {
@@ -978,9 +1020,9 @@
     "todo_lines": 5
   },
   "todo_project_structure.md": {
-    "done_lines": 0,
-    "last_updated": "2025-11-26T01:14:39.077883",
-    "line_count": 30,
+    "done_lines": 1,
+    "last_updated": "2025-11-27T10:43:23.879385",
+    "line_count": 31,
     "path": "docs/todo/todo_project_structure.md",
     "priority": {
       "P0": 0,
@@ -993,7 +1035,7 @@
   },
   "todo_ray_engine.md": {
     "done_lines": 2,
-    "last_updated": "2025-11-26T01:16:02.741673",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 56,
     "path": "docs/todo/todo_ray_engine.md",
     "priority": {
@@ -1007,7 +1049,7 @@
   },
   "todo_ray_mechanics.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:17:11.341470",
+    "last_updated": "2025-11-26T20:18:41.913211",
     "line_count": 28,
     "path": "docs/todo/todo_ray_mechanics.md",
     "priority": {
@@ -1021,7 +1063,7 @@
   },
   "todo_rebalance_policy.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:18:11.889108",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 40,
     "path": "docs/todo/todo_rebalance_policy.md",
     "priority": {
@@ -1035,7 +1077,7 @@
   },
   "todo_reemissure.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.082834",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 24,
     "path": "docs/todo/todo_reemissure.md",
     "priority": {
@@ -1049,7 +1091,7 @@
   },
   "todo_rendering.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.094833",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 14,
     "path": "docs/todo/todo_rendering.md",
     "priority": {
@@ -1063,7 +1105,7 @@
   },
   "todo_rendering_camera.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T19:52:31.801262",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 13,
     "path": "docs/todo/todo_rendering_camera.md",
     "priority": {
@@ -1077,7 +1119,7 @@
   },
   "todo_rendering_color_pipeline.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T03:22:55.115775",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 9,
     "path": "docs/todo/todo_rendering_color_pipeline.md",
     "priority": {
@@ -1091,7 +1133,7 @@
   },
   "todo_rendering_debug.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:08:33.492727",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 21,
     "path": "docs/todo/todo_rendering_debug.md",
     "priority": {
@@ -1105,7 +1147,7 @@
   },
   "todo_rendering_effects.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:12:37.360198",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 19,
     "path": "docs/todo/todo_rendering_effects.md",
     "priority": {
@@ -1119,7 +1161,7 @@
   },
   "todo_rendering_pipeline.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:03:54.274021",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 43,
     "path": "docs/todo/todo_rendering_pipeline.md",
     "priority": {
@@ -1133,7 +1175,7 @@
   },
   "todo_rendering_presets.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T19:35:10.089160",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 13,
     "path": "docs/todo/todo_rendering_presets.md",
     "priority": {
@@ -1147,7 +1189,7 @@
   },
   "todo_rendering_trace.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-25T14:40:25.251799",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 7,
     "path": "docs/todo/todo_rendering_trace.md",
     "priority": {
@@ -1161,7 +1203,7 @@
   },
   "todo_research_experimental.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:21:04.616178",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 503,
     "path": "docs/todo/todo_research_experimental.md",
     "priority": {
@@ -1175,7 +1217,7 @@
   },
   "todo_rle_compression.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.106833",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 14,
     "path": "docs/todo/todo_rle_compression.md",
     "priority": {
@@ -1189,7 +1231,7 @@
   },
   "todo_sector_overview.md": {
     "done_lines": 4,
-    "last_updated": "2025-11-26T13:17:41.110833",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 604,
     "path": "docs/todo/todo_sector_overview.md",
     "priority": {
@@ -1203,7 +1245,7 @@
   },
   "todo_security.md": {
     "done_lines": 3,
-    "last_updated": "2025-11-26T01:26:48.814645",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 320,
     "path": "docs/todo/todo_security.md",
     "priority": {
@@ -1217,7 +1259,7 @@
   },
   "todo_simulation_viewer.md": {
     "done_lines": 2,
-    "last_updated": "2025-11-26T01:30:36.353777",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 524,
     "path": "docs/todo/todo_simulation_viewer.md",
     "priority": {
@@ -1231,7 +1273,7 @@
   },
   "todo_site_wiki.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:32:19.021409",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 19,
     "path": "docs/todo/todo_site_wiki.md",
     "priority": {
@@ -1245,7 +1287,7 @@
   },
   "todo_status_overview.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:08:23.368835",
+    "last_updated": "2025-11-26T20:18:41.914211",
     "line_count": 43,
     "path": "docs/todo/todo_status_overview.md",
     "priority": {
@@ -1259,7 +1301,7 @@
   },
   "todo_support_and_licensing.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:53:50.297868",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 20,
     "path": "docs/todo/todo_support_and_licensing.md",
     "priority": {
@@ -1272,22 +1314,22 @@
     "todo_lines": 11
   },
   "todo_synthesis.md": {
-    "done_lines": 0,
-    "last_updated": "2025-11-26T01:35:14.636804",
+    "done_lines": 2,
+    "last_updated": "2025-11-28T00:18:05.449804",
     "line_count": 27,
     "path": "docs/todo/todo_synthesis.md",
     "priority": {
-      "P0": 2,
+      "P0": 0,
       "P1": 5,
       "P2": 11,
       "P3": 5,
       "unknown": 0
     },
-    "todo_lines": 23
+    "todo_lines": 21
   },
   "todo_system_design.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:36:34.460538",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 34,
     "path": "docs/todo/todo_system_design.md",
     "priority": {
@@ -1301,7 +1343,7 @@
   },
   "todo_system_fps.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:04:03.065911",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 26,
     "path": "docs/todo/todo_system_fps.md",
     "priority": {
@@ -1315,7 +1357,7 @@
   },
   "todo_system_summary_2025_11_25.md": {
     "done_lines": 6,
-    "last_updated": "2025-11-26T13:17:41.114833",
+    "last_updated": "2025-11-27T23:06:27.743531",
     "line_count": 329,
     "path": "docs/todo/todo_system_summary_2025_11_25.md",
     "priority": {
@@ -1329,8 +1371,8 @@
   },
   "todo_testing_ci.md": {
     "done_lines": 1,
-    "last_updated": "2025-11-26T13:17:41.138833",
-    "line_count": 703,
+    "last_updated": "2025-11-27T10:43:23.879385",
+    "line_count": 705,
     "path": "docs/todo/todo_testing_ci.md",
     "priority": {
       "P0": 11,
@@ -1343,7 +1385,7 @@
   },
   "todo_tracker_metadata_integration.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:43:17.563243",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 14,
     "path": "docs/todo/todo_tracker_metadata_integration.md",
     "priority": {
@@ -1357,7 +1399,7 @@
   },
   "todo_vnc_backend.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:41:04.120402",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 13,
     "path": "docs/todo/todo_vnc_backend.md",
     "priority": {
@@ -1371,7 +1413,7 @@
   },
   "todo_watermark_fifos.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:03:56.913258",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 8,
     "path": "docs/todo/todo_watermark_fifos.md",
     "priority": {
@@ -1385,7 +1427,7 @@
   },
   "todo_wiki.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T01:32:34.181356",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 6,
     "path": "docs/todo/todo_wiki.md",
     "priority": {
@@ -1399,7 +1441,7 @@
   },
   "todo_windows_display.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T02:11:42.424321",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 20,
     "path": "docs/todo/todo_windows_display.md",
     "priority": {
@@ -1413,7 +1455,7 @@
   },
   "todo_xschem.md": {
     "done_lines": 0,
-    "last_updated": "2025-11-26T13:17:41.146833",
+    "last_updated": "2025-11-26T20:18:41.915211",
     "line_count": 42,
     "path": "docs/todo/todo_xschem.md",
     "priority": {

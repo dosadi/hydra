@@ -11,6 +11,7 @@ CXX_SRCS     := viewer_main.cpp \
 				 viewer_backend.cpp \
 				 harness_common.cpp \
 				 render_instrumentation.cpp \
+				 dut_wrapper.cpp \
                  platform/platform_stub.cpp \
                  platform/backend_selector.cpp \
                  platform/backend_sdl.cpp \
@@ -79,7 +80,8 @@ ifeq ($(VULKAN),1)
   EXTRA_LIBS   += $(VULKAN_LIBS)
 endif
 
-VERILATOR_LDFLAGS := $(SDL_LIBS) $(EXTRA_LIBS)
+VERILATOR_LDFLAGS := $(SDL_LIBS) $(EXTRA_LIBS) -O3
+CXXFLAGS += -O3
 ifeq ($(SANITIZE),1)
   EXTRA_CFLAGS += -fsanitize=address,undefined -fno-omit-frame-pointer
   VERILATOR_LDFLAGS += -fsanitize=address,undefined
@@ -98,7 +100,7 @@ VERILATOR_FLAGS := \
     --public-flat-rw \
     -GMAX_RAY_STEPS=32 \
     -GRAY_STEP_SHIFT=8 \
-    $(if $(filter 1,$(FAST)),-O1,--inline-mult -O3) \
+    $(if $(filter 1,$(FAST)),-O1,--inline-mult -O3 --x-assign fast --noassert --unroll-count 1024 --unroll-stmts 1024) \
     --threads $(if $(filter 1,$(FAST)),1,1) \
     --exe $(CXX_SRCS) \
     -I$(RTL_DIR)

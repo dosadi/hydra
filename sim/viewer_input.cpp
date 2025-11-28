@@ -6,10 +6,6 @@
 #include <cstring>
 #include <SDL2/SDL.h>
 
-// Forward declarations for Verilator types
-class Vvoxel_framebuffer_top;
-class Vvoxel_framebuffer_top___024root;
-
 // External dependencies that need to be passed as parameters
 extern bool smooth_surfaces;
 extern bool curvature;
@@ -102,7 +98,7 @@ void InputHandler::handle_window_event(const SDL_WindowEvent& ev, bool headless_
 }
 
 void InputHandler::handle_key_event(const SDL_KeyboardEvent& ev, bool log_keys, int& log_keys_count,
-                                         Vvoxel_framebuffer_top___024root* root, bool headless_backend) {
+                                         bool headless_backend) {
     bool key_down = (ev.type == SDL_KEYDOWN);
     SDL_Scancode sc = ev.keysym.scancode;
     SDL_Keycode keycode = ev.keysym.sym;

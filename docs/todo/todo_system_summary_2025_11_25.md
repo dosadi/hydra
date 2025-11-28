@@ -108,20 +108,20 @@ The Hydra project now has a comprehensive TODO tracking system covering all aspe
 
 ---
 
-## Recommended Trackers to Create (Future)
+### Recommended Trackers to Create (Future)
 
 Based on the session discussion, these comprehensive trackers would complete the system but haven't been created yet:
 
-1. **`todo_hardware_validation.md`** - Pre-silicon validation, FPGA bring-up, HW-in-loop CI
-2. **`todo_performance.md`** - Sim tuning, RTL optimization, DMA/bandwidth, benchmarking
-3. **`todo_documentation.md`** - Spec updates, user guides, API docs, tutorials
-4. **`todo_build_tooling.md`** - Makefile, CMake, CI jobs, packaging automation
-5. **`todo_security.md`** - Input validation, fuzzing, driver hardening, IOMMU
-6. **`todo_board_fpga.md`** - Board selection, constraints, synthesis flow
-7. **`todo_ip_integration.md`** - LiteX IP cores (LitePCIe, LiteDRAM, LiteVideo)
-8. **`todo_mesa_drivers.md`** - Mesa Gallium, Windows/macOS drivers
+1. **`todo_hardware_validation.md`** - Pre-silicon validation, FPGA bring-up, HW-in-loop CI **[P2]**
+2. **`todo_performance.md`** - Sim tuning, RTL optimization, DMA/bandwidth, benchmarking **[P1]**
+3. **`todo_documentation.md`** - Spec updates, user guides, API docs, tutorials **[P1]**
+4. **`todo_build_tooling.md`** - Makefile, CMake, CI jobs, packaging automation **[P1]**
+5. **`todo_security.md`** - Input validation, fuzzing, driver hardening, IOMMU **[P0]**
+6. **`todo_board_fpga.md`** - Board selection, constraints, synthesis flow **[P2]**
+7. **`todo_ip_integration.md`** - LiteX IP cores (LitePCIe, LiteDRAM, LiteVideo) **[P1]**
+8. **`todo_mesa_drivers.md`** - Mesa Gallium, Windows/macOS drivers **[P2]**
 
-**Note:** These were documented in the session summary and prioritization document but the actual tracker files need to be created.
+**Note:** These were documented in the session summary and prioritization document but the actual tracker files need to be created **[P2]**.
 
 ---
 
@@ -259,19 +259,19 @@ Based on the session discussion, these comprehensive trackers would complete the
 
 ## Next Steps (Recommendations)
 
-### Immediate (0.0.7 Sprint 1-2)
+### Immediate (0.0.7 Sprint 1-2) **[P0]**
 1. Create the 8 missing comprehensive trackers (if desired)
 2. Assign owners to P0 items
 3. Set up weekly progress tracking
 4. Begin P0 work (RTL hardening)
 
-### Short-Term (0.0.7 Sprint 3-4)
+### Short-Term (0.0.7 Sprint 3-4) **[P1]**
 1. Update prioritization as P0 items complete
 2. Start P1 work (visual quality, docs, CI)
 3. Triage new TODOs from code review
 4. Prepare release checklist
 
-### Long-Term (Post-0.0.7)
+### Long-Term (Post-0.0.7) **[P2]**
 1. Archive DONE items to separate file or remove
 2. Re-prioritize P2/P3 based on community feedback
 3. Consider GitHub Projects integration for visual tracking

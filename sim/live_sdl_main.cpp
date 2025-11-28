@@ -7,7 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <verilated.h>
 #include "Vvoxel_framebuffer_top.h"
-#include "Vvoxel_framebuffer_top___024root.h"
+#include "dut_wrapper.h"
 #include "platform/backend_selector.h"
 #include "platform/platform.h"
 
@@ -317,35 +317,26 @@ int main(int argc, char** argv) {
     const bool render_instrument_mode = env_truthy("HYDRA_RENDER_INSTRUMENT");
     RenderInstrumentation render_instrument(render_instrument_mode, flatten_cli_args(argc, argv));
 
-    Vvoxel_framebuffer_top* top = new Vvoxel_framebuffer_top;
-    auto* root = top->rootp;  // Access internal regs exposed by Verilator
-    top->clk   = 0;
-    top->rst_n = 0;
+    DUTWrapper dut;
+    dut.set_reset_n(0);
     // Default AXI shell inputs (unused in this harness)
-    top->cam_load        = 0;
-    top->cam_x_in        = 0;
-    top->cam_y_in        = 0;
-    top->cam_z_in        = 0;
-    top->cam_dir_x_in    = 0;
-    top->cam_dir_y_in    = 0;
-    top->cam_dir_z_in    = 0;
-    top->cam_plane_x_in  = 0;
-    top->cam_plane_y_in  = 0;
-    top->flags_load      = 0;
-    top->flag_smooth_in  = 0;
-    top->flag_curvature_in = 0;
-    top->flag_extra_light_in = 0;
-    top->flag_diag_slice_in  = 0;
-    top->sel_load        = 0;
-    top->sel_active_in   = 0;
-    top->sel_voxel_x_in  = 0;
-    top->sel_voxel_y_in  = 0;
-    top->sel_voxel_z_in  = 0;
-    top->dbg_ext_write_en   = 0;
-    top->dbg_ext_write_addr = 0;
-    top->dbg_ext_write_data = 0;
-    top->start_frame_ext   = 0;
-    top->soft_reset_ext    = 0;
+    dut.set_camera_load(0);
+    dut.set_camera_position(0, 0, 0);
+    dut.set_camera_direction(0, 0, 0);
+    dut.set_camera_plane(0, 0);
+    dut.set_flags_load(0);
+    dut.set_smooth_surfaces(0);
+    dut.set_curvature(0);
+    dut.set_extra_light(0);
+    dut.set_diag_slice(0);
+    dut.set_selection_load(0);
+    dut.set_selection_active(0);
+    dut.set_selection_voxel(0, 0, 0);
+    dut.set_debug_write_enable(0);
+    dut.set_debug_write_addr(0);
+    dut.set_debug_write_data(0);
+    dut.set_start_frame(0);
+    dut.set_soft_reset(0);
 
     const char* benchmark_env = std::getenv("HYDRA_BENCHMARK");
     int benchmark_frames = benchmark_env ? std::atoi(benchmark_env) : 0;
@@ -495,11 +486,11 @@ int main(int argc, char** argv) {
 
     // Reset sequence
     for (int i = 0; i < 10; ++i) {
-        top->clk = 0; top->eval(); main_time++;
-        top->clk = 1; top->eval(); main_time++;
+        dut.set_clock(0); dut.eval(); main_time++;
+        dut.set_clock(1); dut.eval(); main_time++;
     }
-    top->rst_n = 1;
-    if (headless_backend) top->start_frame_ext = 1;
+    dut.set_reset_n(1);
+    if (headless_backend) dut.set_start_frame(1);
 
     const char* cam_pos_env = std::getenv("HYDRA_CAM_POS");   // "x,y,z"
     const char* cam_ang_env = std::getenv("HYDRA_CAM_ANG");   // "yaw,pitch"
@@ -747,29 +738,22 @@ int main(int argc, char** argv) {
         float px = -dy * 0.66f;
         float py =  dx * 0.66f;
 
-        root->voxel_framebuffer_top__DOT__cam_x       = int16_t(pos_x * FX);
-        root->voxel_framebuffer_top__DOT__cam_y       = int16_t(pos_y * FX);
-        root->voxel_framebuffer_top__DOT__cam_z       = int16_t(pos_z * FX);
-        root->voxel_framebuffer_top__DOT__cam_dir_x   = int16_t(dx * FX);
-        root->voxel_framebuffer_top__DOT__cam_dir_y   = int16_t(dy * FX);
-        root->voxel_framebuffer_top__DOT__cam_dir_z   = int16_t(dz * FX);
-        root->voxel_framebuffer_top__DOT__cam_plane_x = int16_t(px * FX);
-        root->voxel_framebuffer_top__DOT__cam_plane_y = int16_t(py * FX);
+        dut.set_camera_position(int16_t(pos_x * FX), int16_t(pos_y * FX), int16_t(pos_z * FX));
+        dut.set_camera_direction(int16_t(dx * FX), int16_t(dy * FX), int16_t(dz * FX));
+        dut.set_camera_plane(int16_t(px * FX), int16_t(py * FX));
     };
 
     auto apply_flags_to_dut = [&]() {
-        root->voxel_framebuffer_top__DOT__cfg_smooth_surfaces = smooth_surfaces ? 1 : 0;
-        root->voxel_framebuffer_top__DOT__cfg_curvature       = curvature       ? 1 : 0;
-        root->voxel_framebuffer_top__DOT__cfg_extra_light     = extra_light     ? 1 : 0;
-        root->voxel_framebuffer_top__DOT__cfg_diag_slice      = diag_slice     ? 1 : 0;
-        root->voxel_framebuffer_top__DOT__cfg_ray_jitter      = ray_jitter     ? 1 : 0;
+        dut.set_smooth_surfaces(smooth_surfaces);
+        dut.set_curvature(curvature);
+        dut.set_extra_light(extra_light);
+        dut.set_diag_slice(diag_slice);
+        dut.set_ray_jitter(ray_jitter);
     };
 
     auto apply_selection_to_dut = [&]() {
-        root->voxel_framebuffer_top__DOT__sel_active  = selection_active ? 1 : 0;
-        root->voxel_framebuffer_top__DOT__sel_voxel_x = selection_x;
-        root->voxel_framebuffer_top__DOT__sel_voxel_y = selection_y;
-        root->voxel_framebuffer_top__DOT__sel_voxel_z = selection_z;
+        dut.set_selection_active(selection_active);
+        dut.set_selection_voxel(selection_x, selection_y, selection_z);
     };
 
     bool safe_defaults_mode = env_truthy("HYDRA_SAFE_DEFAULTS");
@@ -803,7 +787,7 @@ int main(int argc, char** argv) {
     apply_camera_to_dut();
     apply_flags_to_dut();
     apply_selection_to_dut();
-    root->voxel_framebuffer_top__DOT__world_seed = world_seed_override;
+    dut.set_world_seed(world_seed_override);
     if (!headless_backend) update_mouse_capture();
 
     bool running = true;
@@ -812,7 +796,7 @@ int main(int argc, char** argv) {
 
     while (running && !Verilated::gotFinish()) {
         // Default: no debug write
-        root->voxel_framebuffer_top__DOT__dbg_write_en = 0;
+        dut.set_debug_write_enable(0);
 
         // Process input events through InputHandler
         input_handler.process_events(running, headless_backend);
@@ -927,11 +911,11 @@ int main(int argc, char** argv) {
         // Ensure DUT flags follow local toggles every frame.
         apply_flags_to_dut();
 
-        top->start_frame_ext = 1;
-        top->benchmark_mode = (benchmark_frames > 0) ? 1 : 0;
+        dut.set_start_frame(1);
+        dut.set_clock(benchmark_frames > 0 ? 1 : 0);
 
         // Simulate HDL
-        const int cycles_per_chunk = 1000000;
+        const int cycles_per_chunk = 5000;  // Maximum performance optimization
         bool frame_done = false;
         std::chrono::high_resolution_clock::time_point sim_loop_start;
         std::chrono::high_resolution_clock::time_point hud_present_start, hud_present_end, copy_start, copy_end;
@@ -939,14 +923,14 @@ int main(int argc, char** argv) {
             sim_loop_start = std::chrono::high_resolution_clock::now();
 
         for (int i = 0; i < cycles_per_chunk; ++i) {
-            top->clk = 1; top->eval(); main_time++;
+            dut.set_clock(1); dut.eval(); main_time++;
 
-            if (top->pixel_write_en) {
-                uint32_t addr = top->pixel_addr;
+            if (dut.get_pixel_write_en()) {
+                uint32_t addr = dut.get_pixel_addr();
                 if (addr < NPIX) {
-                    uint32_t w0 = top->pixel_word0;
-                    uint32_t w1 = top->pixel_word1;
-                    uint32_t w2 = top->pixel_word2;
+                    uint32_t w0 = dut.get_pixel_word0();
+                    uint32_t w1 = dut.get_pixel_word1();
+                    uint32_t w2 = dut.get_pixel_word2();
                     uint32_t pixel_value = pixel96_to_argb(w0, w1, w2);
                     uint8_t depth_byte = (w0 >> 16) & 0xFF;
                     if (g_fog_enabled) {
@@ -973,10 +957,10 @@ int main(int argc, char** argv) {
                 ++pixels_this_frame;
             }
 
-            if (top->frame_done)
+            if (dut.get_frame_done())
                 frame_done = true;
 
-            top->clk = 0; top->eval(); main_time++;
+            dut.set_clock(0); dut.eval(); main_time++;
         }
 
         if (frame_done) {
@@ -1075,9 +1059,9 @@ int main(int argc, char** argv) {
                 sel_miss_timer = std::max(0.0f, sel_miss_timer - dt);
             }
 
-            uint64_t mem_cycle = root->voxel_framebuffer_top__DOT__mem_cycle_count;
-            uint64_t mem_read  = root->voxel_framebuffer_top__DOT__mem_read_cycles;
-            uint64_t mem_write = root->voxel_framebuffer_top__DOT__mem_write_cycles;
+            uint64_t mem_cycle = dut.get_mem_cycle_count();
+            uint64_t mem_read  = dut.get_mem_read_cycles();
+            uint64_t mem_write = dut.get_mem_write_cycles();
             uint64_t dc = mem_cycle - prev_mem_cycle;
             uint64_t dr = mem_read  - prev_mem_read;
             uint64_t dw = mem_write - prev_mem_write;
@@ -1114,10 +1098,10 @@ int main(int argc, char** argv) {
                 }
 
                 char buf[256];
-                uint32_t hits = root->voxel_framebuffer_top__DOT__core_dbg_hit_count;
-                uint32_t ray_steps_total = root->voxel_framebuffer_top__DOT__core_dbg_ray_steps_total;
-                uint32_t ray_steps_max   = root->voxel_framebuffer_top__DOT__core_dbg_ray_steps_max;
-                uint32_t ray_miss_count  = root->voxel_framebuffer_top__DOT__core_dbg_ray_miss_count;
+                uint32_t hits = dut.get_core_dbg_hit_count();
+                uint32_t ray_steps_total = dut.get_core_dbg_ray_steps_total();
+                uint32_t ray_steps_max   = dut.get_core_dbg_ray_steps_max();
+                uint32_t ray_miss_count  = dut.get_core_dbg_ray_miss_count();
                 const float pixel_count = float(SCREEN_WIDTH) * float(SCREEN_HEIGHT);
                 const float ray_steps_avg = pixel_count > 0.0f
                     ? float(ray_steps_total) / pixel_count
@@ -1215,13 +1199,13 @@ int main(int argc, char** argv) {
                     yoff += 14;
                 }
 
-                if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
+                if (dut.get_cursor_hit_valid()) {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (%u,%u,%u) mat=0x%02X",
-                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_x,
-                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_y,
-                        (unsigned)root->voxel_framebuffer_top__DOT__cursor_voxel_z,
-                        (unsigned)(root->voxel_framebuffer_top__DOT__cursor_material_id & 0xFF));
+                        (unsigned)dut.get_cursor_voxel_x(),
+                        (unsigned)dut.get_cursor_voxel_y(),
+                        (unsigned)dut.get_cursor_voxel_z(),
+                        (unsigned)(dut.get_cursor_material_id() & 0xFF));
                 } else {
                     std::snprintf(buf, sizeof(buf),
                         "Cursor: (no hit)");
@@ -1347,8 +1331,7 @@ int main(int argc, char** argv) {
             SDL_Delay(idle_ms);
     }
 
-    top->final();
-    delete top;
+    dut.final();
 
     backend_manager.cleanup();
 

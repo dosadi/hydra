@@ -1,4 +1,5 @@
 #include "backend_ops.h"
+#include "backend_vulkan.h"
 
 #if defined(HYDRA_ENABLE_VULKAN) && (defined(__has_include) ? __has_include(<vulkan/vulkan.h>) && __has_include(<SDL2/SDL_vulkan.h>) : 0)
 
@@ -459,6 +460,28 @@ BackendOps get_ops_vulkan() {
     ops.present = vk_present;
     ops.shutdown = vk_shutdown;
     return ops;
+}
+
+// ============================================================================
+// Vulkan Backend Class Implementation
+// ============================================================================
+
+VulkanBackend::VulkanBackend() : context_(nullptr) {}
+
+VulkanBackend::~VulkanBackend() {
+    // Context cleanup is handled in shutdown()
+}
+
+bool VulkanBackend::init(PlatformContext& ctx, const PlatformConfig& cfg) {
+    return vk_init(ctx, cfg);
+}
+
+void VulkanBackend::present(PlatformContext& ctx, const uint32_t* pixels, int w, int h) {
+    vk_present(ctx, pixels, w, h);
+}
+
+void VulkanBackend::shutdown(PlatformContext& ctx) {
+    vk_shutdown(ctx);
 }
 
 #else

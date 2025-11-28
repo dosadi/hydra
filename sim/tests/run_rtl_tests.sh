@@ -88,4 +88,9 @@ ${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_axi_sdram_poison.vvp \
   sim/tests/rtl/test_axi_sdram_poison.sv rtl/axi_sdram_stub.sv
 ${VVP_BIN} sim/tests/rtl/test_axi_sdram_poison.vvp
 
+echo "[rtl-tests] Running SDRAM stub burst coverage bench..."
+${IVERILOG_BIN} -g2012 -Wall -Irtl -o sim/tests/rtl/test_axi_sdram_burst.vvp \
+  sim/tests/rtl/test_axi_sdram_burst.sv sim/tests/axi_sdram_stub.sv
+${VVP_BIN} sim/tests/rtl/test_axi_sdram_burst.vvp
+
 echo "[rtl-tests] All RTL benches passed."
