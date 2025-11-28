@@ -28,7 +28,8 @@ fi
 
 echo "Entering $UBU_DISTRO to perform apt installs and repo setup..."
 
-proot-distro login $UBU_DISTRO -- bash -lc "set -euo pipefail
+proot-distro login $UBU_DISTRO -- bash -lc "
+set -euo pipefail
 echo 'Inside $UBU_DISTRO: update/upgrade'
 apt update -y
 apt upgrade -y
@@ -50,24 +51,48 @@ if ! command -v verilator >/dev/null 2>&1; then
     make install
     ldconfig || true
 else
-    echo "Verilator present: \$(verilator --version)"
+    echo \"Verilator present: \$(verilator --version)\"
 fi
 
 echo 'Cloning repository and checking out branch'
 cd /root
 if [ -d hydra ]; then
-    cd hydra && git fetch --all && git checkout $REPO_BRANCH && git pull
+    cd hydra && git fetch --all && git checkout $REPO_BRANCH 2>/dev/null || {
+        echo \"Branch $REPO_BRANCH not found locally, trying to create it...\"
+        git checkout -b $REPO_BRANCH origin/$REPO_BRANCH 2>/dev/null || {
+            echo \"Branch $REPO_BRANCH not found on remote, staying on main/master\"
+            git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
+        }
+    } && git pull
 else
     git clone $REPO_URL
     cd hydra
-    git checkout $REPO_BRANCH || git checkout -b $REPO_BRANCH origin/$REPO_BRANCH || true
+    git checkout $REPO_BRANCH 2>/dev/null || {
+        echo \"Branch $REPO_BRANCH not found, checking available branches...\"
+        git branch -r
+        echo \"Staying on default branch\"
+    }
 fi
 
 echo 'Build: attempt sim tests (may require additional packages).'
-cd sim/tests || cd sim || true
-chmod +x run_axi_wrap_test.sh || true
-./run_axi_wrap_test.sh || (echo "run_axi_wrap_test.sh failed; you can try 'cd sim && make' or inspect logs" && exit 2)
-echo 'AXI wrap test run completed (see above output).'
+cd sim/tests 2>/dev/null || cd sim 2>/dev/null || { echo \"No sim directory found\"; exit 1; }
+if [ -f \"run_axi_wrap_test.sh\" ]; then
+    chmod +x run_axi_wrap_test.sh
+    if ./run_axi_wrap_test.sh; then
+        echo 'AXI wrap test completed successfully.'
+    else
+        echo \"run_axi_wrap_test.sh failed; you can try 'cd sim && make' or inspect logs\"
+        exit 2
+    fi
+else
+    echo \"Test script run_axi_wrap_test.sh not found, trying basic build...\"
+    cd ..
+    if [ -f \"Makefile\" ]; then
+        make 2>&1 || echo \"Make failed, but setup is complete\"
+    else
+        echo \"No Makefile found, setup complete but manual build required\"
+    fi
+fi
 "
 
 echo "All done. To enter the distro interactively run: proot-distro login $UBU_DISTRO"

@@ -42,7 +42,9 @@ PlatformBackend select_default_backend() {
         else if (strcasecmp(v, "MACOS") == 0)   { env_backend = PlatformBackend::MacOS; env_backend_set = true; }
         else if (strcasecmp(v, "AALIB") == 0)   { env_backend = PlatformBackend::AALIB; env_backend_set = true; }
         else if (strcasecmp(v, "HEADLESS") == 0) { env_backend = PlatformBackend::Headless; env_backend_set = true; }
+#ifdef HYDRA_ENABLE_VNC
         else if (strcasecmp(v, "VNC") == 0)       { env_backend = PlatformBackend::VNC; env_backend_set = true; }
+#endif
 
         if (env_backend_set) {
             if (platform_backend_supported(env_backend)) {
@@ -86,7 +88,9 @@ PlatformBackend select_default_backend() {
                 else if (strcasecmp(token.c_str(), "WIN32") == 0) b = PlatformBackend::Win32;
                 else if (strcasecmp(token.c_str(), "MACOS") == 0) b = PlatformBackend::MacOS;
                 else if (strcasecmp(token.c_str(), "HEADLESS") == 0) b = PlatformBackend::Headless;
+#ifdef HYDRA_ENABLE_VNC
                 else if (strcasecmp(token.c_str(), "VNC") == 0) b = PlatformBackend::VNC;
+#endif
                 if (platform_backend_supported(b)) {
                     return b;
                 }

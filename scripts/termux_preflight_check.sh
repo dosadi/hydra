@@ -31,7 +31,7 @@ echo "-- Disk free (home) --"
 df -h ~ || true
 echo
 echo "-- Installed packages (pkg) --"
-pkg list-installed | sed -n '1,200p' || true
+pkg list-installed 2>/dev/null | head -n 50 || echo "Failed to list packages"
 echo
 echo "-- Check key tools --"
 check_cmd() {
@@ -101,10 +101,15 @@ if [[ ${INSTALL} -eq 1 ]]; then
       [Yy]*) ;;
       *) echo "Skipping install."; exit 0;;
     esac
-    pkg update -y
+    echo "Updating package lists..."
+    if ! pkg update -y; then
+        echo "Warning: pkg update failed, but continuing with install..."
+    fi
     for p in "${MISSING_PACKAGES[@]}"; do
       echo "Installing $p"
-      pkg install -y "$p" || echo "Failed to install $p; continue"
+      if ! pkg install -y "$p"; then
+          echo "Failed to install $p; continuing with other packages"
+      fi
     done
     echo "Install step complete. Re-run this script without --install to verify." 
   fi
