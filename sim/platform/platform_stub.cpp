@@ -60,6 +60,12 @@ bool platform_backend_supported(PlatformBackend backend) {
         case PlatformBackend::Win32:  return is_windows();
         case PlatformBackend::MacOS:  return is_macos();
             case PlatformBackend::AALIB: return true;
+        case PlatformBackend::VNC:
+#if defined(HYDRA_ENABLE_VNC)
+            return true;
+#else
+            return false;
+#endif
         default: return false;
     }
 }

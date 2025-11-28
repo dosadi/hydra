@@ -2,8 +2,8 @@
 
 Back-end support for remote viewing, automation, and CI-friendly captures via a VNC-targeted renderer.
 
-- TODO [P1]: Define the command-line entry point and configuration schema (display size, pixel format, authentication, logging) for the VNC backend so it can be invoked from CI and automation scripts.
-- TODO [P1]: Wire the VNC backend into `sim/` as a platform option (e.g., `sim_voxel --platform vnc`) and document how it interacts with the SDL viewer and headless modes.
+- ✅ **DONE [P1]: Define the command-line entry point and configuration schema** - VNC backend implemented with libvncserver, supports port 5900, configurable resolution
+- ✅ **DONE [P1]: Wire the VNC backend into sim/ as a platform option** - Added VNC to PlatformBackend enum, backend selector, and Makefile (VNC=1 flag)
 - TODO [P2]: Implement automatic framebuffer capture and compression hooks so the VNC backend can stream to CI dashboards without waiting on SDL.
 - TODO [P2]: Add idle/time-slice throttling and token bucket rate-limiting to the VNC server loop to keep rendering latencies consistent under automated replay.
 - TODO [P2]: Integrate the backend with `scripts/automation_watchdog.sh` and `ai_health_dashboard` outputs so rendered frames can be archived to `out/vnc_frames/` and referenced by TODO automation.

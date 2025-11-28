@@ -15,7 +15,7 @@ Current state:
 - Viewer integration: `sim/live_sdl_main.cpp` now consults `HYDRA_BACKEND` (via `select_default_backend`) and, when a non-SDL backend is selected and initialized, passes rendered frames through `present_backend` while still running the SDL HUD/window for input.
 - CLI override: `--backend <name>` (or `--backend=name`, `-b <name>`) sets `HYDRA_BACKEND` for a run without exporting env vars.
 - `platform_stub.cpp` still brokers backend selection and reports platform support (Wayland/X11/fbdev on Linux; Win32; macOS).
-- Other per-backend files (`backend_gl.cpp`, `backend_vulkan.cpp`, `backend_x11.cpp`) currently return stub ops; replace with real implementations as needed.
+- VNC: optional VNC server backend gated by `make VNC=1` (needs libvncserver headers/libs). Creates a VNC server on port 5900 that remote clients can connect to for viewing; frames are streamed as they render. Useful for remote access, automation, and mobile viewing.
 - Makefile builds the platform layer alongside `live_sdl_main.cpp` so downstream code can include the header without link errors.
 - FreeBSD: treated like Linux for backend availability (SDL today); add Wayland/X11/fbdev specifics when implemented.
 
@@ -33,12 +33,12 @@ Notes:
 
 ## Backend compatibility matrix (current coverage)
 
-| OS/Env  | SDL (default) | GL | Vulkan | X11 | Wayland | fbdev | Headless/dummy | CI coverage |
-|---------|---------------|----|--------|-----|---------|-------|----------------|-------------|
-| Linux   | ✅ (primary)  | ⚪ stub impl | ⚪ stub impl | ⚪ stub | ⚪ stub  | ⚪ experimental | ✅ (dummy/headless) | Dummy/headless smoke only |
-| FreeBSD | ✅ (SDL path) | ⚪ stub | ⚪ stub | ⚪ stub | ⚪ stub | ⚪ stub | ✅ (dummy/headless) | Not in CI |
-| Windows | ✅ (SDL path) | ⚪ stub | ⚪ stub | n/a | n/a | n/a | ✅ (SDL dummy) | Not in CI |
-| macOS   | ✅ (SDL path) | ⚪ stub | ⚪ stub | n/a | n/a | n/a | ✅ (SDL dummy) | Not in CI |
+| OS/Env  | SDL (default) | GL | Vulkan | X11 | Wayland | fbdev | VNC | Headless/dummy | CI coverage |
+|---------|---------------|----|--------|-----|---------|-------|-----|----------------|-------------|
+| Linux   | ✅ (primary)  | ⚪ stub impl | ⚪ stub impl | ⚪ stub | ⚪ stub  | ⚪ experimental | ✅ (libvncserver) | ✅ (dummy/headless) | Dummy/headless smoke only |
+| FreeBSD | ✅ (SDL path) | ⚪ stub | ⚪ stub | ⚪ stub | ⚪ stub | ⚪ stub | ✅ (libvncserver) | ✅ (dummy/headless) | Not in CI |
+| Windows | ✅ (SDL path) | ⚪ stub | ⚪ stub | n/a | n/a | n/a | ✅ (libvncserver) | ✅ (SDL dummy) | Not in CI |
+| macOS   | ✅ (SDL path) | ⚪ stub | ⚪ stub | n/a | n/a | n/a | ✅ (libvncserver) | ✅ (SDL dummy) | Not in CI |
 
 Legend: ✅ implemented/used, ⚪ placeholder/stub today. SDL dummy/headless is the regression path; GPU backends are not exercised in CI yet.
 

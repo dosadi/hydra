@@ -17,6 +17,9 @@
 #if defined(HYDRA_ENABLE_VULKAN) && (defined(__has_include) ? __has_include(<vulkan/vulkan.h>) && __has_include(<SDL2/SDL_vulkan.h>) : 0)
 #include "backend_vulkan.h"
 #endif
+#ifdef HYDRA_ENABLE_VNC
+#include "backend_vnc.h"
+#endif
 // TODO: include others
 
 static bool env_equals(const char* key, const char* val) {
@@ -39,6 +42,7 @@ PlatformBackend select_default_backend() {
         else if (strcasecmp(v, "MACOS") == 0)   { env_backend = PlatformBackend::MacOS; env_backend_set = true; }
         else if (strcasecmp(v, "AALIB") == 0)   { env_backend = PlatformBackend::AALIB; env_backend_set = true; }
         else if (strcasecmp(v, "HEADLESS") == 0) { env_backend = PlatformBackend::Headless; env_backend_set = true; }
+        else if (strcasecmp(v, "VNC") == 0)       { env_backend = PlatformBackend::VNC; env_backend_set = true; }
 
         if (env_backend_set) {
             if (platform_backend_supported(env_backend)) {
@@ -82,6 +86,7 @@ PlatformBackend select_default_backend() {
                 else if (strcasecmp(token.c_str(), "WIN32") == 0) b = PlatformBackend::Win32;
                 else if (strcasecmp(token.c_str(), "MACOS") == 0) b = PlatformBackend::MacOS;
                 else if (strcasecmp(token.c_str(), "HEADLESS") == 0) b = PlatformBackend::Headless;
+                else if (strcasecmp(token.c_str(), "VNC") == 0) b = PlatformBackend::VNC;
                 if (platform_backend_supported(b)) {
                     return b;
                 }
@@ -124,7 +129,11 @@ void platform_log_capabilities() {
 #ifdef HYDRA_ENABLE_X11
     std::fprintf(stderr, " X11");
 #endif
-    std::fprintf(stderr, " Headless\n");
+    std::fprintf(stderr, " Headless");
+#ifdef HYDRA_ENABLE_VNC
+    std::fprintf(stderr, " VNC");
+#endif
+    std::fprintf(stderr, "\n");
 }
 
 BackendPtr create_backend(PlatformBackend backend) {
@@ -142,6 +151,10 @@ BackendPtr create_backend(PlatformBackend backend) {
 #if defined(HYDRA_ENABLE_VULKAN) && (defined(__has_include) ? __has_include(<vulkan/vulkan.h>) && __has_include(<SDL2/SDL_vulkan.h>) : 0)
         case PlatformBackend::Vulkan:
             return std::make_unique<VulkanBackend>();
+#endif
+#ifdef HYDRA_ENABLE_VNC
+        case PlatformBackend::VNC:
+            return std::make_unique<VNCBackend>();
 #endif
         // TODO: add other backends
         default:

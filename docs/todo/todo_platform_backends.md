@@ -1,9 +1,9 @@
-# Hydra Platform Backends TODOs (SDL/GL/Vulkan/Wayland/X11/Headless) - 0.0.7 Cycle
+# Hydra Platform Backends TODOs (SDL/GL/Vulkan/Wayland/X11/Headless/VNC) - 0.0.7 Cycle
 
 **Focus:** Backend testing and validation, multi-platform stability.
 See `docs/TODO_MASTER_INDEX.md` for complete tracker reference.
 
-**Related Trackers:** `todo_multiplatform_builds.md`, `todo_testing_ci.md`, `todo_simulation_viewer.md`
+**Related Trackers:** `todo_multiplatform_builds.md`, `todo_testing_ci.md`, `todo_simulation_viewer.md`, `todo_vnc_backend.md`
 
 **Completed in 0.0.6:** CLI backend override, HUD info display, backend probe script, triage guide, window resize handling.
 

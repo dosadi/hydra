@@ -24,6 +24,10 @@ CXX_SRCS     := viewer_main.cpp \
                  platform/backend_fbdev.cpp \
                  platform/backend_win32.cpp \
                  platform/backend_macos.cpp
+
+ifeq ($(VNC),1)
+CXX_SRCS     += platform/backend_vnc.cpp
+endif
 CXX_EXE      := sim_voxel
 
 VERILATOR    ?= verilator
@@ -60,6 +64,10 @@ VULKAN       ?= 0
 VULKAN_CFLAGS ?=
 VULKAN_LIBS   ?= -lvulkan
 
+VNC           ?= 0
+VNC_CFLAGS    ?=
+VNC_LIBS      ?= -lvncserver
+
 ifeq ($(WAYLAND),1)
   EXTRA_CFLAGS += -DHYDRA_ENABLE_WAYLAND $(WAYLAND_CFLAGS)
   EXTRA_LIBS   += $(WAYLAND_LIBS)
@@ -78,6 +86,11 @@ endif
 ifeq ($(VULKAN),1)
   EXTRA_CFLAGS += -DHYDRA_ENABLE_VULKAN $(VULKAN_CFLAGS)
   EXTRA_LIBS   += $(VULKAN_LIBS)
+endif
+
+ifeq ($(VNC),1)
+  EXTRA_CFLAGS += -DHYDRA_ENABLE_VNC $(VNC_CFLAGS)
+  EXTRA_LIBS   += $(VNC_LIBS)
 endif
 
 VERILATOR_LDFLAGS := $(SDL_LIBS) $(EXTRA_LIBS) -O3
@@ -201,9 +214,10 @@ help:
 	@echo "  make X11=1      - Enable X11 backend"
 	@echo "  make WAYLAND=1  - Enable Wayland backend"
 	@echo "  make VULKAN=1   - Enable Vulkan backend"
+	@echo "  make VNC=1      - Enable VNC backend"
 	@echo ""
 	@echo "Runtime environment variables:"
-	@echo "  HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN|FBDEV|WIN32|MACOS>"
+	@echo "  HYDRA_BACKEND=<SDL|GL|X11|WAYLAND|VULKAN|FBDEV|WIN32|MACOS|VNC>"
 	@echo "  LOG_FRAMES=1    - Print per-frame stats"
 	@echo "  LOG_KEYS=1      - Print keyboard events"
 	@echo "  FRAME_DUMP=file.ppm AUTO_EXIT=1 - Non-interactive frame dump"

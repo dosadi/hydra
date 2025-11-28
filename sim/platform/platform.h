@@ -18,7 +18,8 @@ enum class PlatformBackend {
     Win32,
     MacOS,
     AALIB,
-    Headless
+    Headless,
+    VNC
 };
 
 struct PlatformConfig {
