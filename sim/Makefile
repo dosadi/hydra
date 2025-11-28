@@ -5,6 +5,10 @@ SIM_DIR      := $(PROJECT_ROOT)/sim
 TOP_MODULE   := voxel_framebuffer_top
 
 CXX_SRCS     := viewer_main.cpp \
+				 viewer_globals.cpp \
+				 viewer_input.cpp \
+				 viewer_rendering.cpp \
+				 viewer_backend.cpp \
 				 harness_common.cpp \
 				 render_instrumentation.cpp \
                  platform/platform_stub.cpp \
@@ -95,7 +99,7 @@ VERILATOR_FLAGS := \
     -GMAX_RAY_STEPS=32 \
     -GRAY_STEP_SHIFT=8 \
     $(if $(filter 1,$(FAST)),-O1,--inline-mult -O3) \
-    --threads $(if $(filter 1,$(FAST)),1,4) \
+    --threads $(if $(filter 1,$(FAST)),1,1) \
     --exe $(CXX_SRCS) \
     -I$(RTL_DIR)
 
@@ -127,7 +131,7 @@ test_axi_wrap:
 test_frame: $(CXX_EXE)
 	@mkdir -p $(TEST_BUILD_DIR)
 	@rm -f $(TEST_FRAME) $(TEST_BUILD_DIR)/frame_diff.log
-	cd $(SIM_DIR) && FRAME_DUMP="$(TEST_FRAME)" AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
+	cd $(SIM_DIR) && FRAME_DUMP="build/frame_test.ppm" AUTO_EXIT=1 ./$(CXX_EXE) >/dev/null 2>&1 || true
 	@cd $(PROJECT_ROOT) && { \
 		python3 scripts/check_frame.py sim/tests/golden_frame.ppm sim/build/frame_test.ppm > sim/build/frame_diff.log 2>&1; \
 		status=$$?; \
@@ -182,6 +186,7 @@ help:
 	@echo "Sim Build System - Available Targets:"
 	@echo ""
 	@echo "  make all        - Build Verilator sim (default)"
+	@echo "  make FAST=1     - Build with reduced optimization for faster compilation"
 	@echo "  make test_frame - Build sim and run frame regression test"
 	@echo "  make test_pixel96 - Build and run pixel96_to_argb unit test"
 	@echo "  make smoke      - Build sim with minimal defaults (no optional backends)"

@@ -16,6 +16,10 @@
 
 #include "render_instrumentation.h"
 
+#include "viewer_backend.h"
+
+#include "viewer_input.h"
+
 #include <cstdint>
 #include <cstdio>
 #include <vector>
@@ -245,127 +249,7 @@ static void die(const std::string& s);
 // Use external RenderInstrumentation implementation to keep the harness small.
 #include "render_instrumentation.h"
 
-static std::string g_backend_info;
-
-static const char* backend_name(PlatformBackend b) {
-    switch (b) {
-        case PlatformBackend::SDL:    return "SDL";
-        case PlatformBackend::GL:     return "GL";
-        case PlatformBackend::Vulkan: return "Vulkan";
-        case PlatformBackend::Wayland:return "Wayland";
-        case PlatformBackend::X11:    return "X11";
-        case PlatformBackend::Fbdev:  return "fbdev";
-        case PlatformBackend::Win32:  return "Win32";
-        case PlatformBackend::MacOS:  return "macOS";
-        case PlatformBackend::Headless: return "Headless";
-        default: return "Unknown";
-    }
-}
-
-static void log_backend_caps(PlatformBackend requested, PlatformBackend backend, bool vsync) {
-    const char* video_driver = SDL_GetCurrentVideoDriver();
-    const char* render_driver = SDL_GetHint(SDL_HINT_RENDER_DRIVER);
-
-    std::fprintf(stderr,
-        "[hydra] backend requested=%s actual=%s vsync=%s video_driver=%s render_driver=%s\n",
-        backend_name(requested),
-        backend_name(backend),
-        vsync ? "on" : "off",
-        video_driver ? video_driver : "(unknown)",
-        render_driver ? render_driver : "(default)");
-
-    std::fprintf(stderr, "[hydra] compiled backends: SDL");
-#ifdef HYDRA_ENABLE_GL
-    std::fprintf(stderr, " GL");
-#endif
-#ifdef HYDRA_ENABLE_VULKAN
-    std::fprintf(stderr, " Vulkan");
-#endif
-#ifdef HYDRA_ENABLE_WAYLAND
-    std::fprintf(stderr, " Wayland");
-#endif
-#ifdef HYDRA_ENABLE_X11
-    std::fprintf(stderr, " X11");
-#endif
-    std::fprintf(stderr, " Headless\n");
-}
-
-static void log_input_caps() {
-    const char* grab_hint = SDL_GetHint(SDL_HINT_GRAB_KEYBOARD);
-    const char* mouse_hint = SDL_GetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP);
-
-    int joysticks = SDL_NumJoysticks();
-    int controllers = 0;
-    for (int i = 0; i < joysticks; ++i) {
-        if (SDL_IsGameController(i)) {
-            ++controllers;
-        }
-    }
-
-    int touch_devices = SDL_GetNumTouchDevices();
-
-    std::fprintf(stderr,
-        "[hydra] input: keyboard=assumed mouse_capture_hint=%s mouse_relative_hint=%s touch_devices=%d joysticks=%d controllers=%d\n",
-        grab_hint ? grab_hint : "(default)",
-        mouse_hint ? mouse_hint : "(default)",
-        touch_devices,
-        joysticks,
-        controllers);
-}
-
-struct InputState {
-    bool forward     = false;
-    bool back        = false;
-    bool strafe_left = false;
-    bool strafe_right = false;
-    bool up          = false;
-    bool down        = false;
-    bool yaw_left    = false;
-    bool yaw_right   = false;
-    bool pitch_up    = false;
-    bool pitch_down  = false;
-    bool fast        = false;
-};
-
-static inline void update_key_state(InputState& keys, SDL_Scancode sc,
-                                    SDL_Keycode keycode, bool pressed) {
-    switch (sc) {
-        case SDL_SCANCODE_W: keys.forward      = pressed; break;
-        case SDL_SCANCODE_S: keys.back         = pressed; break;
-        case SDL_SCANCODE_A: keys.strafe_left  = pressed; break;
-        case SDL_SCANCODE_D: keys.strafe_right = pressed; break;
-        case SDL_SCANCODE_Q: keys.down         = pressed; break;
-        case SDL_SCANCODE_E: keys.up           = pressed; break;
-        case SDL_SCANCODE_LEFT:  keys.yaw_left  = pressed; break;
-        case SDL_SCANCODE_RIGHT: keys.yaw_right = pressed; break;
-        case SDL_SCANCODE_UP:    keys.pitch_up  = pressed; break;
-        case SDL_SCANCODE_DOWN:  keys.pitch_down= pressed; break;
-        case SDL_SCANCODE_LSHIFT:
-        case SDL_SCANCODE_RSHIFT: keys.fast     = pressed; break;
-        default: break;
-    }
-
-    // Fallback to keycodes in case scancodes are missing or unusual.
-    SDL_Keycode kc = keycode;
-    if (kc >= 'A' && kc <= 'Z')
-        kc = kc - 'A' + 'a';
-
-    switch (kc) {
-        case SDLK_w: keys.forward      = pressed; break;
-        case SDLK_s: keys.back         = pressed; break;
-        case SDLK_a: keys.strafe_left  = pressed; break;
-        case SDLK_d: keys.strafe_right = pressed; break;
-        case SDLK_q: keys.down         = pressed; break;
-        case SDLK_e: keys.up           = pressed; break;
-        case SDLK_LEFT:  keys.yaw_left  = pressed; break;
-        case SDLK_RIGHT: keys.yaw_right = pressed; break;
-        case SDLK_UP:    keys.pitch_up  = pressed; break;
-        case SDLK_DOWN:  keys.pitch_down= pressed; break;
-        case SDLK_LSHIFT:
-        case SDLK_RSHIFT: keys.fast     = pressed; break;
-        default: break;
-    }
-}
+// std::string g_backend_info;  // Now defined in viewer_backend.cpp
 
 static void die(const std::string& s) {
     std::fprintf(stderr, "Error: %s\n", s.c_str());
@@ -509,118 +393,22 @@ int main(int argc, char** argv) {
     // Platform backend selection (HYDRA_BACKEND env respected inside select_default_backend).
     PlatformBackend requested_backend = select_default_backend();
     const bool headless_backend = (requested_backend == PlatformBackend::Headless);
-    if (headless_backend) {
-        // Force SDL to a dummy driver so no window/display server is required.
-        setenv("SDL_VIDEODRIVER", "dummy", 0);
-        setenv("SDL_AUDIODRIVER", "dummy", 0);
+
+    // Create backend manager
+    BackendManager backend_manager;
+    if (!backend_manager.initialize_backend(requested_backend, headless_backend)) {
+        die("Failed to initialize backend");
     }
 
-    log_input_caps();
-
-    if (std::getenv("HYDRA_VSYNC")) {
-        g_vsync = env_truthy("HYDRA_VSYNC");
-    }
-    PlatformBackend backend = PlatformBackend::SDL;
-    PlatformContext plat_ctx;
-    bool use_platform_present = false;
-
-    // Track if we had to fallback from requested backend
-    bool backend_fallback = false;
-    PlatformBackend attempted_backend = requested_backend;
-
-    if (requested_backend != PlatformBackend::SDL) {
-        if (!platform_backend_supported(requested_backend)) {
-            std::fprintf(stderr, "\n[hydra] WARNING: Backend '%s' is not supported on this platform\n",
-                         backend_name(requested_backend));
-            std::fprintf(stderr, "[hydra] REASON: Backend not compiled in or platform incompatible\n");
-            std::fprintf(stderr, "[hydra] ACTION: Falling back to SDL backend\n");
-            std::fprintf(stderr, "[hydra] TIP: Run './sim_voxel --caps' to see available backends\n\n");
-            backend_fallback = true;
-        } else {
-            PlatformConfig plat_cfg;
-            plat_cfg.width  = SCREEN_WIDTH;
-            plat_cfg.height = SCREEN_HEIGHT;
-            plat_cfg.vsync  = true;
-
-            std::fprintf(stderr, "[hydra] Initializing %s backend...\n", backend_name(requested_backend));
-
-            if (init_backend(requested_backend, plat_cfg, plat_ctx)) {
-                backend = requested_backend;
-                use_platform_present = true;
-                std::fprintf(stderr, "[hydra] SUCCESS: %s backend initialized\n", backend_name(backend));
-            } else {
-                std::fprintf(stderr, "\n[hydra] WARNING: Backend '%s' initialization failed\n",
-                             backend_name(requested_backend));
-                std::fprintf(stderr, "[hydra] REASON: Check stderr above for specific error messages\n");
-                std::fprintf(stderr, "[hydra] ACTION: Falling back to SDL backend\n");
-
-                // Provide specific hints based on backend
-                if (requested_backend == PlatformBackend::GL) {
-                    std::fprintf(stderr, "[hydra] TIP: Install OpenGL drivers or try HYDRA_BACKEND=sdl\n");
-                } else if (requested_backend == PlatformBackend::Vulkan) {
-                    std::fprintf(stderr, "[hydra] TIP: Install Vulkan drivers or try HYDRA_BACKEND=gl\n");
-                } else if (requested_backend == PlatformBackend::Wayland || requested_backend == PlatformBackend::X11) {
-                    std::fprintf(stderr, "[hydra] TIP: Check DISPLAY env var or try HYDRA_BACKEND=sdl\n");
-                }
-                std::fprintf(stderr, "\n");
-                backend_fallback = true;
-            }
-        }
+    // Initialize SDL window and renderer if needed
+    if (!backend_manager.initialize_sdl_window_and_renderer()) {
+        die("Failed to initialize SDL window and renderer");
     }
 
-    if (backend == PlatformBackend::SDL) {
-        std::fprintf(stderr, "[hydra] Using SDL backend%s\n",
-                     backend_fallback ? " (fallback)" : " (default)");
+    // Initialize SDL texture if needed
+    if (!backend_manager.initialize_sdl_texture()) {
+        die("Failed to initialize SDL texture");
     }
-
-    log_backend_caps(requested_backend, backend, g_vsync);
-
-    SDL_Window* win = SDL_CreateWindow(
-        "Voxel Accelerator — Interactive Raycaster",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2,
-        SDL_WINDOW_RESIZABLE
-    );
-    if (!win) die("Cannot create SDL window");
-    SDL_RaiseWindow(win);
-
-    uint32_t sdl_renderer_flags = SDL_RENDERER_ACCELERATED;
-    if (g_vsync) sdl_renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
-    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, sdl_renderer_flags);
-    if (!ren) die("Renderer creation failed");
-
-    SDL_RenderSetLogicalSize(ren, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    SDL_RendererInfo ren_info;
-    if (SDL_GetRendererInfo(ren, &ren_info) == 0) {
-        std::fprintf(stderr, "Renderer: %s\n", ren_info.name ? ren_info.name : "(unknown)");
-        const char* video_driver = SDL_GetCurrentVideoDriver();
-        char buf[160];
-        std::snprintf(buf, sizeof(buf), "Backend: %s (vsync %s) renderer=%s video=%s",
-                      backend_name(backend),
-                      g_vsync ? "on" : "off",
-                      ren_info.name ? ren_info.name : "(unknown)",
-                      video_driver ? video_driver : "(unknown)");
-        g_backend_info = buf;
-    }
-
-    SDL_Texture* tex = SDL_CreateTexture(
-        ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-        SCREEN_WIDTH, SCREEN_HEIGHT
-    );
-    if (!tex) die("Texture creation failed");
-
-    auto recreate_texture = [&]() {
-        if (tex) {
-            SDL_DestroyTexture(tex);
-            tex = nullptr;
-        }
-        tex = SDL_CreateTexture(
-            ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-            SCREEN_WIDTH, SCREEN_HEIGHT
-        );
-        if (!tex) die("Texture recreation failed");
-    };
 
     const char* font_env = std::getenv("HYDRA_FONT");
     const char* font_scale_env = std::getenv("HYDRA_FONT_SCALE");
@@ -702,11 +490,7 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> framebuffer(NPIX, clear_color);
 
     auto handle_resize = [&](int new_w, int new_h) {
-        (void)new_w; (void)new_h;
-        SDL_RenderSetLogicalSize(ren, SCREEN_WIDTH, SCREEN_HEIGHT);
-        recreate_texture();
-        std::fill(framebuffer.begin(), framebuffer.end(), clear_color);
-        std::fprintf(stderr, "[hydra] window resized, refreshed texture and cleared framebuffer\n");
+        backend_manager.handle_window_resize(new_w, new_h, framebuffer, clear_color);
     };
 
     // Reset sequence
@@ -715,6 +499,7 @@ int main(int argc, char** argv) {
         top->clk = 1; top->eval(); main_time++;
     }
     top->rst_n = 1;
+    if (headless_backend) top->start_frame_ext = 1;
 
     const char* cam_pos_env = std::getenv("HYDRA_CAM_POS");   // "x,y,z"
     const char* cam_ang_env = std::getenv("HYDRA_CAM_ANG");   // "yaw,pitch"
@@ -867,7 +652,7 @@ int main(int argc, char** argv) {
 
     // Print startup summary for reproducibility
     std::fprintf(stderr, "\n[hydra] === Startup Configuration ===\n");
-    std::fprintf(stderr, "[hydra] Backend: %s\n", backend_name(backend));
+    std::fprintf(stderr, "[hydra] Backend: %s\n", backend_manager.backend_name(backend_manager.get_current_backend()));
 
     // Log backend selection details
     if (const char* v = std::getenv("HYDRA_BACKEND")) {
@@ -926,8 +711,8 @@ int main(int argc, char** argv) {
     inst_config.hud_enabled = hud_enabled;
     inst_config.fps_target = fps_target;
     inst_config.vsync = g_vsync;
-    inst_config.backend_name = backend_name(backend);
-    inst_config.backend_info = g_backend_info;
+    inst_config.backend_name = backend_manager.backend_name(backend_manager.get_current_backend());
+    inst_config.backend_info = backend_manager.get_backend_info();
     inst_config.pixel_view = pixel_view_mode_name(g_pixel_view_mode);
     render_instrument.write_config(inst_config);
 
@@ -936,7 +721,6 @@ int main(int argc, char** argv) {
     uint8_t selection_y = 0;
     uint8_t selection_z = 0;
     uint64_t selection_word = 0;
-    InputState keys;
     float help_overlay_timer = 3.5f;
     if (std::getenv("HYDRA_HELP_STARTUP")) {
         help_overlay_timer = env_truthy("HYDRA_HELP_STARTUP") ? 3.5f : 0.0f;
@@ -944,11 +728,14 @@ int main(int argc, char** argv) {
     bool help_overlay_sticky = false;
     float sel_miss_timer = 0.0f;
 
+    // Create input handler
+    InputHandler input_handler;
+
     auto update_mouse_capture = [&]() {
         if (SDL_SetRelativeMouseMode(mouse_captured ? SDL_TRUE : SDL_FALSE) != 0) {
             std::fprintf(stderr, "Warning: SetRelativeMouseMode failed: %s\n", SDL_GetError());
         }
-        SDL_SetWindowGrab(win, mouse_captured ? SDL_TRUE : SDL_FALSE);
+        SDL_SetWindowGrab(backend_manager.get_sdl_window(), mouse_captured ? SDL_TRUE : SDL_FALSE);
         SDL_ShowCursor(mouse_captured ? SDL_FALSE : SDL_TRUE);
     };
 
@@ -1019,8 +806,6 @@ int main(int argc, char** argv) {
     root->voxel_framebuffer_top__DOT__world_seed = world_seed_override;
     if (!headless_backend) update_mouse_capture();
 
-    auto reset_key_state = [&]() { keys = InputState{}; };
-
     bool running = true;
     auto last_frame_time = std::chrono::high_resolution_clock::now();
     float fps = 0.0f;
@@ -1029,295 +814,68 @@ int main(int argc, char** argv) {
         // Default: no debug write
         root->voxel_framebuffer_top__DOT__dbg_write_en = 0;
 
-        SDL_Event ev;
-        while (SDL_PollEvent(&ev)) {
-            if (ev.type == SDL_QUIT) {
-                running = false;
-            } else if (ev.type == SDL_WINDOWEVENT) {
-                if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED ||
-                    ev.window.event == SDL_WINDOWEVENT_TAKE_FOCUS) {
-                    if (!headless_backend) update_mouse_capture();
-                } else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
-                    reset_key_state();
-                } else if (ev.window.event == SDL_WINDOWEVENT_RESIZED ||
-                           ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                    handle_resize(ev.window.data1, ev.window.data2);
-                }
-            } else if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP) {
-                bool key_down = (ev.type == SDL_KEYDOWN);
-                SDL_Scancode sc = ev.key.keysym.scancode;
-                SDL_Keycode keycode = ev.key.keysym.sym;
-                update_key_state(keys, sc, keycode, key_down);
+        // Process input events through InputHandler
+        input_handler.process_events(running, headless_backend);
 
-                // Debug: Log 'o' and 'O' keys specifically
-                if (key_down && (keycode == 'o' || keycode == 'O' || keycode == SDLK_o || sc == SDL_SCANCODE_O)) {
-                    std::fprintf(stderr, "[DEBUG] O key event: sc=%d kc=%d name=%s SDLK_o=%d\n",
-                                 (int)sc, (int)keycode, SDL_GetKeyName(keycode), (int)SDLK_o);
-                }
+        // Get and process input actions
+        auto actions = input_handler.get_and_clear_actions();
 
-                if (log_keys && log_keys_count < 200) {
-                    std::fprintf(stderr, "key %s sc=%d kc=%d name=%s mod=0x%x\n",
-                                 key_down ? "down" : "up",
-                                 (int)sc, (int)keycode,
-                                 SDL_GetKeyName(keycode),
-                                 ev.key.keysym.mod);
-                    ++log_keys_count;
-                }
+        // Handle quit action
+        if (actions.quit) {
+            running = false;
+        }
 
-                if (key_down) {
-                    switch (keycode) {
-                        case SDLK_ESCAPE:
-                            running = false;
-                            break;
-                        case SDLK_1: case SDLK_KP_1:
-                            smooth_surfaces = !smooth_surfaces;
-                            apply_flags_to_dut();
-                            if (log_keys && log_keys_count < 200) {
-                                std::fprintf(stderr, "toggle smooth -> %d\n", smooth_surfaces ? 1 : 0);
-                                ++log_keys_count;
-                            }
-                            break;
-                        case SDLK_2: case SDLK_KP_2:
-                            curvature = !curvature;
-                            apply_flags_to_dut();
-                            if (log_keys && log_keys_count < 200) {
-                                std::fprintf(stderr, "toggle curvature -> %d\n", curvature ? 1 : 0);
-                                ++log_keys_count;
-                            }
-                            break;
-                        case SDLK_3: case SDLK_KP_3:
-                            extra_light = !extra_light;
-                            apply_flags_to_dut();
-                            if (log_keys && log_keys_count < 200) {
-                                std::fprintf(stderr, "toggle extra_light -> %d\n", extra_light ? 1 : 0);
-                                ++log_keys_count;
-                            }
-                            break;
-                        case SDLK_o:
-                            diag_slice = !diag_slice;
-                            apply_flags_to_dut();
-                            std::fprintf(stderr, "[DEBUG] 'o' key pressed: diag_slice now = %d\n", diag_slice ? 1 : 0);
-                            if (log_keys && log_keys_count < 200) {
-                                std::fprintf(stderr, "toggle diag_slice -> %d\n", diag_slice ? 1 : 0);
-                                ++log_keys_count;
-                            }
-                            break;
-                        case SDLK_y:
-                            spectrum_mode = !spectrum_mode;
-                            std::fprintf(stderr, "[hydra] spectrum_mode %s\n", spectrum_mode ? "ON" : "OFF");
-                            break;
-                        case SDLK_j:
-                            ray_jitter = !ray_jitter;
-                            apply_flags_to_dut();
-                            std::fprintf(stderr, "[hydra] ray jitter %s\n", ray_jitter ? "ON" : "OFF");
-                            if (log_keys && log_keys_count < 200) {
-                                std::fprintf(stderr, "toggle ray_jitter -> %d\n", ray_jitter ? 1 : 0);
-                                ++log_keys_count;
-                            }
-                            break;
-                        case SDLK_m:
-                            if (!headless_backend) {
-                                mouse_captured = !mouse_captured;
-                                update_mouse_capture();
-                            }
-                            break;
-                        case SDLK_F3:
-                            safe_capture_mode = !safe_capture_mode;
-                            std::fprintf(stderr, "[hydra] safe capture %s\n", safe_capture_mode ? "ON" : "OFF");
-                            break;
-                        case SDLK_F2:
-                            safe_defaults_mode = !safe_defaults_mode;
-                            apply_safe_defaults();
-                            if (cam_clamp_enabled) {
-                                if (pos_x < cam_min) pos_x = cam_min;
-                                if (pos_x > cam_max) pos_x = cam_max;
-                                if (pos_y < cam_min) pos_y = cam_min;
-                                if (pos_y > cam_max) pos_y = cam_max;
-                                if (pos_z < cam_min) pos_z = cam_min;
-                                if (pos_z > cam_max) pos_z = cam_max;
-                            }
-                            std::fprintf(stderr, "[hydra] safe defaults %s (move=%.3f/%.3f turn=%.3f mouse=%.4f clamp=%d)\n",
-                                         safe_defaults_mode ? "ON" : "OFF",
-                                         move_speed, move_speed_fast, turn_speed_keys, mouse_sens,
-                                         cam_clamp_enabled ? 1 : 0);
-                            break;
-                        case SDLK_F1:
-                            help_overlay_sticky = !help_overlay_sticky;
-                            if (!help_overlay_sticky && help_overlay_timer <= 0.0f) {
-                                help_overlay_timer = 3.0f;
-                            }
-                            break;
-                        case SDLK_SLASH:
-                            help_overlay_timer = 4.0f;
-                            help_overlay_sticky = false;
-                            break;
-                        case SDLK_f:
-                            if (root->voxel_framebuffer_top__DOT__cursor_hit_valid) {
-                                selection_active = true;
-                                selection_x = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_x);
-                                selection_y = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_y);
-                                selection_z = static_cast<uint8_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_z);
-                                selection_word = static_cast<uint64_t>(root->voxel_framebuffer_top__DOT__cursor_voxel_data);
-                                apply_selection_to_dut();
-                                sel_miss_timer = 0.0f;
-                            } else {
-                                sel_miss_timer = 1.5f;
-                            }
-                            break;
-                        case SDLK_g:
-                            selection_active = false;
-                            selection_word   = 0;
-                            apply_selection_to_dut();
-                            break;
-                        case SDLK_h:
-                            hud_enabled = !hud_enabled;
-                            break;
-                        case SDLK_t:
-                            hud_theme_light = !hud_theme_light;
-                            break;
-                        case SDLK_r:
-                            // Reset camera and flags to defaults; clear selection.
-                            pos_x = default_pos_x;
-                            pos_y = default_pos_y;
-                            pos_z = default_pos_z;
-                            yaw   = default_yaw;
-                            pitch = default_pitch;
-                            smooth_surfaces = true;
-                            curvature       = true;
-                            extra_light     = false;
-                            diag_slice      = false;
-                            selection_active = false;
-                            selection_word   = 0;
-                            apply_camera_to_dut();
-                            apply_flags_to_dut();
-                            apply_selection_to_dut();
-                            apply_safe_defaults();
-                            break;
-                        case SDLK_v: {
-                            if (g_pixel_view_mode == PixelViewMode::Color) {
-                                g_pixel_view_mode = PixelViewMode::Word0;
-                            } else if (g_pixel_view_mode == PixelViewMode::Word0) {
-                                g_pixel_view_mode = PixelViewMode::Word2;
-                            } else if (g_pixel_view_mode == PixelViewMode::Word2) {
-                                g_pixel_view_mode = PixelViewMode::SidebandMix;
-                            } else {
-                                g_pixel_view_mode = PixelViewMode::Color;
-                            }
-                            std::fprintf(stderr, "[hydra] pixel view -> %s\n",
-                                         pixel_view_mode_name(g_pixel_view_mode));
-                            break;
-                        }
-                        case SDLK_p:
-                            std::fprintf(stderr,
-                                "State: cam=(%.3f,%.3f,%.3f) yaw=%.3f pitch=%.3f flags[smooth=%d curv=%d extra=%d diag=%d] sel=%d (%u,%u,%u)\n",
-                                pos_x, pos_y, pos_z, yaw, pitch,
-                                smooth_surfaces ? 1 : 0,
-                                curvature ? 1 : 0,
-                                extra_light ? 1 : 0,
-                                diag_slice ? 1 : 0,
-                                selection_active ? 1 : 0,
-                                (unsigned)selection_x,
-                                (unsigned)selection_y,
-                                (unsigned)selection_z);
-                            break;
-                        case SDLK_s: {
-                            // Screenshot: save current framebuffer as timestamped PPM
-                            auto now = std::chrono::system_clock::now();
-                            auto secs = std::chrono::duration_cast<std::chrono::seconds>(
-                                now.time_since_epoch()).count();
-                            char filename[256];
-                            std::snprintf(filename, sizeof(filename), "sim/screenshot_%ld.ppm", secs);
-                            FILE* f = std::fopen(filename, "wb");
-                            if (!f) {
-                                std::fprintf(stderr, "Failed to open %s for screenshot\n", filename);
-                            } else {
-                                std::fprintf(f, "P6\n%d %d\n255\n", SCREEN_WIDTH, SCREEN_HEIGHT);
-                                for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-                                    for (int x = 0; x < SCREEN_WIDTH; ++x) {
-                                        uint32_t argb = framebuffer[size_t(y) * SCREEN_WIDTH + x];
-                                        uint8_t rgb[3] = {
-                                            (uint8_t)((argb >> 16) & 0xFF),
-                                            (uint8_t)((argb >> 8) & 0xFF),
-                                            (uint8_t)(argb & 0xFF)
-                                        };
-                                        std::fwrite(rgb, 1, 3, f);
-                                    }
-                                }
-                                std::fclose(f);
-                                std::fprintf(stderr, "Screenshot saved: %s\n", filename);
-                            }
-                            break;
-                        }
-                        default: break;
-                    }
+        // Handle mouse capture toggle
+        if (actions.toggle_mouse_capture) {
+            mouse_captured = !mouse_captured;
+            update_mouse_capture();
+        }
 
-                    // Edit selected voxel
-                    if (selection_active) {
-                        uint64_t w = selection_word;
-                        uint8_t material_props = (w >> 56) & 0xFF;
-                        uint8_t emissive       = (w >> 48) & 0xFF;
-                        uint8_t alpha          = (w >> 40) & 0xFF;
-                        uint8_t light          = (w >> 32) & 0xFF;
-                        uint8_t r              = (w >> 24) & 0xFF;
-                        uint8_t g              = (w >> 16) & 0xFF;
-                        uint8_t b              = (w >>  8) & 0xFF;
-                        uint8_t material_type  = (w >>  4) & 0x0F;
+        // Handle camera update
+        if (actions.update_camera) {
+            apply_camera_to_dut();
+        }
 
-                        bool do_write = false;
+        // Handle flag updates
+        if (actions.update_flags) {
+            apply_flags_to_dut();
+        }
 
-                        if (keycode == SDLK_c) {
-                            material_type = (material_type + 1) & 0x0F;
-                            w &= ~((uint64_t)0x0F << 4);
-                            w |= (uint64_t(material_type) << 4);
-                            do_write = true;
-                        } else if (keycode == SDLK_x) {
-                            int val = emissive + 16;
-                            if (val > 255) val = 255;
-                            emissive = (uint8_t)val;
-                            w &= ~((uint64_t)0xFF << 48);
-                            w |= (uint64_t)emissive << 48;
-                            do_write = true;
-                        } else if (keycode == SDLK_z) {
-                            int val = emissive - 16;
-                            if (val < 0) val = 0;
-                            emissive = (uint8_t)val;
-                            w &= ~((uint64_t)0xFF << 48);
-                            w |= (uint64_t)emissive << 48;
-                            do_write = true;
-                        } else if (keycode == SDLK_b) {
-                            auto saturate_add = [](uint8_t c, int delta) -> uint8_t {
-                                int v = c + delta;
-                                if (v < 0) v = 0;
-                                if (v > 255) v = 255;
-                                return (uint8_t)v;
-                            };
-                            r = saturate_add(r, 16);
-                            g = saturate_add(g, 16);
-                            b = saturate_add(b, 16);
-                            w &= ~(((uint64_t)0xFFFFFF) << 8);
-                            w |= ((uint64_t)r << 24) |
-                                 ((uint64_t)g << 16) |
-                                 ((uint64_t)b <<  8);
-                            do_write = true;
-                        }
+        // Handle selection updates
+        if (actions.update_selection) {
+            apply_selection_to_dut();
+        }
 
-                        if (do_write) {
-                            selection_word = w;
-                            uint32_t addr = voxel_addr_from_xyz(selection_x, selection_y, selection_z);
-                            root->voxel_framebuffer_top__DOT__dbg_write_addr = addr;
-                            root->voxel_framebuffer_top__DOT__dbg_write_data = w;
-                            root->voxel_framebuffer_top__DOT__dbg_write_en   = 1;
-                        }
-                    }
-                }
-            } else if (ev.type == SDL_MOUSEMOTION && mouse_captured && !safe_capture_mode) {
-                int dx = ev.motion.xrel;
-                int dy = ev.motion.yrel;
-                yaw   += dx * mouse_sens;
+        // Handle camera reset
+        if (actions.reset_camera) {
+            pos_x = default_pos_x;
+            pos_y = default_pos_y;
+            pos_z = default_pos_z;
+            yaw = default_yaw;
+            pitch = default_pitch;
+            smooth_surfaces = true;
+            curvature = true;
+            extra_light = false;
+            diag_slice = false;
+            selection_active = false;
+            selection_word = 0;
+            apply_camera_to_dut();
+            apply_flags_to_dut();
+            apply_selection_to_dut();
+            apply_safe_defaults();
+        }
+
+        // Handle mouse motion if captured
+        if (mouse_captured && !safe_capture_mode) {
+            SDL_Event motion_ev;
+            while (SDL_PeepEvents(&motion_ev, 1, SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEMOTION) > 0) {
+                int dx = motion_ev.motion.xrel;
+                int dy = motion_ev.motion.yrel;
+                yaw += dx * mouse_sens;
                 pitch += (invert_y_mouse ? dy : -dy) * mouse_sens;
-    if (pitch >  1.50f) pitch =  1.50f;
-    if (pitch < -1.50f) pitch = -1.50f;
-                apply_camera_to_dut();
+                if (pitch > 1.50f) pitch = 1.50f;
+                if (pitch < -1.50f) pitch = -1.50f;
+                actions.update_camera = true;
             }
         }
 
@@ -1328,20 +886,20 @@ int main(int argc, char** argv) {
         float rdx = -std::sin(yaw);
         float rdy =  std::cos(yaw);
 
-        float cur_speed = keys.fast ? move_speed_fast : move_speed;
+        float cur_speed = input_handler.get_keys().fast ? move_speed_fast : move_speed;
 
         if (!safe_capture_mode) {
-            if (keys.forward)      { pos_x += fdx * cur_speed; pos_y += fdy * cur_speed; cam_changed = true; }
-            if (keys.back)         { pos_x -= fdx * cur_speed; pos_y -= fdy * cur_speed; cam_changed = true; }
-            if (keys.strafe_left)  { pos_x += rdx * cur_speed; pos_y += rdy * cur_speed; cam_changed = true; }
-            if (keys.strafe_right) { pos_x -= rdx * cur_speed; pos_y -= rdy * cur_speed; cam_changed = true; }
-            if (keys.down)         { pos_z -= cur_speed; cam_changed = true; }
-            if (keys.up)           { pos_z += cur_speed; cam_changed = true; }
+            if (input_handler.get_keys().forward)      { pos_x += fdx * cur_speed; pos_y += fdy * cur_speed; cam_changed = true; }
+            if (input_handler.get_keys().back)         { pos_x -= fdx * cur_speed; pos_y -= fdy * cur_speed; cam_changed = true; }
+            if (input_handler.get_keys().strafe_left)  { pos_x += rdx * cur_speed; pos_y += rdy * cur_speed; cam_changed = true; }
+            if (input_handler.get_keys().strafe_right) { pos_x -= rdx * cur_speed; pos_y -= rdy * cur_speed; cam_changed = true; }
+            if (input_handler.get_keys().down)         { pos_z -= cur_speed; cam_changed = true; }
+            if (input_handler.get_keys().up)           { pos_z += cur_speed; cam_changed = true; }
 
-            if (keys.yaw_left)   { yaw   -= turn_speed_keys; cam_changed = true; }
-            if (keys.yaw_right)  { yaw   += turn_speed_keys; cam_changed = true; }
-            if (keys.pitch_up)   { pitch += turn_speed_keys; cam_changed = true; }
-            if (keys.pitch_down) { pitch -= turn_speed_keys; cam_changed = true; }
+            if (input_handler.get_keys().yaw_left)   { yaw   -= turn_speed_keys; cam_changed = true; }
+            if (input_handler.get_keys().yaw_right)  { yaw   += turn_speed_keys; cam_changed = true; }
+            if (input_handler.get_keys().pitch_up)   { pitch += turn_speed_keys; cam_changed = true; }
+            if (input_handler.get_keys().pitch_down) { pitch -= turn_speed_keys; cam_changed = true; }
         }
 
         if (pitch >  1.50f) pitch =  1.50f;
@@ -1369,7 +927,7 @@ int main(int argc, char** argv) {
         // Ensure DUT flags follow local toggles every frame.
         apply_flags_to_dut();
 
-        top->start_frame_ext = (benchmark_frames > 0) ? 1 : 0;
+        top->start_frame_ext = 1;
         top->benchmark_mode = (benchmark_frames > 0) ? 1 : 0;
 
         // Simulate HDL
@@ -1764,32 +1322,7 @@ int main(int argc, char** argv) {
                                 warn_x, warn_y, warn_color);
             }
 
-            if (use_platform_present) {
-                present_backend(plat_ctx, framebuffer.data(),
-                                SCREEN_WIDTH, SCREEN_HEIGHT);
-            }
-
-            if (render_instrument.active())
-                hud_present_end = std::chrono::high_resolution_clock::now();
-
-            if (render_instrument.active())
-                copy_start = std::chrono::high_resolution_clock::now();
-            void* pixels = nullptr;
-            int pitch_bytes = 0;
-            if (SDL_LockTexture(tex, nullptr, &pixels, &pitch_bytes) != 0)
-                die("LockTexture failed");
-
-            for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-                uint32_t* row = (uint32_t*)((uint8_t*)pixels + y * pitch_bytes);
-                std::memcpy(row, &framebuffer[size_t(y)*SCREEN_WIDTH],
-                            SCREEN_WIDTH * sizeof(uint32_t));
-            }
-            SDL_UnlockTexture(tex);
-
-            SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-            SDL_RenderClear(ren);
-            SDL_RenderCopy(ren, tex, nullptr, nullptr);
-            SDL_RenderPresent(ren);
+            backend_manager.present_frame(framebuffer, backend_manager.is_platform_present_enabled());
 
             if (render_instrument.active())
                 copy_end = std::chrono::high_resolution_clock::now();
@@ -1817,19 +1350,15 @@ int main(int argc, char** argv) {
     top->final();
     delete top;
 
-    if (use_platform_present)
-        shutdown_backend(plat_ctx);
+    backend_manager.cleanup();
 
     std::fprintf(stderr, "[hydra] exit summary: backend=%s vsync=%s frames_rendered=%zu\n",
-                 backend_name(backend),
+                 backend_manager.backend_name(backend_manager.get_current_backend()),
                  g_vsync ? "on" : "off",
                  frame_counter);
 
     if (font) TTF_CloseFont(font);
     TTF_Quit();
-    SDL_DestroyTexture(tex);
-    SDL_DestroyRenderer(ren);
-    SDL_DestroyWindow(win);
     SDL_Quit();
     return 0;
 }
