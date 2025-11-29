@@ -174,7 +174,7 @@ lint:
 	@$(VERILATOR) -Wall --Wno-fatal --Wno-PINCONNECTEMPTY --Wno-MULTITOP --lint-only --top-module voxel_sim_harness -I$(RTL_DIR) $(shell find $(RTL_DIR) -name '*.sv' ! -name 'crossbar_*.sv' ! -name 'ucie_*.sv' ! -path '*/ip_cores/*' ! -path '*/deprecated/*')
 	@if command -v clang-tidy >/dev/null 2>&1; then \
 		echo "[lint] clang-tidy on sim C++ sources..."; \
-		clang-tidy $(CXX_SRCS) -- $(SDL_CFLAGS) $(EXTRA_CFLAGS) || exit $$?; \
+		clang-tidy $(CXX_SRCS) -- $(SDL_CFLAGS) $(EXTRA_CFLAGS) -I/usr/share/verilator/include -I/usr/share/verilator/include/vltstd || exit $$?; \
 	else \
 		echo "[lint] clang-tidy not found; skipping C++ lint."; \
 	fi
