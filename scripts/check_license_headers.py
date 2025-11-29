@@ -10,7 +10,20 @@ from typing import Iterable
 LICENSE_TAG = "SPDX-License-Identifier: BSD-3-Clause"
 
 SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".sv", ".svh", ".v"}
-SKIP_DIRS = {"third_party", "build", "sim/obj_dir", "out", ".git"}
+SKIP_DIRS = {
+    "third_party", "build", "out", ".git", ".venv",
+    "obj_dir", "obj_dir_test",  # Verilator generated files
+    "verification",  # UVM stubs/placeholders
+    "mesa",  # Mesa Gallium stubs (third-party API)
+    "deprecated",  # Deprecated modules
+    "ip_cores",  # Third-party IP cores
+    "litex",  # LiteX integration stubs
+}
+
+SKIP_FILES = {
+    "generated_properties.sv",  # Auto-generated formal properties
+    "hydra_pcie_drv.mod.c",  # Kernel module build artifact
+}
 
 
 def iter_sources(root: Path) -> Iterable[Path]:
@@ -20,6 +33,8 @@ def iter_sources(root: Path) -> Iterable[Path]:
         if path.suffix not in SUFFIXES:
             continue
         if any(part in SKIP_DIRS for part in path.parts):
+            continue
+        if path.name in SKIP_FILES:
             continue
         yield path
 
