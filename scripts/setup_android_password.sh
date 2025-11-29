@@ -57,7 +57,22 @@ get_android_ip() {
         if [[ -n "$LOCAL_IP" ]]; then
             NETWORK=$(echo "$LOCAL_IP" | sed 's/\.[0-9]*$/.0\/24/')
             log_info "Scanning network: $NETWORK"
-            nmap -p 8022 --open "$NETWORK" 2>/dev/null | grep "Nmap scan report" | awk '{print $5}' || true
+            NMAP_RESULTS=$(nmap -p 8022 --open "$NETWORK" 2>/dev/null | grep "Nmap scan report" | awk '{print $5}' || true)
+            if [[ -n "$NMAP_RESULTS" ]]; then
+                log_success "Found devices with SSH on port 8022:"
+                echo "$NMAP_RESULTS"
+                # Take the first result
+                DETECTED_IP=$(echo "$NMAP_RESULTS" | head -1)
+                if [[ -n "$DETECTED_IP" ]]; then
+                    log_success "Auto-detected Android IP: $DETECTED_IP"
+                    read -rp "Use this IP address? (Y/n): " -n 1 -r
+                    echo
+                    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                        ANDROID_IP="$DETECTED_IP"
+                        return
+                    fi
+                fi
+            fi
         fi
     fi
 
@@ -78,13 +93,12 @@ install_android_password_store() {
     log_info "Installing password store on Android..."
 
     # Install required packages
-    ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null "termux-user@$ANDROID_IP" "
+    ssh_android "
         pkg update
         pkg install -y gnupg pass git openssh termux-api
         mkdir -p ~/.password-store
         chmod 700 ~/.password-store
-        log_success 'Password store installed on Android'
+        echo 'Password store installed on Android'
     "
 }
 
@@ -130,17 +144,11 @@ setup_android_store() {
     log_info "Setting up password store on Android..."
 
     # Copy GPG keys to Android
-    gpg --export-secret-keys "$GPG_KEY" | \
-    ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null "termux-user@$ANDROID_IP" "gpg --import"
-
-    gpg --export "$GPG_KEY" | \
-    ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null "termux-user@$ANDROID_IP" "gpg --import"
+    gpg --export-secret-keys "$GPG_KEY" | ssh_android "gpg --import"
+    gpg --export "$GPG_KEY" | ssh_android "gpg --import"
 
     # Initialize Android password store
-    ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null "termux-user@$ANDROID_IP" "
+    ssh_android "
         gpg --list-keys
         GPG_KEY=\$(gpg --list-keys --with-colons | grep '^pub' | cut -d: -f5)
         pass init \"\$GPG_KEY\"
@@ -220,8 +228,7 @@ chmod +x ~/.password_sync.sh
 create_android_script() {
     log_info "Creating Android password management script..."
 
-    ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null "termux-user@$ANDROID_IP" "
+    ssh_android "
         cat > ~/.password_manager.sh << 'EOF'
 #!/bin/bash
 # Android Password Manager
@@ -333,6 +340,82 @@ Security Notes:
 EOF
 }
 
+# Test SSH connection with better error handling
+test_ssh_connection() {
+    log_info "Testing SSH connection to Android..."
+
+    # First, try with existing key
+    if ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
+           -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 \
+           "termux-user@$ANDROID_IP" "echo 'SSH key authentication successful'" >/dev/null 2>&1; then
+        log_success "SSH key authentication working"
+        return 0
+    fi
+
+    # If key auth fails, try password auth (if sshpass available)
+    if command -v sshpass &>/dev/null; then
+        log_info "Trying password authentication..."
+        # Try common default passwords
+        for password in "" "termux" "android"; do
+            if sshpass -p "$password" ssh -o StrictHostKeyChecking=no \
+                       -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 \
+                       "termux-user@$ANDROID_IP" -p 8022 "echo 'Password auth successful'" >/dev/null 2>&1; then
+                log_success "Password authentication working with password: '$password'"
+                SSH_PASSWORD="$password"
+                return 0
+            fi
+        done
+    fi
+
+    # If both fail, provide setup instructions
+    log_error "Cannot connect to Android device"
+    echo
+    log_info "Please complete Termux SSH setup first:"
+    echo
+    echo "On your Android device in Termux, run these commands:"
+    echo
+    echo "1. Install OpenSSH:"
+    echo "   pkg install openssh"
+    echo
+    echo "2. Start SSH server:"
+    echo "   sshd"
+    echo
+    echo "3. Set a password for termux-user (if not set):"
+    echo "   passwd"
+    echo
+    echo "4. Check SSH server status:"
+    echo "   ps aux | grep sshd"
+    echo
+    echo "5. Get your IP address:"
+    echo "   ip addr show wlan0 | grep 'inet ' | awk '{print \$2}' | cut -d/ -f1"
+    echo
+    read -rp "Press Enter when Termux SSH is set up and running..."
+    echo
+
+    # Try connection again
+    if ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
+           -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 \
+           "termux-user@$ANDROID_IP" "echo 'Connection successful'" >/dev/null 2>&1; then
+        log_success "SSH connection established"
+        return 0
+    fi
+
+    # If still failing, try password prompt
+    log_info "Please enter the Termux password:"
+    read -rsp "Password: " SSH_PASSWORD
+    echo
+
+    if [[ -n "$SSH_PASSWORD" ]] && sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
+               -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 \
+               "termux-user@$ANDROID_IP" -p 8022 "echo 'Password authentication successful'" >/dev/null 2>&1; then
+        log_success "Password authentication working"
+        return 0
+    fi
+
+    log_error "Still cannot connect. Please check Termux setup."
+    return 1
+}
+
 # Main setup
 main() {
     get_android_ip
@@ -343,17 +426,8 @@ main() {
         exit 1
     fi
 
-    # Test connection
-    log_info "Testing connection to Android..."
-    if ! ssh -i "$HOME/.ssh/id_ed25519" -p 8022 -o StrictHostKeyChecking=no \
-             -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 \
-             "termux-user@$ANDROID_IP" "echo 'Connection successful'" >/dev/null 2>&1; then
-        log_error "Cannot connect to Android device"
-        log_info "Please ensure:"
-        log_info "  • Termux is installed and running"
-        log_info "  • SSH server is running: sshd"
-        log_info "  • SSH key is configured"
-        log_info "  • Device is on the same network"
+    # Test connection with improved error handling
+    if ! test_ssh_connection; then
         exit 1
     fi
 
