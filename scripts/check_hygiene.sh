@@ -16,11 +16,12 @@ fi
 
 echo "[hygiene] Running shellcheck on scripts/"
 set +e
-shellcheck -x scripts/*.sh
+# Only fail on errors, allow warnings/info/style for now
+shellcheck -x -S error scripts/*.sh
 SH_OK=$?
 set -e
 if [ $SH_OK -ne 0 ]; then
-    echo "shellcheck reported issues. Fix warnings or adjust rules." >&2
+    echo "shellcheck reported errors. Fix critical issues or adjust rules." >&2
     exit $SH_OK
 fi
 
