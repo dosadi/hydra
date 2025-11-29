@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y verilator shellcheck python3 python3-pip
+          sudo apt-get install -y verilator shellcheck python3 python3-pip libsdl2-dev libsdl2-ttf-dev
 
       - name: Run lint checks
         run: |
