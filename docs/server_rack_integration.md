@@ -7,6 +7,7 @@ This document describes the server rack integration for Hydra accelerators, cove
 ## Rack Architecture Overview
 
 ### Standard Rack Specifications
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    42U Server Rack                          │
@@ -38,6 +39,7 @@ This document describes the server rack integration for Hydra accelerators, cove
 ```
 
 ### Rack Unit Allocation
+
 - **1U**: Network switches, management controllers
 - **2U**: CPU servers, storage nodes, compact accelerators
 - **4U**: GPU servers, high-power accelerators, storage arrays
@@ -46,6 +48,7 @@ This document describes the server rack integration for Hydra accelerators, cove
 ## Power Distribution and Management
 
 ### Rack Power Specifications
+
 ```c
 #define RACK_VOLTAGE_208V_3PH  208  // 208V 3-phase
 #define RACK_VOLTAGE_480V_3PH  480  // 480V 3-phase (high-density)
@@ -71,6 +74,7 @@ struct hydra_power_rail {
 ```
 
 ### Power Delivery Implementation
+
 ```c
 static const struct hydra_power_rail hydra_power_rails[] = {
     {
@@ -144,6 +148,7 @@ power_off:
 ```
 
 ### Power Monitoring and Telemetry
+
 ```c
 struct hydra_power_telemetry {
     ktime_t timestamp;
@@ -204,6 +209,7 @@ static void hydra_power_monitor_work(struct work_struct *work)
 ## Thermal Management
 
 ### Rack Cooling Architecture
+
 ```
 Airflow Direction: Front → Rear (Standard)
 ┌─────────────────────────────────────────────────────────────┐
@@ -226,6 +232,7 @@ Airflow Direction: Front → Rear (Standard)
 ```
 
 ### Hydra Thermal Design
+
 ```c
 #define TEMP_FPGA_MAX       85.0   // °C
 #define TEMP_PCIE_MAX       75.0   // °C
@@ -298,6 +305,7 @@ static int hydra_thermal_throttle(struct hydra_dev *hdev,
 ## Network Connectivity
 
 ### Rack Network Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                Rack Network Topology                        │
@@ -332,6 +340,7 @@ static int hydra_thermal_throttle(struct hydra_dev *hdev,
 ```
 
 ### High-Speed Networking Implementation
+
 ```c
 #define HYDRA_ETH_PORTS_MAX    4
 #define HYDRA_ETH_SPEED_MAX    400000  // 400Gbps
@@ -404,6 +413,7 @@ static int hydra_network_init(struct hydra_dev *hdev)
 ## Management Interfaces
 
 ### IPMI (Intelligent Platform Management Interface)
+
 ```c
 #define IPMI_MAX_CHANNELS     16
 #define IPMI_MAX_USERS       16
@@ -465,6 +475,7 @@ static int hydra_ipmi_init(struct hydra_dev *hdev)
 ```
 
 ### Redfish API Integration
+
 ```c
 #define REDFISH_API_VERSION   "1.0.0"
 #define REDFISH_PORT         443
@@ -519,6 +530,7 @@ static int hydra_redfish_init(struct hydra_dev *hdev)
 ## Rack-Scale Management
 
 ### Rack Management Controller Integration
+
 ```c
 struct rack_management_config {
     char bmc_ip[16];          // BMC IP address
@@ -568,6 +580,7 @@ static int hydra_rack_discovery(struct hydra_dev *hdev)
 ```
 
 ### Environmental Monitoring
+
 ```c
 struct rack_environmental_data {
     ktime_t timestamp;
@@ -621,6 +634,7 @@ reschedule:
 ## Hot-Swap and Serviceability
 
 ### Hot-Swap Implementation
+
 ```c
 struct hydra_hotswap_config {
     bool hotswap_supported;    // Hot-swap capability
@@ -711,6 +725,7 @@ static void hydra_hotswap_extraction_handler(struct hydra_dev *hdev)
 ## Testing and Validation
 
 ### Rack Integration Testing
+
 ```bash
 #!/bin/bash
 # rack_integration_test.sh

@@ -39,6 +39,23 @@ help:
 	@echo "  make bar1-hexdump  - Map BAR1 and hexdump a small range (skips if missing)"
 	@echo "  make cam-flags-demo - Sample: set camera/flags/selection via libhydra"
 	@echo "  make backend-probe - Probe SDL backends (best effort; skips if SDL missing)"
+	@echo "  make uvm-test      - Run UVM verification tests"
+	@echo "  make uvm-perf      - Run UVM performance profiling tests"
+	@echo "  make uvm-constr    - Run UVM constrained random tests"
+	@echo "  make synth          - Run unified FPGA synthesis (auto-select tool)"
+	@echo "  make synth-vivado   - Run Vivado FPGA synthesis"
+	@echo "  make synth-quartus  - Run Quartus FPGA synthesis"
+	@echo "  make synth-yosys    - Run Yosys open-source synthesis"
+	@echo "  make synth-all      - Run synthesis with all available tools"
+	@echo "  make synth-test     - Test synthesis interface functionality"
+	@echo "  make synth-analyze - Analyze synthesis results"
+	@echo "  make synth-check   - Check synthesis readiness"
+	@echo "  make formal        - Run formal verification"
+	@echo "  make power-analyze - Analyze power consumption"
+	@echo "  make security-check- Run security analysis"
+	@echo "  make benchmark     - Run performance benchmarks"
+	@echo "  make quality-check - Analyze code quality"
+	@echo "  make package-release - Create release package"
 	@echo "  make dev-loop      - Full dev cycle (sim + test + SDK + optional RTL/QEMU)"
 	@echo "  make ip-fetch      - Fetch third-party IP (LitePCIe/LiteDRAM/LiteX)"
 	@echo "  make bsd-kmod      - Build FreeBSD hydra kmod (drivers/bsd/Makefile.kmod)"
@@ -239,6 +256,82 @@ bar1-hexdump:
 
 backend-probe:
 	@./scripts/check_backends.sh
+
+# UVM Verification targets
+uvm-test:
+	@echo "Running UVM verification tests..."
+	@cd verification/uvm && ./run_uvm_tests.sh
+
+uvm-perf:
+	@echo "Running UVM performance profiling tests..."
+	@cd verification/uvm && ./run_performance_tests.sh
+
+uvm-constr:
+	@echo "Running UVM constrained random tests..."
+	@cd verification/uvm && ./run_constrained_tests.sh
+
+# FPGA Synthesis targets
+synth:
+	@echo "Running unified FPGA synthesis..."
+	@cd synthesis && ./run_synthesis.sh
+
+synth-vivado:
+	@echo "Running Vivado FPGA synthesis..."
+	@cd synthesis && TOOL=vivado ./run_synthesis.sh
+
+synth-quartus:
+	@echo "Running Quartus FPGA synthesis..."
+	@cd synthesis && TOOL=quartus ./run_synthesis.sh
+
+synth-yosys:
+	@echo "Running Yosys open-source synthesis..."
+	@cd synthesis && TOOL=yosys ./run_synthesis.sh
+
+synth-all:
+	@echo "Running synthesis with all available tools..."
+	@cd synthesis && TOOL=all ./run_synthesis.sh
+
+synth-test:
+	@echo "Testing synthesis interface..."
+	@cd synthesis && ./test_interface.sh
+
+synth-analyze:
+	@echo "Analyzing synthesis results..."
+	@python3 scripts/analyze_synthesis.py --tool vivado --output synthesis_report.md
+
+synth-check:
+	@echo "Checking synthesis readiness..."
+	@./scripts/check_synthesis_readiness.sh
+
+# Formal Verification targets
+formal:
+	@echo "Running formal verification..."
+	@cd formal && ./run_formal.sh
+
+# Power Analysis targets
+power-analyze:
+	@echo "Analyzing power consumption..."
+	@cd power && ./analyze_power.sh
+
+# Security Analysis targets
+security-check:
+	@echo "Running security analysis..."
+	@cd security && ./analyze_security.sh
+
+# Benchmarking targets
+benchmark:
+	@echo "Running performance benchmarks..."
+	@cd benchmark && ./run_benchmarks.sh
+
+# Code Quality targets
+quality-check:
+	@echo "Analyzing code quality..."
+	@cd quality && ./analyze_quality.sh
+
+# Packaging targets
+package-release:
+	@echo "Creating release package..."
+	@cd package && ./create_release.sh
 
 # Touch system targets
 doc-scan:
