@@ -122,6 +122,8 @@ module axi_sdram_stub #(
 
     // ------------------------------------------------------------------------
     // AXI Protocol SVAs and Coverage
+`ifndef SYNTHESIS
+`ifndef IVERILOG
         // SVA: AWVALID and WVALID must not be asserted simultaneously unless AWREADY and WREADY are both high
         property aw_w_valid_exclusive;
             @(posedge clk) disable iff (!rst_n)
@@ -135,6 +137,8 @@ module axi_sdram_stub #(
             (s_axi_arvalid && s_axi_rvalid) |-> (s_axi_arready && s_axi_rready);
         endproperty
         ar_r_valid_exclusive_sva: assert property (ar_r_valid_exclusive);
+`endif // IVERILOG
+`endif // SYNTHESIS
 
 `ifdef FORMAL
         // SVA: AW handshake only when AWVALID
