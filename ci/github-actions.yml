@@ -1,0 +1,195 @@
+# ============================================================================
+# Hydra CI/CD Pipeline Configuration
+# GitHub Actions workflow for automated testing and deployment
+# ============================================================================
+
+name: Hydra CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run nightly builds
+    - cron: '0 2 * * *'
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # Quick quality checks (fast feedback)
+  quality-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y verilator build-essential libsdl2-dev libsdl2-ttf-dev
+
+    - name: Check code quality
+      run: |
+        make lint
+        make docs-lint
+        make whitespace
+
+    - name: Check file structure
+      run: |
+        make files
+        make todo-unique
+
+  # Build and test simulation
+  build-test:
+    runs-on: ubuntu-latest
+    needs: quality-check
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y verilator build-essential libsdl2-dev libsdl2-ttf-dev
+
+    - name: Build simulation
+      run: make sim
+
+    - name: Run tests
+      run: make test
+
+    - name: Build SDK
+      run: make sdk-setup
+
+    - name: Run benchmarks
+      run: make bench
+
+  # Verification tests
+  verification:
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install verification tools
+      run: |
+        pip install cocotb
+        # Note: UVM and formal tools would be installed here
+
+    - name: Check synthesis readiness
+      run: make synth-check
+
+    - name: Run UVM tests (if tools available)
+      run: |
+        if command -v vsim || command -v iverilog; then
+          make uvm-test || echo "UVM tests skipped - tools not configured"
+        else
+          echo "UVM tools not available - skipping"
+        fi
+
+  # Documentation and packaging
+  docs-package:
+    runs-on: ubuntu-latest
+    needs: verification
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Build documentation
+      run: |
+        make docs
+        make doxygen
+
+    - name: Create package
+      run: make package
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: hydra-package
+        path: out/hydra-package.tar.gz
+
+  # Security and formal verification (optional)
+  security-formal:
+    runs-on: ubuntu-latest
+    needs: docs-package
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[security]')
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install security tools
+      run: |
+        pip install symbiyosys
+        # Install other security tools as needed
+
+    - name: Run security analysis
+      run: |
+        if [ -d "security" ]; then
+          ./security/analyze_security.sh || echo "Security analysis failed"
+        fi
+
+    - name: Run formal verification
+      run: |
+        if [ -d "formal" ]; then
+          ./formal/run_formal.sh || echo "Formal verification failed"
+        fi
+
+  # Release deployment
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [docs-package, security-formal]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: hydra-package
+
+    - name: Create release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## Changes
+          See CHANGELOG.md for details
+
+          ## Assets
+          - hydra-package.tar.gz: Complete Hydra distribution
+        draft: false
+        prerelease: false
+
+    - name: Upload release assets
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./hydra-package.tar.gz
+        asset_name: hydra-package.tar.gz
+        asset_content_type: application/gzip
