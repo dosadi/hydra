@@ -127,6 +127,7 @@ module voxel_framebuffer_top #(
     cg_pixel_write_en_inst = new();
 `endif // IVERILOG
 `endif // VERILATOR
+`endif // FORMAL
 
     // SVA: Frame done pulse only when not busy (all pixels written)
     property frame_done_when_idle;
