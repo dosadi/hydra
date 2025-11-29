@@ -836,6 +836,7 @@ module voxel_csr #(
         end
     end
 
+`ifndef VERILATOR
     covergroup cg_axi_lite @(posedge clk);
         coverpoint int_status {
             bins frame_done = {32'h1};
@@ -848,6 +849,7 @@ module voxel_csr #(
         if (!rst_n)
             axi_cover.sample();
     end
+`endif // VERILATOR
 `endif
 
 `ifdef FORMAL

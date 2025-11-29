@@ -829,6 +829,10 @@ module voxel_axil_csr #(
                     ((int_status[i] && int_mask[i]) |-> irq_out);
                 endproperty
                 assert property (int_mask_bit_gates_irq)
+                    else $fatal("SVA: irq_out not asserted for int_status[%0d] & int_mask[%0d]", i, i);
+            end
+        endgenerate
+
     // AXI-Lite stability checks: hold address/data/strobes steady while VALID && !READY.
     always @(posedge clk) begin
         if (s_axil_awvalid && !s_axil_awready) begin
@@ -866,6 +870,7 @@ module voxel_axil_csr #(
         end
     end
 
+`ifndef VERILATOR
     covergroup cg_axi_lite @(posedge clk);
         coverpoint int_status {
             bins frame_done = {32'h1};
@@ -878,9 +883,8 @@ module voxel_axil_csr #(
         if (!rst_n)
             axi_cover.sample();
     end
-                else $fatal("SVA: irq_out not asserted for int_status[%0d] & int_mask[%0d]", i, i);
-        end
-    endgenerate
+`endif // VERILATOR
+
 `endif
 
 `ifdef FORMAL

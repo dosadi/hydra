@@ -65,12 +65,14 @@ module surface_extractor #(
         output_bounds_sva: assert property (output_bounds);
     `endif
 
+`ifndef VERILATOR
     // Covergroup: Extraction event types
     covergroup cg_extraction_events @(posedge clk);
         done_evt: coverpoint done;
         enable_evt: coverpoint enable;
     endgroup
     cg_extraction_events_inst = new();
+`endif // VERILATOR
 
     // ------------------------------------------------------------------------
     // Stub: Future surface extraction logic

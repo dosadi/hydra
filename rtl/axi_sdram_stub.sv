@@ -351,6 +351,7 @@ module axi_sdram_stub #(
     endproperty
     rvalid_aractive_sva: assert property (rvalid_aractive);
 
+`ifndef VERILATOR
     // Covergroup: Burst lengths and wait states
     covergroup cg_axi_burst @(posedge clk);
         burst_len: coverpoint s_axi_awlen {
@@ -374,6 +375,7 @@ module axi_sdram_stub #(
         r_stall:  coverpoint !s_axi_rready;
     endgroup
     cg_axi_backpressure_inst = new();
+`endif // VERILATOR
 
 `ifndef SYNTHESIS
     initial begin
@@ -659,16 +661,9 @@ module axi_sdram_stub #(
         end
     end
 
-    // ------------------------------------------------------------------------
-    // Stub parameters and interface signals for advanced AXI features
-    parameter integer AXI_QOS_WIDTH = 4;
-    parameter integer AXI_REGION_WIDTH = 4;
-    input  wire [AXI_QOS_WIDTH-1:0]    s_axi_awqos,
-    input  wire [AXI_REGION_WIDTH-1:0] s_axi_awregion,
-    input  wire [AXI_QOS_WIDTH-1:0]    s_axi_arqos,
-    input  wire [AXI_REGION_WIDTH-1:0] s_axi_arregion,
     // NOTE: For now we accept INCR bursts and FIXED bursts; other burst types
-    // will cause a SLVERR response. Extending to WRAP bursts and QoS/region
-    // handling is future work.
+    // will cause a SLVERR response. Extending to WRAP bursts, QoS, and region
+    // handling is future work. Add s_axi_awqos, s_axi_awregion, s_axi_arqos,
+    // s_axi_arregion to module port list when implementing advanced AXI features.
 
 endmodule

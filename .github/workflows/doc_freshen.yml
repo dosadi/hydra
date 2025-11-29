@@ -33,7 +33,6 @@ jobs:
 
       - name: Rebuild doc metadata
         run: |
-          python3 scripts/doc_touch.py --scan
           python3 scripts/doc_touch.py --rebuild-metadata
 
       - name: Check for stale docs

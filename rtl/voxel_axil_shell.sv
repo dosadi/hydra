@@ -161,6 +161,7 @@ module voxel_axil_shell #(
     valid_ready_deassert_on_reset_sva: assert property (valid_ready_deassert_on_reset);
 `endif
 
+`ifndef VERILATOR
     // Covergroup: CSR access patterns
     covergroup cg_csr_access @(posedge clk);
         awvalid: coverpoint s_axil_awvalid;
@@ -177,6 +178,8 @@ module voxel_axil_shell #(
         msi_evt: coverpoint msi_pulse;
     endgroup
     cg_irq_inst = new();
+`endif // VERILATOR
+
     wire         cam_load_pulse;
     wire signed [15:0] cam_x;
     wire signed [15:0] cam_y;

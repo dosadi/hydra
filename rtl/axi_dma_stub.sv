@@ -221,6 +221,7 @@ module axi_dma_stub #(
     // ------------------------------------------------------------------------
     // Covergroups for DMA burst, backpressure, and error response
     // ------------------------------------------------------------------------
+`ifndef VERILATOR
     covergroup cg_dma_burst @(posedge clk);
         awlen: coverpoint m_axi_awlen {
             bins single = {0};
@@ -251,6 +252,8 @@ module axi_dma_stub #(
         }
     endgroup
     cg_dma_error_inst = new();
+`endif // VERILATOR
+
     always @(posedge clk) begin
         if (m_axi_awvalid && !m_axi_awready) begin
             assert($stable(m_axi_awaddr)) else $fatal("AWADDR changed while AWVALID held high");
