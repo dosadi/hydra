@@ -199,10 +199,10 @@ if [[ "$DRY_RUN" == true ]]; then
     log_info "DRY RUN MODE - Commands will be shown but not executed"
     # Override make and script calls to echo instead
     make() {
-        echo "make $@"
+        echo "make $*"
     }
     ./scripts/() {
-        echo "./scripts/$@"
+        echo "./scripts/$*"
     }
 fi
 
