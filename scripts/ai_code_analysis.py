@@ -55,6 +55,28 @@ def analyze_cpp_file(filepath):
         if magic_numbers > 10:
             suggestions.append("🔢 Found multiple magic numbers - consider using named constants")
 
+        # Check for exception safety
+        try_blocks = len(re.findall(r'\btry\s*\{', content))
+        catch_blocks = len(re.findall(r'\bcatch\s*\(', content))
+        if try_blocks > catch_blocks:
+            suggestions.append("⚠️  Unbalanced try/catch blocks - ensure proper exception handling")
+
+        # Check for memory leaks (basic heuristic)
+        news = len(re.findall(r'\bnew\s+', content))
+        deletes = len(re.findall(r'\bdelete\s+', content))
+        if news > deletes + 2:  # Allow some margin
+            suggestions.append("💧 Potential memory leaks - ensure all 'new' calls have matching 'delete'")
+
+        # Check for const correctness
+        non_const_params = len(re.findall(r'\w+\s+\w+\s*\(', content))  # Simple heuristic
+        if non_const_params > 10:
+            suggestions.append("🔒 Consider using 'const' for parameters that aren't modified")
+
+        # Check for include guards in headers
+        if filepath.endswith('.h') or filepath.endswith('.hpp'):
+            if not re.search(r'#ifndef\s+\w+\s*#define\s+\w+', content, re.IGNORECASE):
+                suggestions.append("🛡️  Missing include guards in header file")
+
     except Exception as e:
         suggestions.append(f"❌ Error analyzing {filepath}: {e}")
 
@@ -88,6 +110,25 @@ def analyze_systemverilog_file(filepath):
         param_usage = len(re.findall(r'\b\w+\s*\[.*\]', content))
         if params > 0 and param_usage < params:
             suggestions.append("🔧 Parameters defined but not fully utilized - review parameter usage")
+
+        # Check for clock domain crossings without proper synchronization
+        if 'always_ff' in content and 'posedge' in content:
+            clock_signals = re.findall(r'posedge\s+(\w+)', content)
+            if len(set(clock_signals)) > 1:
+                suggestions.append("⚠️  Multiple clock domains detected - ensure proper CDC synchronization")
+
+        # Check for combinational loops
+        always_comb_blocks = re.findall(r'always_comb\s*begin(.*?)\bend', content, re.DOTALL)
+        for block in always_comb_blocks:
+            if '=' in block and '<=' not in block:
+                suggestions.append("🔄 Potential combinational loop - review always_comb assignments")
+
+        # Check for unused signals (basic heuristic)
+        assignments = set(re.findall(r'(\w+)\s*[<=]=', content))
+        usages = set(re.findall(r'\b(\w+)\b', content))
+        potentially_unused = assignments - usages
+        if len(potentially_unused) > 5:
+            suggestions.append(f"📝 Found {len(potentially_unused)} potentially unused signals - review assignments")
 
     except Exception as e:
         suggestions.append(f"❌ Error analyzing {filepath}: {e}")
