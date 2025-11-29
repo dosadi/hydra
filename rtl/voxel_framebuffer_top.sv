@@ -129,12 +129,16 @@ module voxel_framebuffer_top #(
 `endif // VERILATOR
 `endif // FORMAL
 
+`ifndef SYNTHESIS
+`ifndef IVERILOG
     // SVA: Frame done pulse only when not busy (all pixels written)
     property frame_done_when_idle;
         @(posedge clk) disable iff (!rst_n)
         frame_done |-> !core_busy;
     endproperty
     frame_done_when_idle_sva: assert property (frame_done_when_idle);
+`endif // IVERILOG
+`endif // SYNTHESIS
 
     // SVA: Every frame start pulse must eventually result in a frame_done pulse
     // NOTE: Verilator does not support SVA sequence delays (##[n:m]).
