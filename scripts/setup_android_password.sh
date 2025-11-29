@@ -16,11 +16,58 @@ log_warn() { echo -e "${YELLOW}[PASS-WARN]${NC} $*" >&2; }
 log_error() { echo -e "${RED}[PASS-ERROR]${NC} $*" >&2; }
 log_success() { echo -e "${GREEN}[PASS-SUCCESS]${NC} $*" >&2; }
 
-# Get Android IP from user
+# Get Android IP from user or auto-detect
 get_android_ip() {
     echo "=== Android Password Keeper Setup ==="
     echo
     log_info "We need to connect to your Android device running Termux"
+    echo
+    log_info "Make sure Termux is running and SSH is enabled:"
+    echo "  pkg install openssh"
+    echo "  sshd"
+    echo
+
+    # Try to auto-detect Android IP
+    log_info "Attempting to auto-detect Android IP address..."
+    
+    # Method 1: Check for recent SSH connections
+    if command -v last &>/dev/null; then
+        RECENT_IP=$(last -i | grep -E "termux|android" | head -1 | awk '{print $3}' || true)
+        if [[ -n "$RECENT_IP" && "$RECENT_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            log_success "Found recent connection from: $RECENT_IP"
+            read -rp "Use this IP address? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                ANDROID_IP="$RECENT_IP"
+                return
+            fi
+        fi
+    fi
+
+    # Method 2: Check ARP table for Android devices
+    if command -v arp &>/dev/null; then
+        log_info "Checking ARP table for Android devices..."
+        arp -a | grep -i android || true
+    fi
+
+    # Method 3: Network scan (if nmap available)
+    if command -v nmap &>/dev/null; then
+        log_info "Scanning local network for Termux SSH servers..."
+        LOCAL_IP=$(ip route get 8.8.8.8 2>/dev/null | awk '{print $7}' | head -1 || hostname -I | awk '{print $1}')
+        if [[ -n "$LOCAL_IP" ]]; then
+            NETWORK=$(echo "$LOCAL_IP" | sed 's/\.[0-9]*$/.0\/24/')
+            log_info "Scanning network: $NETWORK"
+            nmap -p 8022 --open "$NETWORK" 2>/dev/null | grep "Nmap scan report" | awk '{print $5}' || true
+        fi
+    fi
+
+    # Fallback to manual entry
+    echo
+    log_warn "Could not auto-detect Android IP. Please find your Android IP:"
+    echo "  On Android/Termux, try these commands:"
+    echo "    ip addr show wlan0 | grep 'inet ' | awk '{print \$2}' | cut -d/ -f1"
+    echo "    curl -s ifconfig.me"
+    echo "    getprop dhcp.wlan0.ipaddress"
     echo
     read -rp "Enter your Android device IP address: " ANDROID_IP
     echo
