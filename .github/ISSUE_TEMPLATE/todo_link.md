@@ -1,9 +1,10 @@
 ---
-name: "Task: Hydra TODO tracker"
+name: 'Task: Hydra TODO tracker'
 about: File a task and reference docs/todo_master.md
 title: "[Task] "
-labels: ["task"]
-assignees: ""
+labels: ''
+assignees: ''
+
 ---
 
 Please describe the task and link the relevant entries in `docs/todo_master.md`.
