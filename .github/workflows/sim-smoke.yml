@@ -35,6 +35,7 @@ jobs:
       - name: Run non-interactive frame test
         run: |
           cd sim
+          mkdir -p build
           FRAME_DUMP=build/frame_test.ppm AUTO_EXIT=1 ./sim_voxel
 
       - name: Compare frame with golden
