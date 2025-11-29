@@ -356,6 +356,7 @@ module axi_sdram_stub #(
     rvalid_aractive_sva: assert property (rvalid_aractive);
 
 `ifndef VERILATOR
+`ifndef IVERILOG
     // Covergroup: Burst lengths and wait states
     covergroup cg_axi_burst @(posedge clk);
         burst_len: coverpoint s_axi_awlen {
@@ -379,6 +380,7 @@ module axi_sdram_stub #(
         r_stall:  coverpoint !s_axi_rready;
     endgroup
     cg_axi_backpressure_inst = new();
+`endif // IVERILOG
 `endif // VERILATOR
 
 `ifndef SYNTHESIS

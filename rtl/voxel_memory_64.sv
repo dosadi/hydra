@@ -32,6 +32,8 @@ module voxel_memory_64 #(
     // ------------------------------------------------------------------------
     // SVAs for memory correctness and bounds
     // ------------------------------------------------------------------------
+`ifndef SYNTHESIS
+`ifndef IVERILOG
     // SVA: No out-of-bounds read or write
     property addr_in_bounds;
         @(posedge clk)
@@ -45,6 +47,8 @@ module voxel_memory_64 #(
         (read_en && write_en && (read_addr == write_addr)) |-> (read_data == write_data);
     endproperty
     read_after_write_sva: assert property (read_after_write);
+`endif // IVERILOG
+`endif // SYNTHESIS
 
     localparam integer DEPTH = GRID_SIZE * GRID_SIZE * GRID_SIZE; // 262,144
 

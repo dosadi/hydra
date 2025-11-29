@@ -108,6 +108,8 @@ module voxel_framebuffer_top #(
     endproperty
     pixel_write_en_when_busy_sva: assert property (pixel_write_en_when_busy);
 
+`ifndef VERILATOR
+`ifndef IVERILOG
     // Coverage: Pixel address distribution
     covergroup cg_pixel_addr @(posedge clk);
         addr_bins: coverpoint pixel_addr {
@@ -123,7 +125,8 @@ module voxel_framebuffer_top #(
         write_en: coverpoint pixel_write_en;
     endgroup
     cg_pixel_write_en_inst = new();
-`endif
+`endif // IVERILOG
+`endif // VERILATOR
 
     // SVA: Frame done pulse only when not busy (all pixels written)
     property frame_done_when_idle;
