@@ -327,6 +327,8 @@ module axi_sdram_stub #(
     wire aw_active = w_active;
     wire ar_active = r_active;
 
+`ifndef SYNTHESIS
+`ifndef IVERILOG
     // SVA: AWREADY only high when not exceeding MAX_OUTSTANDING
     property awready_limit;
         @(posedge clk) disable iff (!rst_n)
@@ -354,6 +356,8 @@ module axi_sdram_stub #(
         s_axi_rvalid |-> ar_active;
     endproperty
     rvalid_aractive_sva: assert property (rvalid_aractive);
+`endif // IVERILOG
+`endif // SYNTHESIS
 
 `ifndef VERILATOR
 `ifndef IVERILOG
