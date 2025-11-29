@@ -1,0 +1,72 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'rtl/**'
+      - 'sim/**'
+      - 'scripts/**'
+      - 'drivers/**'
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator g++ make libsdl2-dev libsdl2-ttf-dev python3 python3-pip
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r scripts/requirements.txt
+
+      - name: Run AI-assisted code analysis
+        run: |
+          # Analyze changed files for potential improvements
+          CHANGED_FILES=$(git diff --name-only HEAD~1 | grep -E '\.(sv|v|cpp|c\+\+|cc|cxx|c\+\+|py)$' || true)
+
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Analyzing changed files: $CHANGED_FILES"
+
+            # Run linting and collect suggestions
+            make lint 2>&1 | head -50 > lint_output.txt || true
+
+            # Check for common patterns that could be improved
+            python3 scripts/ai_code_analysis.py --files "$CHANGED_FILES" --output ai_suggestions.md
+          else
+            echo "No relevant code changes to analyze"
+            touch ai_suggestions.md
+          fi
+
+      - name: Generate AI review comments
+        if: always()
+        run: |
+          if [ -f ai_suggestions.md ] && [ -s ai_suggestions.md ]; then
+            # Post AI suggestions as PR comment
+            python3 scripts/post_ai_review.py --pr ${{ github.event.pull_request.number }} --suggestions ai_suggestions.md
+          fi
+
+      - name: Upload AI analysis artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-code-review-${{ github.event.pull_request.number }}
+          path: |
+            ai_suggestions.md
+            lint_output.txt
+          retention-days: 30

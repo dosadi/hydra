@@ -15,6 +15,18 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
+    groups:
+      actions-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Python dependencies (for cocotb and scripts)
   - package-ecosystem: "pip"
@@ -31,6 +43,18 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
+    groups:
+      python-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      python-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     # Only update if there's a requirements.txt or similar
     # If not present, this won't do anything
 
@@ -49,6 +73,18 @@ updates:
     commit-message:
       prefix: "docker"
       include: "scope"
+    groups:
+      docker-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      docker-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Note: Native dependencies (Verilator, SDL2, etc.) are managed by OS package managers
   # and should be updated manually. Version constraints are documented in:

@@ -54,3 +54,38 @@ jobs:
           comment-on-alert: true
           alert-threshold: '200%'
           fail-on-alert: false
+
+      - name: AI Performance Analysis
+        if: always()
+        run: |
+          python3 scripts/ai_performance_analysis.py --benchmark out/render_pipeline_baseline.csv --output ai_perf_analysis.md
+
+      - name: Store Performance Baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          python3 scripts/ai_performance_baseline.py --store --data out/render_pipeline_baseline.csv
+
+      - name: AI Performance Regression Detection
+        if: github.event_name == 'pull_request'
+        run: |
+          python3 scripts/ai_performance_baseline.py --compare --data out/render_pipeline_baseline.csv --output perf_regression.md
+
+      - name: Post AI Performance Insights
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          if [ -f ai_perf_analysis.md ]; then
+            python3 scripts/post_ai_review.py --pr ${{ github.event.pull_request.number }} --suggestions ai_perf_analysis.md
+          fi
+          if [ -f perf_regression.md ]; then
+            python3 scripts/post_ai_review.py --pr ${{ github.event.pull_request.number }} --suggestions perf_regression.md
+          fi
+
+      - name: Upload AI Performance Analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-performance-analysis
+          path: |
+            ai_perf_analysis.md
+            perf_regression.md
+          retention-days: 30

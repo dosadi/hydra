@@ -54,6 +54,18 @@ jobs:
         run: |
           python3 scripts/doc_ai_freshen.py --generate-prompts --confidence 0.7
 
+      - name: AI Documentation Enhancement
+        if: steps.check.outputs.STALE == 'true'
+        run: |
+          python3 scripts/ai_doc_generator.py --scan-code --output ai_doc_updates.md
+
+      - name: Apply AI Documentation Updates
+        if: steps.check.outputs.STALE == 'true'
+        run: |
+          if [ -f ai_doc_updates.md ] && [ -s ai_doc_updates.md ]; then
+            python3 scripts/apply_ai_docs.py --updates ai_doc_updates.md
+          fi
+
       - name: Check for changes
         id: git_status
         if: steps.check.outputs.STALE == 'true'

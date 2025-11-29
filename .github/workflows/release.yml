@@ -59,29 +59,37 @@ jobs:
           VERSION="${{ steps.tag.outputs.tag }}"
           VERSION_NUM="${VERSION#v}"
 
-          # Generate release notes from RELEASE_NOTES files
-          RELEASE_NOTES_FILE="RELEASE_NOTES_${VERSION_NUM}.md"
-          if [ -f "$RELEASE_NOTES_FILE" ]; then
-            RELEASE_BODY=$(cat "$RELEASE_NOTES_FILE")
+          # Generate AI-enhanced release notes
+          python3 scripts/ai_release_notes.py --version "$VERSION" --output ai_release_notes.md
+
+          # Use AI-generated notes if available, fallback to manual
+          if [ -f ai_release_notes.md ] && [ -s ai_release_notes.md ]; then
+            RELEASE_BODY=$(cat ai_release_notes.md)
           else
-            RELEASE_BODY="## Release ${VERSION}
+            # Generate release notes from RELEASE_NOTES files
+            RELEASE_NOTES_FILE="RELEASE_NOTES_${VERSION_NUM}.md"
+            if [ -f "$RELEASE_NOTES_FILE" ]; then
+              RELEASE_BODY=$(cat "$RELEASE_NOTES_FILE")
+            else
+              RELEASE_BODY="## Release ${VERSION}
 
-            ### Changes
-            - See commit history for details
+              ### Changes
+              - See commit history for details
 
-            ### Installation
-            Download the package from the assets below and extract:
-            \`\`\`bash
-            tar xzf hydra-package.tar.gz
-            cd hydra-package
-            ./sim_voxel
-            \`\`\`
+              ### Installation
+              Download the package from the assets below and extract:
+              \`\`\`bash
+              tar xzf hydra-package.tar.gz
+              cd hydra-package
+              ./sim_voxel
+              \`\`\`
 
-            ### Requirements
-            - Verilator 5.x
-            - SDL2 libraries
-            - C++17 compiler
-            "
+              ### Requirements
+              - Verilator 5.x
+              - SDL2 libraries
+              - C++17 compiler
+              "
+            fi
           fi
 
           # Escape for multiline output
