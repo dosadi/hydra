@@ -167,14 +167,14 @@ module test_dma_loopback;
         last_pixel_addr = 32'hFFFFFFFF;
         for (i = 0; i < DMA_TIMEOUT_CYCLES; i = i + 1) begin
             @(posedge clk);
-            if (dut.pixel_write_en) begin
+            if (dut.pixel_write_en_int) begin
                 pixel_write_seen = 1;
-                $display("Framebuffer write: pixel_addr=%0d", dut.pixel_addr);
+                $display("Framebuffer write: pixel_addr=%0d", dut.pixel_addr_int);
                 // Check monotonicity
-                if (last_pixel_addr != 32'hFFFFFFFF && dut.pixel_addr <= last_pixel_addr) begin
-                    $fatal(1, "Pixel address not monotonic: prev=%0d curr=%0d", last_pixel_addr, dut.pixel_addr);
+                if (last_pixel_addr != 32'hFFFFFFFF && dut.pixel_addr_int <= last_pixel_addr) begin
+                    $fatal(1, "Pixel address not monotonic: prev=%0d curr=%0d", last_pixel_addr, dut.pixel_addr_int);
                 end
-                last_pixel_addr = dut.pixel_addr;
+                last_pixel_addr = dut.pixel_addr_int;
             end
             if (dut.dma_done && !dma_done_seen) begin
                 dma_done_seen = 1;
