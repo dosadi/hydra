@@ -71,7 +71,11 @@ run_full_automation() {
     make todo-unique
     ./scripts/todo_sweep.py
 
-    # 7. Optional: RTL tests if iverilog available
+    # 7. External chunk processing
+    log_info "Processing external chunks..."
+    python3 scripts/external_chunk_handler.py --process-all || log_warning "Chunk processing had issues"
+
+    # 8. Optional: RTL tests if iverilog available
     if command_exists iverilog && command_exists vvp; then
         log_info "Running RTL tests..."
         ./sim/tests/run_rtl_tests.sh
@@ -92,6 +96,10 @@ run_quick_automation() {
     make todo-unique
     ./scripts/automate_priority.sh --skip-bench --skip-security --skip-integration
     make touch-check-all
+
+    # Quick chunk processing
+    log_info "Quick chunk processing check..."
+    python3 scripts/external_chunk_handler.py --status || log_warning "Chunk status check failed"
 
     log_success "Quick automation completed!"
 }

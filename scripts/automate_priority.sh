@@ -202,6 +202,11 @@ integration_sector() {
         run_cmd "Validating CMake presets" cmake --list-presets || warn "CMake preset validation had issues"
     fi
 
+    # External chunk processing
+    if [ -f scripts/external_chunk_handler.py ]; then
+        run_cmd "Processing external chunks" python3 scripts/external_chunk_handler.py --process-all || warn "Chunk processing had issues"
+    fi
+
     log "✓ Integration sector automation complete"
 }
 

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Script to toggle VS Code Source Control view
+echo "VS Code Source Control View Management"
+echo "======================================"
+echo ""
+echo "The Source Control view has been disabled by default in VS Code settings."
+echo ""
+echo "To temporarily show/hide the Source Control view:"
+echo "1. Press Ctrl+Shift+P (Command Palette)"
+echo "2. Type 'View: Toggle Source Control'"
+echo "3. Or use the View menu → Appearance → Toggle Source Control"
+echo ""
+echo "Current setting: workbench.view.sourceControl.enabled = false"
+echo ""
+echo "If you want to re-enable it permanently, change the setting to 'true' in .vscode/settings.json"

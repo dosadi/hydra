@@ -332,6 +332,19 @@ android_password_admin() {
     "$WORKSPACE/scripts/android_password_keeper.sh" menu
 }
 
+# Chunk Processing Status
+chunk_processing_status() {
+    log_info "Chunk processing status..."
+
+    if [[ ! -f "$WORKSPACE/scripts/chunk_dashboard.py" ]]; then
+        log_error "Chunk dashboard script not found"
+        return
+    fi
+
+    echo "=== External Chunk Processing Status ==="
+    cd "$WORKSPACE" && python3 scripts/chunk_dashboard.py --status
+}
+
 # Show notification details
 show_notifications() {
     log_info "System Notifications"
@@ -368,9 +381,10 @@ show_menu() {
     echo "8. Laptop Administration"
     echo "9. Router Administration"
     echo "10. Android Password Keeper"
-    echo "11. View Notifications"
-    echo "12. Full System Report"
-    echo "13. Exit"
+    echo "11. Chunk Processing Status"
+    echo "12. View Notifications"
+    echo "13. Full System Report"
+    echo "14. Exit"
     echo
     echo -e "\033[2K\r\033[60C$NOTIFICATION_BELL"
     echo
@@ -423,9 +437,10 @@ main() {
             8) laptop_admin ;;
             9) router_admin ;;
             10) android_password_admin ;;
-            11) show_notifications ;;
-            12) full_report ;;
-            13) log_info "Exiting..."; exit 0 ;;
+            11) chunk_processing_status ;;
+            12) show_notifications ;;
+            13) full_report ;;
+            14) log_info "Exiting..."; exit 0 ;;
             *) log_error "Invalid option" ;;
         esac
 
@@ -448,6 +463,7 @@ if [[ $# -gt 0 ]]; then
         laptop) laptop_admin ;;
         router) router_admin ;;
         password) android_password_admin ;;
+        chunks) chunk_processing_status ;;
         notifications) get_notification_status && show_notifications ;;
         report) full_report ;;
         *) log_error "Unknown command: $1" ;;

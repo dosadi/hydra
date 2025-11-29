@@ -402,7 +402,7 @@ def main():
     parser.add_argument("--process-all", action="store_true",
                        help="Process all pending chunks")
     parser.add_argument("--webhook", action="store_true",
-                       help="Run as webhook server (not implemented yet)")
+                       help="Run as webhook server for real-time chunk processing")
     parser.add_argument("--validate-schema", type=str,
                        help="Validate chunk file against schema")
     parser.add_argument("--status", action="store_true",
@@ -506,9 +506,22 @@ def main():
                         print(f"    ✗ {error}")
 
     elif args.webhook:
-        print("Webhook server not implemented yet")
-        print("Use --process-all to process chunks manually")
-        sys.exit(1)
+        print("Starting chunk webhook server...")
+        print("This will provide real-time chunk processing via HTTP endpoints")
+        print("Use Ctrl+C to stop the server")
+        print()
+
+        # Import here to avoid circular imports
+        from scripts.chunk_webhook_server import ChunkWebhookServer
+
+        server = ChunkWebhookServer()
+        try:
+            server.start()
+        except KeyboardInterrupt:
+            print("\nWebhook server stopped")
+        except Exception as e:
+            print(f"Webhook server error: {e}")
+            sys.exit(1)
 
     else:
         parser.print_help()
