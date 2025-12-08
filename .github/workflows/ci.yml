@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload frame test artifacts on failure
         if: failure() && steps.frame_test.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frame-test-failure-${{ matrix.compiler }}
           path: |
