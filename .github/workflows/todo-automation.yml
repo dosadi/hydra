@@ -39,7 +39,7 @@ jobs:
         python scripts/todo_sweep.py --report > todo_report.md
     
     - name: Upload TODO report
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: todo-report
         path: todo_report.md

@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload automation report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: automation-report-${{ steps.mode.outputs.mode }}
           path: automation_report.md
